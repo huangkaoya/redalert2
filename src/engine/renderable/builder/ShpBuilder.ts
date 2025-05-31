@@ -1,30 +1,97 @@
-import * as TextureUtils from "../../gfx/TextureUtils";
-import * as SpriteUtils from "../../gfx/SpriteUtils";
-import { ShpTextureAtlas } from "./ShpTextureAtlas";
-import { PaletteBasicMaterial } from "../../gfx/material/PaletteBasicMaterial";
-import { BatchedMesh, BatchMode } from "../../gfx/batch/BatchedMesh";
+import { TextureUtils } from "@/engine/gfx/TextureUtils";
+import { SpriteUtils } from "@/engine/gfx/SpriteUtils";
+import { ShpTextureAtlas } from "@/engine/renderable/builder/ShpTextureAtlas";
+import { PaletteBasicMaterial } from "@/engine/gfx/material/PaletteBasicMaterial";
+import { BatchedMesh, BatchMode } from "@/engine/gfx/batch/BatchedMesh";
 import * as THREE from 'three';
+import { ShpFile } from "@/data/ShpFile";
+
+interface Palette {
+  uuid: string;
+  hash: string;
+}
+
+interface Camera {
+  // Define camera interface properties as needed
+}
+
+interface Size {
+  width: number;
+  height: number;
+}
+
+interface Offset {
+  x: number;
+  y: number;
+}
+
+interface SpriteGeometryOptions {
+  texture: THREE.Texture;
+  textureArea: any;
+  flat: boolean;
+  align: { x: number; y: number };
+  offset: Offset;
+  camera: Camera;
+  depth: boolean;
+  depthOffset: number;
+  scale: number;
+}
+
+interface MaterialCacheEntry {
+  material: PaletteBasicMaterial;
+  usages: number;
+}
 
 export class ShpBuilder {
-  static textureCache = new Map();
-  static geometryCache = new Map();
-  static materialCache = new Map();
+  private static textureCache = new Map<ShpFile, ShpTextureAtlas>();
+  private static geometryCache = new Map<ShpFile, Map<string, THREE.BufferGeometry>>();
+  private static materialCache = new Map<string, MaterialCacheEntry>();
 
-  static prepareTexture(shpFile) {
+  private shpFile: ShpFile;
+  private palette: Palette;
+  private camera: Camera;
+  private scale: number;
+  private depth: boolean;
+  private depthOffset: number;
+  private batchPalettes: Palette[];
+  private useMeshBatching: boolean;
+  private opacity: number;
+  private forceTransparent: boolean;
+  private offset: Offset;
+  private frameOffset: number;
+  private flat: boolean;
+  private shpSize: Size;
+  private frameNo: number;
+  private atlas?: ShpTextureAtlas;
+  private mesh?: THREE.Mesh | BatchedMesh;
+  private materialCacheKey?: string;
+  private extraLight?: any;
+
+  static prepareTexture(shpFile: ShpFile): void {
     if (!ShpBuilder.textureCache.has(shpFile)) {
       const atlas = new ShpTextureAtlas().fromShpFile(shpFile);
       ShpBuilder.textureCache.set(shpFile, atlas);
     }
   }
 
-  static clearCaches() {
-    ShpBuilder.textureCache.forEach((texture) => texture.dispose());
+  static clearCaches(): void {
+    ShpBuilder.textureCache.forEach((atlas) => atlas.dispose());
     ShpBuilder.textureCache.clear();
-    ShpBuilder.geometryCache.forEach((cache) => cache.forEach((geometry) => geometry.dispose()));
+    
+    ShpBuilder.geometryCache.forEach((geometryMap) => 
+      geometryMap.forEach((geometry) => geometry.dispose())
+    );
     ShpBuilder.geometryCache.clear();
   }
 
-  constructor(shpFile, palette, camera, scale = 1, depth = false, depthOffset = 0) {
+  constructor(
+    shpFile: ShpFile,
+    palette: Palette,
+    camera: Camera,
+    scale: number = 1,
+    depth: boolean = false,
+    depthOffset: number = 0
+  ) {
     this.scale = scale;
     this.depth = depth;
     this.depthOffset = depthOffset;
@@ -42,18 +109,22 @@ export class ShpBuilder {
     this.setFrame(0);
   }
 
-  useMaterial(texture, palette, transparent) {
-    if (texture.format !== THREE.RGBAFormat) {
-      throw new Error("Texture must have format THREE.RGBAFormat");
+  private useMaterial(
+    texture: THREE.Texture,
+    palette: THREE.Texture,
+    transparent: boolean
+  ): PaletteBasicMaterial {
+    if (texture.format !== THREE.AlphaFormat) {
+      throw new Error("Texture must have format THREE.AlphaFormat");
     }
-    
-    this.materialCacheKey = texture.uuid + "_" + palette.uuid + "_" + Number(transparent);
-    let cached = ShpBuilder.materialCache.get(this.materialCacheKey);
-    let material;
 
-    if (cached) {
-      material = cached.material;
-      cached.usages++;
+    this.materialCacheKey = texture.uuid + "_" + palette.uuid + "_" + Number(transparent);
+    let cacheEntry = ShpBuilder.materialCache.get(this.materialCacheKey);
+    let material: PaletteBasicMaterial;
+
+    if (cacheEntry) {
+      material = cacheEntry.material;
+      cacheEntry.usages++;
     } else {
       material = new PaletteBasicMaterial({
         map: texture,
@@ -63,66 +134,66 @@ export class ShpBuilder {
         flatShading: true,
         transparent: transparent,
       });
-      cached = { material: material, usages: 1 };
-      ShpBuilder.materialCache.set(this.materialCacheKey, cached);
+      cacheEntry = { material: material, usages: 1 };
+      ShpBuilder.materialCache.set(this.materialCacheKey, cacheEntry);
     }
-    
+
     return material;
   }
 
-  freeMaterial() {
+  private freeMaterial(): void {
     if (!this.materialCacheKey) {
       throw new Error("Material cache key not set");
     }
-    
-    let cached = ShpBuilder.materialCache.get(this.materialCacheKey);
-    if (cached) {
-      if (cached.usages === 1) {
+
+    const cacheEntry = ShpBuilder.materialCache.get(this.materialCacheKey);
+    if (cacheEntry) {
+      if (cacheEntry.usages === 1) {
         ShpBuilder.materialCache.delete(this.materialCacheKey);
-        cached.material.dispose();
+        cacheEntry.material.dispose();
       } else {
-        cached.usages--;
+        cacheEntry.usages--;
       }
     }
   }
 
-  setBatched(batched) {
+  setBatched(useBatching: boolean): void {
     if (this.mesh) {
       throw new Error("Batching can only be set before calling build()");
     }
-    this.useMeshBatching = batched;
+    this.useMeshBatching = useBatching;
   }
 
-  setOffset(offset) {
+  setOffset(offset: Offset): void {
     if (this.mesh) {
       throw new Error("Offset can only be set before calling build()");
     }
     this.offset = offset;
   }
 
-  setFrameOffset(frameOffset) {
+  setFrameOffset(frameOffset: number): void {
     if (this.mesh) {
       throw new Error("frameOffset can only be set before calling build()");
     }
     this.frameOffset = frameOffset;
   }
 
-  initTexture() {
+  private initTexture(): void {
     ShpBuilder.prepareTexture(this.shpFile);
-    this.atlas = ShpBuilder.textureCache.get(this.shpFile);
+    this.atlas = ShpBuilder.textureCache.get(this.shpFile)!;
   }
 
-  getSpriteGeometryOptions(frameNo) {
-    frameNo += this.frameOffset;
-    const image = this.shpFile.getImage(frameNo);
+  private getSpriteGeometryOptions(frameIndex: number): SpriteGeometryOptions {
+    frameIndex += this.frameOffset;
+    const image = this.shpFile.getImage(frameIndex);
     const offset = {
       x: image.x - Math.floor(this.shpSize.width / 2) + Math.floor(this.offset.x),
       y: image.y - Math.floor(this.shpSize.height / 2) + Math.floor(this.offset.y),
     };
-    
+
     return {
-      texture: this.atlas.getTexture(),
-      textureArea: this.atlas.getTextureArea(frameNo),
+      texture: this.atlas!.getTexture(),
+      textureArea: this.atlas!.getTextureArea(frameIndex),
       flat: this.flat,
       align: { x: 1, y: -1 },
       offset: offset,
@@ -133,37 +204,31 @@ export class ShpBuilder {
     };
   }
 
-  getGeometryCacheKey(frameNo) {
+  private getGeometryCacheKey(frameIndex: number): string {
     return (
-      frameNo +
-      this.frameOffset +
-      "_" +
-      this.shpSize.width +
-      "_" +
-      this.shpSize.height +
-      "_" +
-      this.offset.x +
-      "_" +
-      this.offset.y +
-      "_" +
-      this.flat +
-      "_" +
-      this.depth +
-      "_" +
-      this.depthOffset
+      frameIndex + this.frameOffset +
+      "_" + this.shpSize.width +
+      "_" + this.shpSize.height +
+      "_" + this.offset.x +
+      "_" + this.offset.y +
+      "_" + this.flat +
+      "_" + this.depth +
+      "_" + this.depthOffset
     );
   }
 
-  setFrame(frameNo) {
-    if (this.frameNo !== frameNo) {
-      this.frameNo = frameNo;
+  setFrame(frameIndex: number): void {
+    if (this.frameNo !== frameIndex) {
+      this.frameNo = frameIndex;
       if (this.mesh) {
-        let geometryCache = this.getGeometryCache();
-        const cacheKey = this.getGeometryCacheKey(frameNo);
+        const geometryCache = this.getGeometryCache();
+        const cacheKey = this.getGeometryCacheKey(frameIndex);
         let geometry = geometryCache.get(cacheKey);
         
         if (!geometry) {
-          geometry = SpriteUtils.createSpriteGeometry(this.getSpriteGeometryOptions(frameNo));
+          geometry = SpriteUtils.createSpriteGeometry(
+            this.getSpriteGeometryOptions(frameIndex)
+          );
           geometryCache.set(cacheKey, geometry);
         }
         
@@ -172,32 +237,32 @@ export class ShpBuilder {
     }
   }
 
-  getGeometryCache() {
-    let cache = ShpBuilder.geometryCache.get(this.shpFile);
-    if (!cache) {
-      cache = new Map();
-      ShpBuilder.geometryCache.set(this.shpFile, cache);
+  private getGeometryCache(): Map<string, THREE.BufferGeometry> {
+    let geometryCache = ShpBuilder.geometryCache.get(this.shpFile);
+    if (!geometryCache) {
+      geometryCache = new Map();
+      ShpBuilder.geometryCache.set(this.shpFile, geometryCache);
     }
-    return cache;
+    return geometryCache;
   }
 
-  getFrame() {
+  getFrame(): number {
     return this.frameNo;
   }
 
-  setSize(size) {
+  setSize(size: Size): void {
     this.shpSize = { width: size.width, height: size.height };
   }
 
-  getSize() {
+  getSize(): Size {
     return this.shpSize;
   }
 
-  get frameCount() {
+  get frameCount(): number {
     return this.shpFile.numImages;
   }
 
-  getBatchPaletteIndex(palette) {
+  private getBatchPaletteIndex(palette: Palette): number {
     const index = this.batchPalettes.findIndex((p) => p.hash === palette.hash);
     if (index === -1) {
       throw new Error(
@@ -207,21 +272,21 @@ export class ShpBuilder {
     return index;
   }
 
-  setPalette(palette) {
+  setPalette(palette: Palette): void {
     this.palette = palette;
     if (this.mesh) {
       if (this.useMeshBatching) {
         const paletteIndex = this.getBatchPaletteIndex(palette);
-        this.mesh.setPaletteIndex(paletteIndex);
+        (this.mesh as BatchedMesh).setPaletteIndex(paletteIndex);
       } else {
         const paletteTexture = TextureUtils.textureFromPalette(palette);
-        let material = this.mesh.material;
+        const material = this.mesh.material as PaletteBasicMaterial;
         material.palette = paletteTexture;
       }
     }
   }
 
-  setBatchPalettes(palettes) {
+  setBatchPalettes(palettes: Palette[]): void {
     if (!this.useMeshBatching) {
       throw new Error("Can't use multiple palettes when not batching");
     }
@@ -231,19 +296,19 @@ export class ShpBuilder {
     this.batchPalettes = palettes;
   }
 
-  setExtraLight(extraLight) {
+  setExtraLight(extraLight: any): void {
     this.extraLight = extraLight;
     if (this.mesh) {
       if (this.useMeshBatching) {
-        this.mesh.setExtraLight(extraLight);
+        (this.mesh as BatchedMesh).setExtraLight(extraLight);
       } else {
-        let material = this.mesh.material;
+        const material = this.mesh.material as PaletteBasicMaterial;
         material.extraLight = extraLight;
       }
     }
   }
 
-  setOpacity(opacity) {
+  setOpacity(opacity: number): void {
     const oldOpacity = this.opacity;
     if (oldOpacity !== opacity) {
       this.opacity = opacity;
@@ -255,84 +320,65 @@ export class ShpBuilder {
     }
   }
 
-  setForceTransparent(forceTransparent) {
+  setForceTransparent(forceTransparent: boolean): void {
     if (forceTransparent !== this.forceTransparent) {
       this.forceTransparent = forceTransparent;
       this.updateTransparency();
     }
   }
 
-  updateOpacity() {
+  private updateOpacity(): void {
     if (this.mesh) {
       if (this.useMeshBatching) {
-        this.mesh.setOpacity(this.opacity);
+        (this.mesh as BatchedMesh).setOpacity(this.opacity);
       } else {
-        this.mesh.material.opacity = this.opacity;
+        (this.mesh.material as PaletteBasicMaterial).opacity = this.opacity;
       }
     }
   }
 
-  updateTransparency() {
+  private updateTransparency(): void {
     if (this.mesh) {
       const transparent = this.forceTransparent || this.opacity < 1;
+      
       if (this.useMeshBatching) {
-        const texture = this.mesh.material.map;
-        const palette = this.mesh.material.palette;
+        const texture = (this.mesh.material as PaletteBasicMaterial).map;
+        const palette = (this.mesh.material as PaletteBasicMaterial).palette;
         this.freeMaterial();
         this.mesh.material = this.useMaterial(texture, palette, transparent);
       } else {
-        this.mesh.material.transparent = transparent;
+        (this.mesh.material as PaletteBasicMaterial).transparent = transparent;
       }
     }
   }
 
-  build() {
-    console.log('[ShpBuilder] build() called');
-    
+  build(): THREE.Mesh | BatchedMesh {
     if (this.mesh) {
-      console.log('[ShpBuilder] Returning existing mesh');
       return this.mesh;
     }
-    
-    console.log('[ShpBuilder] Creating new mesh, useMeshBatching:', this.useMeshBatching);
-    
+
     this.initTexture();
-    const texture = this.atlas.getTexture();
+    const texture = this.atlas!.getTexture();
     const cacheKey = this.getGeometryCacheKey(this.frameNo);
-    
-    console.log('[ShpBuilder] Texture:', texture);
-    console.log('[ShpBuilder] Cache key:', cacheKey);
-    
-    let geometryCache = this.getGeometryCache();
+    const geometryCache = this.getGeometryCache();
     let geometry = geometryCache.get(cacheKey);
-    
+
     if (!geometry) {
-      console.log('[ShpBuilder] Creating new geometry');
       const options = this.getSpriteGeometryOptions(this.frameNo);
-      console.log('[ShpBuilder] Geometry options:', options);
       geometry = SpriteUtils.createSpriteGeometry(options);
-      console.log('[ShpBuilder] Created geometry:', geometry);
       geometryCache.set(cacheKey, geometry);
-    } else {
-      console.log('[ShpBuilder] Using cached geometry');
     }
 
-    let mesh;
+    let mesh: THREE.Mesh | BatchedMesh;
     const transparent = this.opacity < 1 || this.forceTransparent;
-    
-    console.log('[ShpBuilder] Creating mesh, transparent:', transparent);
-    
+
     if (this.useMeshBatching) {
-      console.log('[ShpBuilder] Using batched mesh');
       const paletteTexture = TextureUtils.textureFromPalettes(this.batchPalettes);
       const material = this.useMaterial(texture, paletteTexture, transparent);
-      console.log('[ShpBuilder] Batched material:', material);
       mesh = new BatchedMesh(geometry, material, BatchMode.Merging);
       mesh.castShadow = false;
     } else {
-      console.log('[ShpBuilder] Using regular mesh');
       const paletteTexture = TextureUtils.textureFromPalette(this.palette);
-      console.log('[ShpBuilder] Palette texture:', paletteTexture);
       const material = new PaletteBasicMaterial({
         map: texture,
         palette: paletteTexture,
@@ -340,17 +386,9 @@ export class ShpBuilder {
         flatShading: true,
         transparent: transparent,
       });
-      console.log('[ShpBuilder] Regular material:', material);
       mesh = new THREE.Mesh(geometry, material);
     }
-    
-    console.log('[ShpBuilder] Created mesh:', mesh);
-    console.log('[ShpBuilder] Mesh material:', mesh.material);
-    console.log('[ShpBuilder] Material map (texture):', mesh.material.map);
-    console.log('[ShpBuilder] Material palette:', mesh.material.palette);
-    console.log('[ShpBuilder] Mesh geometry:', mesh.geometry);
-    console.log('[ShpBuilder] Geometry attributes:', mesh.geometry.attributes);
-    
+
     mesh.matrixAutoUpdate = false;
     this.mesh = mesh;
     this.setPalette(this.palette);
@@ -359,20 +397,18 @@ export class ShpBuilder {
     if (this.extraLight) {
       this.setExtraLight(this.extraLight);
     }
-    
-    console.log('[ShpBuilder] Returning final mesh:', mesh);
+
     return mesh;
   }
 
-  dispose() {
+  dispose(): void {
     if (this.mesh) {
       if (this.useMeshBatching) {
         this.freeMaterial();
       } else {
-        this.mesh.material.dispose();
+        (this.mesh.material as PaletteBasicMaterial).dispose();
       }
       this.mesh = undefined;
     }
   }
 }
-  

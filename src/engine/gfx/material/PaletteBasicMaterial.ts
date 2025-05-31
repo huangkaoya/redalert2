@@ -1,7 +1,24 @@
 import { paletteShaderLib } from "./paletteShaderLib";
 import * as THREE from 'three';
 
-const PaletteBasicShader = {
+// 定义材质参数接口
+interface PaletteBasicMaterialParameters extends THREE.MeshBasicMaterialParameters {
+  palette?: THREE.Texture;
+  paletteCount?: number;
+  paletteOffset?: number;
+  extraLight?: THREE.Vector3;
+  useVertexColorMult?: boolean;
+  flatShading?: boolean; // 注释掉的不支持属性，但保留在类型中以防需要
+}
+
+// 定义shader对象的类型
+interface ShaderObject {
+  uniforms: { [uniform: string]: THREE.IUniform };
+  vertexShader: string;
+  fragmentShader: string;
+}
+
+const PaletteBasicShader: ShaderObject = {
   uniforms: THREE.UniformsUtils.merge([
     THREE.ShaderLib.basic.uniforms,
     paletteShaderLib.uniforms,
@@ -47,39 +64,43 @@ const PaletteBasicShader = {
 };
 
 export class PaletteBasicMaterial extends THREE.MeshBasicMaterial {
-  get palette() {
+  public uniforms: { [uniform: string]: THREE.IUniform };
+  public vertexShader: string;
+  public fragmentShader: string;
+
+  get palette(): THREE.Texture {
     return this.uniforms.palette.value;
   }
 
-  set palette(value) {
+  set palette(value: THREE.Texture) {
     this.uniforms.palette.value = value;
   }
 
-  get paletteOffset() {
+  get paletteOffset(): number {
     return this.uniforms.paletteOffsetCount.value[0];
   }
 
-  set paletteOffset(value) {
+  set paletteOffset(value: number) {
     this.uniforms.paletteOffsetCount.value[0] = value;
   }
 
-  get paletteCount() {
+  get paletteCount(): number {
     return this.uniforms.paletteOffsetCount.value[1];
   }
 
-  set paletteCount(value) {
+  set paletteCount(value: number) {
     this.uniforms.paletteOffsetCount.value[1] = value;
   }
 
-  get extraLight() {
+  get extraLight(): THREE.Vector3 {
     return this.uniforms.extraLight.value;
   }
 
-  set extraLight(value) {
+  set extraLight(value: THREE.Vector3) {
     this.uniforms.extraLight.value = value;
   }
 
-  set useVertexColorMult(value) {
+  set useVertexColorMult(value: boolean) {
     if (value) {
       this.defines = this.defines || {};
       this.defines.USE_VERTEX_COLOR_MULT = "";
@@ -88,15 +109,17 @@ export class PaletteBasicMaterial extends THREE.MeshBasicMaterial {
     }
   }
 
-  constructor({
-    palette,
-    paletteCount,
-    paletteOffset,
-    extraLight,
-    useVertexColorMult,
-    flatShading, // Remove this unsupported property
-    ...options
-  } = {}) {
+  constructor(parameters: PaletteBasicMaterialParameters = {}) {
+    const {
+      palette,
+      paletteCount,
+      paletteOffset,
+      extraLight,
+      useVertexColorMult,
+      flatShading, // Remove this unsupported property
+      ...options
+    } = parameters;
+
     super(options);
     
     this.uniforms = THREE.UniformsUtils.clone(PaletteBasicShader.uniforms);
@@ -104,16 +127,16 @@ export class PaletteBasicMaterial extends THREE.MeshBasicMaterial {
     if (palette) {
       this.palette = palette;
     }
-    if (paletteCount) {
+    if (paletteCount !== undefined) {
       this.paletteCount = paletteCount;
     }
-    if (paletteOffset) {
+    if (paletteOffset !== undefined) {
       this.paletteOffset = paletteOffset;
     }
     if (extraLight) {
       this.extraLight.copy(extraLight);
     }
-    if (useVertexColorMult) {
+    if (useVertexColorMult !== undefined) {
       this.useVertexColorMult = useVertexColorMult;
     }
     
@@ -122,7 +145,7 @@ export class PaletteBasicMaterial extends THREE.MeshBasicMaterial {
     this.type = "PaletteBasicMaterial";
   }
 
-  copy(source) {
+  copy(source: PaletteBasicMaterial): this {
     super.copy(source);
     this.fragmentShader = source.fragmentShader;
     this.vertexShader = source.vertexShader;
@@ -130,4 +153,4 @@ export class PaletteBasicMaterial extends THREE.MeshBasicMaterial {
     this.palette = source.palette;
     return this;
   }
-} 
+}

@@ -1,6 +1,6 @@
 import { IniFile } from '../data/IniFile';
 import { ShpFile } from '../data/ShpFile';
-import { VxlFile } from '../data/VxlFile';
+import { VxlFile } from '@/data/VxlFile';
 import { TmpFile } from '../data/TmpFile';
 import { Palette } from '../data/Palette';
 import { Theater } from './Theater'; // Assuming Theater.ts will be in the same directory

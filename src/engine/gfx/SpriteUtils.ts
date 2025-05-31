@@ -4,6 +4,9 @@ import * as THREE from 'three';
 
 class SpriteUtilsClass {
   static MAGIC_DEPTH_SCALE = 0.8;
+  USE_INDEXED_GEOMETRY: boolean;
+  VERTICES_PER_SPRITE: number;
+  TRIANGLES_PER_SPRITE: number;
 
   constructor() {
     this.USE_INDEXED_GEOMETRY = true;

@@ -2,18 +2,47 @@ import { VirtualFile } from '@/data/vfs/VirtualFile';
 import { Section } from '@/data/vxl/Section';
 import { VxlHeader } from '@/data/vxl/VxlHeader';
 import * as THREE from 'three';
+import { DataStream } from './DataStream';
+
+interface Voxel {
+  x: number;
+  y: number;
+  z: number;
+  colorIndex: number;
+  normalIndex: number;
+}
+
+interface Span {
+  x: number;
+  y: number;
+  voxels: Voxel[];
+}
+
+interface SectionTailer {
+  startingSpanOffset: number;
+  endingSpanOffset: number;
+  dataSpanOffset: number;
+}
+
+interface PlainVxlFile {
+  sections: any[];
+  voxelCount: number;
+}
 
 export class VxlFile {
-  constructor(virtualFile) {
-    this.voxelCount = 0;
+  public filename?: string;
+  public sections: Section[] = [];
+  public voxelCount: number = 0;
+
+  constructor(virtualFile?: VirtualFile) {
     if (virtualFile instanceof VirtualFile) {
       this.fromVirtualFile(virtualFile);
     }
   }
 
-  fromVirtualFile(virtualFile) {
+  fromVirtualFile(virtualFile: VirtualFile): void {
     this.filename = virtualFile.filename;
-    let stream = virtualFile.stream;
+    const stream: DataStream = virtualFile.stream;
     
     this.sections = [];
     
@@ -21,7 +50,7 @@ export class VxlFile {
       return;
     }
 
-    let header = new VxlHeader();
+    const header = new VxlHeader();
     header.read(stream);
     
     if (!header.headerCount || !header.tailerCount || header.tailerCount !== header.headerCount) {
@@ -45,7 +74,7 @@ export class VxlFile {
     stream.seek(stream.position + header.bodySize);
 
     // Read section tailers
-    let tailers = [];
+    const tailers: SectionTailer[] = [];
     for (let i = 0; i < header.tailerCount; ++i) {
       tailers[i] = this.readSectionTailer(this.sections[i], stream);
     }
@@ -60,14 +89,14 @@ export class VxlFile {
     this.voxelCount = totalVoxelCount;
   }
 
-  readSectionHeader(section, stream) {
+  private readSectionHeader(section: Section, stream: DataStream): void {
     section.name = stream.readCString(16);
     stream.readUint32(); // Skip 3 uint32 values
     stream.readUint32();
     stream.readUint32();
   }
 
-  readSectionTailer(section, stream) {
+  private readSectionTailer(section: Section, stream: DataStream): SectionTailer {
     const startingSpanOffset = stream.readUint32();
     const endingSpanOffset = stream.readUint32();
     const dataSpanOffset = stream.readUint32();
@@ -96,8 +125,8 @@ export class VxlFile {
     };
   }
 
-  readTransfMatrix(stream) {
-    let matrix = [];
+  private readTransfMatrix(stream: DataStream): THREE.Matrix4 {
+    const matrix: number[] = [];
     for (let i = 0; i < 3; ++i) {
       matrix.push(
         stream.readFloat32(),
@@ -110,13 +139,13 @@ export class VxlFile {
     return new THREE.Matrix4().fromArray(matrix).transpose();
   }
 
-  readSectionBodySpans(section, tailer, stream) {
+  private readSectionBodySpans(section: Section, tailer: SectionTailer, stream: DataStream): number {
     stream.seek(stream.position + tailer.startingSpanOffset);
     
     const { sizeX, sizeY, sizeZ } = section;
     
     // Read starting offsets
-    let startingOffsets = new Array(sizeY);
+    const startingOffsets: number[][] = new Array(sizeY);
     for (let y = 0; y < sizeY; ++y) {
       startingOffsets[y] = new Array(sizeX);
       for (let x = 0; x < sizeX; ++x) {
@@ -125,7 +154,7 @@ export class VxlFile {
     }
 
     // Read ending offsets
-    let endingOffsets = new Array(sizeY);
+    const endingOffsets: number[][] = new Array(sizeY);
     for (let y = 0; y < sizeY; ++y) {
       endingOffsets[y] = new Array(sizeX);
       for (let x = 0; x < sizeX; ++x) {
@@ -134,12 +163,12 @@ export class VxlFile {
     }
 
     // Read spans
-    let spans = section.spans = [];
+    const spans: Span[] = section.spans = [];
     let voxelCount = 0;
     
     for (let y = 0; y < sizeY; ++y) {
       for (let x = 0; x < sizeX; ++x) {
-        const span = {
+        const span: Span = {
           x: x,
           y: y,
           voxels: this.readSpanVoxels(
@@ -159,19 +188,26 @@ export class VxlFile {
     return voxelCount;
   }
 
-  readSpanVoxels(startOffset, endOffset, x, y, sizeZ, stream) {
+  private readSpanVoxels(
+    startOffset: number,
+    endOffset: number,
+    x: number,
+    y: number,
+    sizeZ: number,
+    stream: DataStream
+  ): Voxel[] {
     if (startOffset === -1 || endOffset === -1) {
       return [];
     }
 
-    let voxels = [];
+    const voxels: Voxel[] = [];
     
     for (let z = 0; z < sizeZ; ) {
       z += stream.readUint8(); // Skip count
       const voxelCount = stream.readUint8();
       
       for (let i = 0; i < voxelCount; ++i) {
-        const voxel = {
+        const voxel: Voxel = {
           x: x,
           y: y,
           z: z++,
@@ -187,7 +223,7 @@ export class VxlFile {
     return voxels;
   }
 
-  fromPlain(plainObject) {
+  fromPlain(plainObject: PlainVxlFile): VxlFile {
     this.sections = plainObject.sections.map(sectionData => 
       new Section().fromPlain(sectionData)
     );
@@ -195,14 +231,14 @@ export class VxlFile {
     return this;
   }
 
-  toPlain() {
+  toPlain(): PlainVxlFile {
     return {
       sections: this.sections.map(section => section.toPlain()),
       voxelCount: this.voxelCount
     };
   }
 
-  getSection(index) {
+  getSection(index: number): Section | undefined {
     return this.sections[index];
   }
 }
