@@ -1,6 +1,8 @@
 # RA2WEB React
 
-免责声明：这是基于《时空分裂（chronodivide）》中文版RA2WEB（www.ra2web.com）的分析而开发，并意图基于最新的react和three版本进行重构。但项目所有权利（包括收益权）归《时空分裂（chronodivide）》的所有者所有。未经《时空分裂（chronodivide）》的所有者许可，严禁用于任何商业行为。
+免责声明：这是基于《时空分裂（chronodivide）》中文版RA2WEB www.ra2web.com 的分析而开发，并意图基于最新的react和three版本进行重构。
+
+但项目所有权利（包括收益权）归《时空分裂（chronodivide）》/RA2WEB负责人所有。未经《时空分裂（chronodivide）》的所有者/RA2WEB负责人许可，严禁用于任何商业行为。
 
 需要注意的是，《时空分裂（chronodivide）》的所有者从未以任何方式开源游戏客户端代码（即便存在诸如mod-sdk之类的周边开源内容）。本项目运行产生的BUG、功能不完善，不能等同视为对《时空分裂（chronodivide）》的名誉贬损。任何基于本项目开展商业行为，包括但不限于植入广告、开发“弹幕红警”收受礼物获利、直接封装收费、以“作者”身份骗取赞助和充电收益等，均视为对《时空分裂（chronodivide）》原作者Alexandru Ciucă和RA2WEB的侵权。
 
