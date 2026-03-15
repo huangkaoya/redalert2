@@ -4,8 +4,12 @@ import { FactoryType } from '@/game/rules/TechnoRules';
 import { MovementZone } from '@/game/type/MovementZone';
 import { SpeedType } from '@/game/type/SpeedType';
 import { Tile } from '@/game/map/Tile';
-import { World } from '@/game/World';
+import { GameMap } from '@/game/GameMap';
 import { GameObject } from '@/game/gameobject/GameObject';
+
+type RallyContext = {
+  map: GameMap;
+};
 
 export class RallyTrait {
   private rallyPoint?: Tile;
@@ -14,24 +18,24 @@ export class RallyTrait {
     return this.rallyPoint;
   }
 
-  changeRallyPoint(gameObject: GameObject, targetTile: Tile, world: World): void {
-    const validPoint = this.findValidRallyPoint(gameObject, targetTile, world);
+  changeRallyPoint(targetTile: Tile, gameObject: GameObject, world: RallyContext): void {
+    const validPoint = this.findValidRallyPoint(gameObject, targetTile, world.map);
     if (validPoint) {
       this.rallyPoint = validPoint;
     }
   }
 
-  findValidRallyPoint(gameObject: GameObject, targetTile: Tile, world: World): Tile | undefined {
+  findValidRallyPoint(gameObject: GameObject, targetTile: Tile, map: GameMap): Tile | undefined {
     const finder = new RadialTileFinder(
-      world.tiles,
-      world.mapBounds,
+      map.tiles,
+      map.mapBounds,
       targetTile,
       { width: 1, height: 1 },
       0,
       20,
       (tile) =>
-        gameObject.rules.naval === (tile.terrainType === TerrainType.Water) &&
-        !world.tileOccupation.isTileOccupiedBy(tile, gameObject)
+        (gameObject.rules.naval || tile.terrainType !== TerrainType.Water) &&
+        !map.tileOccupation.isTileOccupiedBy(tile, gameObject)
     );
 
     let validTile = finder.getNextTile();
@@ -40,12 +44,12 @@ export class RallyTrait {
       const { width, height } = gameObject.getFoundation();
       for (let x = 0; x < width; x++) {
         for (let y = 0; y < height; y++) {
-          const tile = world.tiles.getByMapCoords(
+          const tile = map.tiles.getByMapCoords(
             gameObject.tile.rx + x,
             gameObject.tile.ry + y
           );
           if (!tile) break;
-          if (world.terrain.getPassableSpeed(tile, SpeedType.Float, false, false) > 0) {
+          if (map.terrain.getPassableSpeed(tile, SpeedType.Float, false, false) > 0) {
             validTile = tile;
             break;
           }
@@ -56,12 +60,12 @@ export class RallyTrait {
     return validTile;
   }
 
-  findRallyNodeForUnit(unit: GameObject, world: World): { tile: Tile; onBridge?: any } | undefined {
+  findRallyNodeForUnit(unit: GameObject, map: GameMap): { tile: Tile; onBridge?: any } | undefined {
     if (this.rallyPoint) {
-      const rallyTile = this.findRallyPointforUnit(unit, this.rallyPoint, world, true);
+      const rallyTile = this.findRallyPointforUnit(unit, this.rallyPoint, map, true);
       return {
         tile: rallyTile,
-        onBridge: unit.rules.naval ? undefined : world.tileOccupation.getBridgeOnTile(rallyTile)
+        onBridge: unit.rules.naval ? undefined : map.tileOccupation.getBridgeOnTile(rallyTile)
       };
     }
   }
@@ -69,30 +73,30 @@ export class RallyTrait {
   findRallyPointforUnit(
     unit: GameObject,
     targetTile: Tile,
-    world: World,
+    map: GameMap,
     checkBuildings: boolean,
     targetElevation?: number
   ): Tile {
-    const bridge = unit.rules.naval ? undefined : world.tileOccupation.getBridgeOnTile(targetTile);
+    const bridge = unit.rules.naval ? undefined : map.tileOccupation.getBridgeOnTile(targetTile);
     const isFlying = unit.rules.movementZone === MovementZone.Fly;
 
     const finder = new RadialTileFinder(
-      world.tiles,
-      world.mapBounds,
+      map.tiles,
+      map.mapBounds,
       targetTile,
       { width: 1, height: 1 },
       0,
       5,
       (tile) => {
         const tileBridge = !bridge || bridge.isHighBridge() 
-          ? world.tileOccupation.getBridgeOnTile(tile)
+          ? map.tileOccupation.getBridgeOnTile(tile)
           : undefined;
 
         return (
-          !(isFlying ? [] : world.terrain.findObstacles({ tile, onBridge: tileBridge }, unit)).length &&
+          !(isFlying ? [] : map.terrain.findObstacles({ tile, onBridge: tileBridge }, unit)).length &&
           (targetElevation === undefined || Math.abs(targetElevation - (tile.z + (tileBridge?.tileElevation ?? 0))) < 4) &&
-          (!checkBuildings || !world.getObjectsOnTile(tile).find(obj => obj.isBuilding() && !obj.isDestroyed)) &&
-          (isFlying || world.terrain.getPassableSpeed(tile, unit.rules.speedType, unit.isInfantry(), !!tileBridge) > 0)
+          (!checkBuildings || !map.getObjectsOnTile(tile).find(obj => obj.isBuilding() && !obj.isDestroyed)) &&
+          (isFlying || map.terrain.getPassableSpeed(tile, unit.rules.speedType, unit.isInfantry(), !!tileBridge) > 0)
         );
       }
     );

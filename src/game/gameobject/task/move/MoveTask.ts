@@ -75,10 +75,10 @@ interface UnreachableTarget {
 }
 
 export class MoveTask extends Task {
-  private game: Game;
-  private targetTile: Tile;
-  private toBridge: boolean;
-  private options?: MoveOptions;
+  protected game: Game;
+  protected targetTile: Tile;
+  protected toBridge: boolean;
+  protected options?: MoveOptions;
   public preventOpportunityFire = false;
   private logger: Logger;
   private destinationLeptons: Vector2;
@@ -427,7 +427,7 @@ export class MoveTask extends Task {
       .add(offset);
   }
 
-  private canStopAtTile(unit: Unit, tile: Tile, onBridge: boolean): boolean {
+  protected canStopAtTile(unit: Unit, tile: Tile, onBridge: boolean): boolean {
     if (unit.zone === ZoneType.Air) {
       if (
         (!unit.isAircraft() || !unit.airportBoundTrait) &&
@@ -501,7 +501,7 @@ export class MoveTask extends Task {
     return true;
   }
 
-  private isCloseEnoughToDest(unit: Unit, tile: Tile, maxDistance?: number): boolean {
+  protected isCloseEnoughToDest(unit: Unit, tile: Tile, maxDistance?: number): boolean {
     if (maxDistance === undefined) {
       return true;
     }
@@ -510,7 +510,7 @@ export class MoveTask extends Task {
     return rangeHelper.tileDistance(this.targetTile, tile) <= maxDistance;
   }
 
-  private hasReachedDestination(unit: Unit): boolean {
+  protected hasReachedDestination(unit: Unit): boolean {
     return !this.path!.length;
   }
 

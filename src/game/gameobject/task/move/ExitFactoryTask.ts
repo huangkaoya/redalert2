@@ -41,9 +41,9 @@ export class ExitFactoryTask extends MoveTask {
     }
   }
 
-  canStopAtTile(tile: any, unit: any, path: any): boolean {
+  canStopAtTile(unit: any, tile: any, onBridge: any): boolean {
     return !this.game.map.tileOccupation.isTileOccupiedBy(tile, this.factory) && 
-           super.canStopAtTile(tile, unit, path);
+           super.canStopAtTile(unit, tile, onBridge);
   }
 
   onTick(unit: any): boolean {

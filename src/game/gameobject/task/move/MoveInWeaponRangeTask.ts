@@ -25,23 +25,6 @@ export class MoveInWeaponRangeTask extends MoveTask {
   private losHelper: LosHelper;
   private bomberManeuverTile?: any;
   private bomberQueuedTargetTile?: any;
-  
-  // Declare inherited properties from MoveTask
-  protected game: any;
-  protected targetTile: any;
-  protected toBridge: boolean;
-  protected options: any;
-  
-  // Declare inherited methods from MoveTask
-  protected updateTarget(tile: any, toBridge: boolean): void {
-    // This will be implemented in the base class
-    super.updateTarget?.(tile, toBridge);
-  }
-  
-  protected isCancelling(): boolean {
-    // This will be implemented in the base class
-    return super.isCancelling?.() || false;
-  }
 
   constructor(game: any, target: any, unit: any, weapon: any) {
     super(
@@ -177,7 +160,8 @@ export class MoveInWeaponRangeTask extends MoveTask {
       this.game.map.tileOccupation.isTileOccupiedBy(tile, this.target) &&
       (!this.target.isUnit() ||
         (this.target.tile === tile &&
-          (this.target as any).moveTrait.moveState !== MoveState.Moving))
+          (this.target as any).moveTrait.moveState !== MoveState.Moving &&
+          this.target.position.subCell === unit.position.subCell))
     ) {
       return false;
     }
