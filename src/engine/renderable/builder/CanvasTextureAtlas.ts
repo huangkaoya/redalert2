@@ -1,12 +1,5 @@
 import * as THREE from 'three';
-
-// 声明全局的GrowingPacker类型
-declare global {
-  class GrowingPacker {
-    root: { w: number; h: number };
-    fit(blocks: Array<{ w: number; h: number; image: HTMLImageElement; fit?: { x: number; y: number } }>): void;
-  }
-}
+import { GrowingPacker } from '@/engine/gfx/GrowingPacker';
 
 export class CanvasTextureAtlas {
   private texture?: THREE.Texture;

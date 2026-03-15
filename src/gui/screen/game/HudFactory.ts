@@ -20,7 +20,8 @@ export class HudFactory {
     private cameoFilenames: any,
     private jsxRenderer: any,
     private strings: any,
-    private commandBarButtons: any
+    private commandBarButtons: any,
+    private persistentHoverTags: any,
   ) {}
 
   setSidebarModel(sidebarModel: any): void {
@@ -45,7 +46,8 @@ export class HudFactory {
       this.countdownTimer,
       this.jsxRenderer,
       this.strings,
-      this.commandBarButtons
+      this.commandBarButtons,
+      this.persistentHoverTags,
     );
   }
 }

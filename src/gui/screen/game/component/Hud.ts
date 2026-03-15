@@ -58,6 +58,7 @@ export class Hud extends UiObject {
   private jsxRenderer: any;
   private strings: any;
   private commandBarButtonTypes: CommandBarButtonType[];
+  private persistentHoverTags: any;
 
   private _onDiploButtonClick: EventDispatcher<this, void>;
   private _onOptButtonClick: EventDispatcher<this, void>;
@@ -115,7 +116,8 @@ export class Hud extends UiObject {
     countdownTimer: any,
     jsxRenderer: any,
     strings: any,
-    commandBarButtonTypes: CommandBarButtonType[]
+    commandBarButtonTypes: CommandBarButtonType[],
+    persistentHoverTags: any,
   ) {
     super(new THREE.Object3D(), new HtmlContainer());
     
@@ -136,6 +138,7 @@ export class Hud extends UiObject {
     this.jsxRenderer = jsxRenderer;
     this.strings = strings;
     this.commandBarButtonTypes = commandBarButtonTypes;
+    this.persistentHoverTags = persistentHoverTags;
 
     this._onDiploButtonClick = new EventDispatcher();
     this._onOptButtonClick = new EventDispatcher();
@@ -421,6 +424,7 @@ export class Hud extends UiObject {
                 y: side1Bottom + sidebarCardOffset.y,
                 strings: this.strings,
                 textColor: textColor,
+                persistentHoverTags: this.persistentHoverTags,
                 ref: (ref: any) => (this.sidebarCard = ref),
                 zIndex: 2,
               }),

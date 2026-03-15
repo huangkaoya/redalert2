@@ -663,7 +663,8 @@ export class GameScreen extends RootScreen {
       cameoFilenames,
       this.jsxRenderer,
       this.strings,
-      commandBarButtonList.buttons
+      commandBarButtonList.buttons,
+      this.runtimeVars.persistentHoverTags,
     );
     this.disposables.add(() => this.hudFactory = undefined);
 
@@ -848,7 +849,7 @@ export class GameScreen extends RootScreen {
         y: rect.top + resolvedViewportPoint.y,
       };
     };
-    const getSidebarTechnoClickPointByName = (technoName: string) => {
+    const resolveSidebarTechnoSlot = (technoName: string) => {
       const sidebarModel = (this.playerUi as any)?.sidebarModel;
       const sidebarCard = (this.hud as any)?.sidebarCard;
       const uiScene = this.uiScene;
@@ -880,6 +881,7 @@ export class GameScreen extends RootScreen {
       if ((sidebarCard as any).pagingOffset !== normalizedOffset) {
         sidebarCard.scrollToOffset?.(normalizedOffset);
       }
+      sidebarCard.updateSlots?.(sidebarModel.activeTab.items, sidebarCard.props?.slots ?? 0);
 
       const slotIndex = itemIndex - ((sidebarCard as any).pagingOffset ?? 0);
       const slotContainer = sidebarCard.slotContainers?.[slotIndex];
@@ -889,10 +891,30 @@ export class GameScreen extends RootScreen {
         );
       }
 
-      const cameoSize = {
-        width: sidebarCard.props?.cameoImages?.width ?? 0,
-        height: sidebarCard.props?.cameoImages?.height ?? 0,
+      return {
+        sidebarModel,
+        sidebarCard,
+        uiScene,
+        targetTabId,
+        itemIndex,
+        slotIndex,
+        slotContainer,
+        cameoSize: {
+          width: sidebarCard.props?.cameoImages?.width ?? 0,
+          height: sidebarCard.props?.cameoImages?.height ?? 0,
+        },
       };
+    };
+    const getSidebarTechnoClickPointByName = (technoName: string) => {
+      const {
+        uiScene,
+        targetTabId,
+        itemIndex,
+        slotIndex,
+        slotContainer,
+        cameoSize,
+      } = resolveSidebarTechnoSlot(technoName);
+
       const clickWorldPoint = new THREE.Vector3(cameoSize.width / 2, cameoSize.height / 2, 0);
       slotContainer.get3DObject().localToWorld(clickWorldPoint);
 
@@ -919,6 +941,67 @@ export class GameScreen extends RootScreen {
         viewportY: resolvedViewportPoint.y,
         x: rect.left + resolvedViewportPoint.x,
         y: rect.top + resolvedViewportPoint.y,
+      };
+    };
+    const getSidebarTechnoDebugStateByName = (technoName: string) => {
+      const {
+        sidebarModel,
+        sidebarCard,
+        targetTabId,
+        itemIndex,
+        slotIndex,
+        slotContainer,
+        cameoSize,
+      } = resolveSidebarTechnoSlot(technoName);
+
+      const slotObject = sidebarCard.slotObjects?.[slotIndex];
+      const labelObject = sidebarCard.labelObjects?.[slotIndex];
+      const quantityObject = sidebarCard.quantityObjects?.[slotIndex];
+      const tagObject = sidebarCard.tagObjects?.[slotIndex];
+      const container3D = slotContainer.get3DObject();
+      const containerWorldPosition = new THREE.Vector3();
+      container3D.getWorldPosition(containerWorldPosition);
+
+      const getFrame = (uiObject: any) =>
+        typeof uiObject?.getFrame === 'function' ? uiObject.getFrame() : undefined;
+      const getVisible = (uiObject: any) => Boolean(uiObject?.get3DObject?.()?.visible);
+      const getPosition = (uiObject: any) =>
+        typeof uiObject?.getPosition === 'function' ? uiObject.getPosition() : undefined;
+
+      return {
+        technoName,
+        tabId: targetTabId,
+        activeTabId: sidebarModel.activeTabId,
+        itemIndex,
+        slotIndex,
+        pagingOffset: sidebarCard.pagingOffset ?? 0,
+        slotTooltip: container3D.userData?.tooltip,
+        width: sidebarCard.props?.cameoImages?.width ?? 0,
+        height: sidebarCard.props?.cameoImages?.height ?? 0,
+        cameoSize,
+        containerPosition: slotContainer.getPosition?.() ?? undefined,
+        containerWorldPosition: {
+          x: containerWorldPosition.x,
+          y: containerWorldPosition.y,
+          z: containerWorldPosition.z,
+        },
+        centerScreenPoint: getSidebarTechnoClickPointByName(technoName),
+        slotFrame: getFrame(slotObject),
+        label: {
+          visible: getVisible(labelObject),
+          frame: getFrame(labelObject),
+          position: getPosition(labelObject),
+        },
+        quantity: {
+          visible: getVisible(quantityObject),
+          frame: getFrame(quantityObject),
+          position: getPosition(quantityObject),
+        },
+        tag: {
+          visible: getVisible(tagObject),
+          frame: getFrame(tagObject),
+          position: getPosition(tagObject),
+        },
       };
     };
     const spawnOwnedUnitCopiesById = (unitId: number, count: number, maxDistance: number = 6) => {
@@ -992,6 +1075,8 @@ export class GameScreen extends RootScreen {
       },
       getSidebarTechnoClickPointByName: (technoName: string) =>
         getSidebarTechnoClickPointByName(technoName),
+      getSidebarTechnoDebugStateByName: (technoName: string) =>
+        getSidebarTechnoDebugStateByName(technoName),
       spawnOwnedUnitCopiesById: (unitId: number, count: number, maxDistance?: number) =>
         spawnOwnedUnitCopiesById(unitId, count, maxDistance),
       spawnOwnedUnitCopiesByName: (unitName: string, count: number, maxDistance?: number) =>

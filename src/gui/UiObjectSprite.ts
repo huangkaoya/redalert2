@@ -5,7 +5,7 @@ import { ShpBuilder } from '../engine/renderable/builder/ShpBuilder';
 import * as THREE from 'three';
 
 export class UiObjectSprite extends UiObject {
-  private builder: ShpBuilder;
+  private builder: any;
   private animationRunner?: any;
   private initialTransparency?: boolean;
   private initialOpacity?: number;
@@ -23,7 +23,7 @@ export class UiObjectSprite extends UiObject {
     return new UiObjectSprite(builder);
   }
 
-  constructor(builder: ShpBuilder) {
+  constructor(builder: any) {
     super();
     this.builder = builder;
   }
@@ -80,7 +80,7 @@ export class UiObjectSprite extends UiObject {
   }
 
   setLightMult(lightMult: number): void {
-    if (this.get3DObject()) {
+    if (this.get3DObject() && typeof this.builder.setExtraLight === 'function') {
       this.builder.setExtraLight(new THREE.Vector3().addScalar(-1 + lightMult));
     } else {
       this.initialLightMult = lightMult;
@@ -106,7 +106,9 @@ export class UiObjectSprite extends UiObject {
       this.builder.setOpacity(this.initialOpacity);
     }
     if (this.initialLightMult !== undefined) {
-      this.builder.setExtraLight(new THREE.Vector3().addScalar(this.initialLightMult));
+      if (typeof this.builder.setExtraLight === 'function') {
+        this.builder.setExtraLight(new THREE.Vector3().addScalar(this.initialLightMult));
+      }
     }
     
     //console.log('[UiObjectSprite] create3DObject() completed');
