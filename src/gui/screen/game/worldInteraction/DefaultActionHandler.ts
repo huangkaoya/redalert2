@@ -55,6 +55,12 @@ class SelectAction {
     }
 
     const selected = this.unitSelectionHandler.getSelectedUnits();
+    const targetAlreadySelected = selected.includes(target);
+    const canCollapseMultipleSelection =
+      !this.toggleSelect &&
+      targetAlreadySelected &&
+      selected.length > 1 &&
+      selected.every((unit: any) => unit.owner === target.owner);
     if (
       !this.toggleSelect &&
       selected.some((unit: any) => unit.isUnit?.()) &&
@@ -72,7 +78,8 @@ class SelectAction {
       (this.toggleSelect ||
         this.force ||
         (this.allowTypeSelect && selected.length === 1 && selected[0] === target) ||
-        !selected.includes(target))
+        !targetAlreadySelected ||
+        canCollapseMultipleSelection)
     );
   }
 

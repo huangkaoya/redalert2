@@ -53,6 +53,7 @@ import * as A from '@/gui/screen/game/worldInteraction/WorldInteractionFactory';
 import { ChatMessageFormat } from '@/gui/chat/ChatMessageFormat';
 import { ActionsApi } from '@/game/api/ActionsApi';
 import { OrderType } from '@/game/order/OrderType';
+import { RadialTileFinder } from '@/game/map/tileFinder/RadialTileFinder';
 
 /**
  * Main game screen that orchestrates the entire game UI and logic
@@ -777,74 +778,151 @@ export class GameScreen extends RootScreen {
     debugRoot.actionFactory = actionFactory;
     debugRoot.actionsApi = actionsApi;
     debugRoot.unitSelection = game.getUnitSelection();
+    const serializeOwnedUnit = (unit: any) => ({
+      id: unit.id,
+      name: unit.name,
+      type: unit.constructor?.name,
+      isSpawned: unit.isSpawned,
+      tile: unit.tile ? { rx: unit.tile.rx, ry: unit.tile.ry, z: unit.tile.z } : undefined,
+    });
+    const resolveOwnedUnitById = (unitId: number) => {
+      const unit = localPlayer.getOwnedObjectById(unitId);
+      if (!unit) {
+        throw new Error(`No owned unit found with id "${unitId}"`);
+      }
+      if (!unit.isSpawned) {
+        throw new Error(`Owned unit "${unit.name}"#${unit.id} is not spawned`);
+      }
+      return unit;
+    };
+    const resolveOwnedUnitByName = (unitName: string) => {
+      const unit = localPlayer
+        .getOwnedObjects()
+        .find((ownedUnit: any) => ownedUnit.name === unitName && ownedUnit.isSpawned);
+      if (!unit) {
+        throw new Error(`No spawned owned unit found with name "${unitName}"`);
+      }
+      return unit;
+    };
+    const getOwnedUnitClickPoint = (unit: any) => {
+      if (!renderableManager) {
+        throw new Error('Renderable manager is not available');
+      }
+      if (!worldScene?.camera || !worldScene?.viewport) {
+        throw new Error('World scene camera or viewport is not available');
+      }
+
+      const renderable = renderableManager.getRenderableByGameObject(unit);
+      if (!renderable) {
+        throw new Error(`Renderable not found for unit "${unit.name}"#${unit.id}`);
+      }
+
+      const renderablePosition =
+        renderable.getPosition?.()?.clone?.() ?? unit.position.worldPosition.clone();
+      const projected = renderablePosition.project(worldScene.camera);
+      const viewportPoint = {
+        x: worldScene.viewport.x + ((projected.x + 1) / 2) * worldScene.viewport.width,
+        y: worldScene.viewport.y + ((1 - projected.y) / 2) * worldScene.viewport.height,
+      };
+
+      const resolvedViewportPoint = {
+        x: Math.max(
+          worldScene.viewport.x,
+          Math.min(worldScene.viewport.x + worldScene.viewport.width - 1, viewportPoint.x),
+        ),
+        y: Math.max(
+          worldScene.viewport.y,
+          Math.min(worldScene.viewport.y + worldScene.viewport.height - 1, viewportPoint.y),
+        ),
+      };
+
+      const canvas = this.renderer.getCanvas?.() ?? document.querySelector('canvas');
+      const rect = canvas?.getBoundingClientRect?.() ?? { left: 0, top: 0 };
+
+      return {
+        unitId: unit.id,
+        viewportX: resolvedViewportPoint.x,
+        viewportY: resolvedViewportPoint.y,
+        x: rect.left + resolvedViewportPoint.x,
+        y: rect.top + resolvedViewportPoint.y,
+      };
+    };
+    const spawnOwnedUnitCopiesById = (unitId: number, count: number, maxDistance: number = 6) => {
+      if (!Number.isInteger(count) || count <= 0) {
+        throw new Error(`count must be a positive integer, got "${count}"`);
+      }
+
+      const sourceUnit = resolveOwnedUnitById(unitId);
+      if (!sourceUnit.isUnit?.()) {
+        throw new Error(`Unit "${sourceUnit.name}"#${sourceUnit.id} is not a unit`);
+      }
+
+      const canSpawnAtTile = (tile: any) =>
+        !game.map.tileOccupation.getObjectsOnTile(tile).length &&
+        game.map.terrain.getPassableSpeed(
+          tile,
+          sourceUnit.rules.speedType,
+          sourceUnit.isInfantry?.() ?? false,
+          false,
+        ) > 0 &&
+        !game.map.terrain.findObstacles({ tile, onBridge: undefined }, sourceUnit).length;
+      const finder = new RadialTileFinder(
+        game.map.tiles,
+        game.map.mapBounds,
+        sourceUnit.tile,
+        sourceUnit.getFoundation?.() ?? { width: 1, height: 1 },
+        1,
+        maxDistance,
+        canSpawnAtTile,
+      );
+      const spawnedUnits = [];
+
+      for (let index = 0; index < count; index += 1) {
+        const spawnTile = finder.getNextTile();
+        if (!spawnTile) {
+          throw new Error(
+            `Unable to find enough spawn tiles near unit "${sourceUnit.name}"#${sourceUnit.id}. Spawned ${spawnedUnits.length}/${count}.`,
+          );
+        }
+        const spawnedUnit = game.createUnitForPlayer(sourceUnit.rules, localPlayer);
+        game.spawnObject(spawnedUnit, spawnTile);
+        spawnedUnits.push(spawnedUnit);
+      }
+
+      console.log(
+        '[GameScreen.debug] spawned owned unit copies',
+        spawnedUnits.map((unit: any) => serializeOwnedUnit(unit)),
+      );
+
+      return spawnedUnits.map((unit: any) => serializeOwnedUnit(unit));
+    };
+    const despawnOwnedUnitsByIds = (unitIds: number[]) => {
+      const despawnedUnits = unitIds.map((unitId) => {
+        const unit = resolveOwnedUnitById(unitId);
+        game.unspawnObject(unit);
+        unit.dispose();
+        return serializeOwnedUnit(unit);
+      });
+
+      console.log('[GameScreen.debug] despawned owned units', despawnedUnits);
+
+      return despawnedUnits;
+    };
     debugRoot.helpers = {
       getSelectedUnitIds: () => game.getUnitSelection().getSelectedUnits().map((unit: any) => unit.id),
       getOwnedUnits: () =>
-        localPlayer.getOwnedObjects().map((unit: any) => ({
-          id: unit.id,
-          name: unit.name,
-          type: unit.constructor?.name,
-          isSpawned: unit.isSpawned,
-          tile: unit.tile ? { rx: unit.tile.rx, ry: unit.tile.ry, z: unit.tile.z } : undefined,
-        })),
+        localPlayer.getOwnedObjects().map((unit: any) => serializeOwnedUnit(unit)),
+      getOwnedUnitClickPointById: (unitId: number) => getOwnedUnitClickPoint(resolveOwnedUnitById(unitId)),
       getOwnedUnitClickPointByName: (unitName: string) => {
-        const unit = localPlayer
-          .getOwnedObjects()
-          .find((ownedUnit: any) => ownedUnit.name === unitName && ownedUnit.isSpawned);
-        if (!unit) {
-          throw new Error(`No spawned owned unit found with name "${unitName}"`);
-        }
-        if (!renderableManager) {
-          throw new Error('Renderable manager is not available');
-        }
-        if (!worldScene?.camera || !worldScene?.viewport) {
-          throw new Error('World scene camera or viewport is not available');
-        }
-
-        const renderable = renderableManager.getRenderableByGameObject(unit);
-        if (!renderable) {
-          throw new Error(`Renderable not found for unit "${unitName}"`);
-        }
-
-        const renderablePosition =
-          renderable.getPosition?.()?.clone?.() ?? unit.position.worldPosition.clone();
-        const projected = renderablePosition.project(worldScene.camera);
-        const viewportPoint = {
-          x: worldScene.viewport.x + ((projected.x + 1) / 2) * worldScene.viewport.width,
-          y: worldScene.viewport.y + ((1 - projected.y) / 2) * worldScene.viewport.height,
-        };
-
-        const clampToViewport = (point: { x: number; y: number }) => ({
-          x: Math.max(
-            worldScene.viewport.x,
-            Math.min(worldScene.viewport.x + worldScene.viewport.width - 1, point.x),
-          ),
-          y: Math.max(
-            worldScene.viewport.y,
-            Math.min(worldScene.viewport.y + worldScene.viewport.height - 1, point.y),
-          ),
-        });
-
-        const resolvedViewportPoint = clampToViewport(viewportPoint);
-
-        const canvas = this.renderer.getCanvas?.() ?? document.querySelector('canvas');
-        const rect = canvas?.getBoundingClientRect?.() ?? { left: 0, top: 0 };
-
-        return {
-          unitId: unit.id,
-          viewportX: resolvedViewportPoint.x,
-          viewportY: resolvedViewportPoint.y,
-          x: rect.left + resolvedViewportPoint.x,
-          y: rect.top + resolvedViewportPoint.y,
-        };
+        return getOwnedUnitClickPoint(resolveOwnedUnitByName(unitName));
       },
+      spawnOwnedUnitCopiesById: (unitId: number, count: number, maxDistance?: number) =>
+        spawnOwnedUnitCopiesById(unitId, count, maxDistance),
+      spawnOwnedUnitCopiesByName: (unitName: string, count: number, maxDistance?: number) =>
+        spawnOwnedUnitCopiesById(resolveOwnedUnitByName(unitName).id, count, maxDistance),
+      despawnOwnedUnitsByIds: (unitIds: number[]) => despawnOwnedUnitsByIds(unitIds),
       selectOwnedUnitByName: (unitName: string) => {
-        const unit = localPlayer
-          .getOwnedObjects()
-          .find((ownedUnit: any) => ownedUnit.name === unitName && ownedUnit.isSpawned);
-        if (!unit) {
-          throw new Error(`No spawned owned unit found with name "${unitName}"`);
-        }
+        const unit = resolveOwnedUnitByName(unitName);
         game.getUnitSelection().deselectAll();
         game.getUnitSelection().addToSelection(unit);
         return unit.id;
