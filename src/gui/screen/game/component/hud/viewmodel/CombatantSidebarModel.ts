@@ -1,4 +1,4 @@
-import { TechnoRules } from "@/game/rules/TechnoRules";
+import { FactoryType } from "@/game/rules/TechnoRules";
 import { ProductionQueue, QueueType, QueueStatus } from "@/game/player/production/ProductionQueue";
 import { ObjectType } from "@/engine/type/ObjectType";
 import { DockTrait } from "@/game/gameobject/trait/DockTrait";
@@ -205,7 +205,7 @@ export class CombatantSidebarModel extends SidebarModel {
       const totalPads = buildings
         .filter(
           (b: any) =>
-            b.factoryTrait?.type === (TechnoRules as any).FactoryType.AircraftType &&
+            b.factoryTrait?.type === FactoryType.AircraftType &&
             b.helipadTrait
         )
         .reduce(

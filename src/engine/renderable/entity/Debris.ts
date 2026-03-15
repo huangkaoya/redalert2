@@ -108,6 +108,7 @@ export class Debris {
     rules: Rules,
     imageFinder: ImageFinder,
     voxels: Voxels,
+    _unusedVoxelAnimCollection: unknown,
     palette: Palette,
     camera: Camera,
     lighting: Lighting,
@@ -128,6 +129,17 @@ export class Debris {
     this.objectRules = gameObject.rules;
     this.objectArt = gameObject.art;
     this.label = "debris_" + this.objectRules.name;
+
+    if (
+      typeof this.lighting?.compute !== "function" ||
+      typeof this.lighting?.computeNoAmbient !== "function"
+    ) {
+      throw new Error(
+        `[Debris] invalid lighting dependency for "${this.objectRules.name}". ` +
+        `Expected Lighting with compute()/computeNoAmbient(), got "${this.lighting?.constructor?.name ?? typeof this.lighting}"`,
+      );
+    }
+
     this.init();
   }
 
