@@ -135,6 +135,12 @@ export class WorldView {
     try {
       console.log('[WorldView.init] MapRenderable added');
     } catch {}
+    const debugRoot = ((window as any).__ra2debug ??= {});
+    debugRoot.worldView = this;
+    debugRoot.worldScene = worldScene;
+    debugRoot.mapRenderable = mapRenderable;
+    debugRoot.game = this.game;
+    debugRoot.theater = theater;
     this.disposables.add(mapRenderable, () => (this.mapRenderable = undefined));
     this.mapRenderable = mapRenderable;
 

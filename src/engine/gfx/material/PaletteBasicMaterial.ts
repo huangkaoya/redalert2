@@ -100,6 +100,10 @@ export class PaletteBasicMaterial extends THREE.MeshBasicMaterial {
     useRedIndex,
     ...options
   }: any = {}) {
+    if (options.side === undefined) {
+      options.side = THREE.DoubleSide;
+    }
+
     super(options);
     
     this.uniforms = THREE.UniformsUtils.clone(PaletteBasicShader.uniforms);
@@ -131,14 +135,21 @@ export class PaletteBasicMaterial extends THREE.MeshBasicMaterial {
 
     // Inject palette shader code at compile-time to match original project behavior
     this.onBeforeCompile = (shader: any) => {
-      try { console.log('[PBM] onBeforeCompile hit'); } catch {}
       shader.uniforms = THREE.UniformsUtils.merge([ shader.uniforms, this.uniforms ]);
       shader.vertexShader = this.vertexShader;
       shader.fragmentShader = this.fragmentShader;
-      try {
-        console.log('[PBM] has <color_fragment>?', shader.fragmentShader.includes('#include <color_fragment>'));
-        console.log('[PBM] has paletteColorIndex?', shader.fragmentShader.includes('paletteColorIndex'));
-      } catch {}
+      this.userData.lastCompiledShader = {
+        vertexShader: shader.vertexShader,
+        fragmentShader: shader.fragmentShader,
+        uniforms: Object.keys(shader.uniforms),
+      };
+      console.log('[PaletteBasicMaterial] compiled', {
+        type: this.type,
+        hasMap: !!this.map,
+        defines: this.defines,
+        hasColorFragmentInclude: shader.fragmentShader.includes('#include <color_fragment>'),
+        hasPaletteColorIndex: shader.fragmentShader.includes('paletteColorIndex'),
+      });
     };
     this.needsUpdate = true;
   }

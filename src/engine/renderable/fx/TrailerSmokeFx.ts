@@ -1,6 +1,8 @@
 import { AnimProps } from "@/engine/AnimProps";
 import { ImageUtils } from "@/engine/gfx/ImageUtils";
 import * as THREE from "three";
+import * as SPELib from "shader-particle-engine";
+import { patchSpeGroup } from "./speCompat";
 
 // 假设的类型定义 - 根据实际情况调整
 interface SmokeArt {
@@ -137,7 +139,7 @@ export class TrailerSmokeFx {
         TrailerSmokeFx.textureCache.set(this.shpFile, texture);
       }
 
-      this.particleGroup = new SPE.Group({
+      this.particleGroup = new SPELib.Group({
         texture: {
           value: texture,
           frames: new THREE.Vector2(this.shpFile.numImages, 1),
@@ -150,6 +152,7 @@ export class TrailerSmokeFx {
         alphaTest: 0,
         blending: THREE.NormalBlending,
       });
+      patchSpeGroup(this.particleGroup);
 
       this.particleGroup.mesh.name = "fx_trailer_smoke";
       this.particleGroup.mesh.frustumCulled = false;
@@ -161,7 +164,7 @@ export class TrailerSmokeFx {
         
       this.particleMaxAge = this.shpFile.numImages / animProps.rate;
 
-      this.particleEmitter = new SPE.Emitter({
+      this.particleEmitter = new SPELib.Emitter({
         particleCount: PARTICLE_COUNT,
         maxAge: { value: this.particleMaxAge },
         activeMultiplier: activeMultiplier / (PARTICLE_COUNT / this.particleMaxAge),

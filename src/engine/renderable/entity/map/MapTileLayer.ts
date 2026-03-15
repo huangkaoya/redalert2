@@ -163,6 +163,24 @@ export class MapTileLayer {
     const mergedGeometry = BufferGeometryUtils.mergeBufferGeometries(geometries);
     try { console.log('[MapTileLayer] mergedGeometry', { geometries: geometries.length, vertexCount: mergedGeometry.getAttribute("position").count }); } catch {}
     const vertexCount = mergedGeometry.getAttribute("position").count;
+    const positionAttribute = mergedGeometry.getAttribute("position");
+    const uvAttribute = mergedGeometry.getAttribute("uv");
+    let invalidPositionValues = 0;
+    for (let i = 0; i < positionAttribute.array.length; i++) {
+      if (!Number.isFinite(positionAttribute.array[i])) {
+        invalidPositionValues++;
+      }
+    }
+    let invalidUvValues = 0;
+    for (let i = 0; i < uvAttribute.array.length; i++) {
+      if (!Number.isFinite(uvAttribute.array[i])) {
+        invalidUvValues++;
+      }
+    }
+    console.log('[MapTileLayer] geometry sanity', {
+      invalidPositionValues,
+      invalidUvValues,
+    });
 
     if (vertexCount !== (SpriteUtils.VERTICES_PER_SPRITE * lightingData.length) / 3) {
       throw new Error("Vertex count mismatch");

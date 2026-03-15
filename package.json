@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "debug:skirmish": "node scripts/skirmish-flow.mjs"
   },
   "dependencies": {
     "@brakebein/threeoctree": "^2.0.1",
@@ -29,6 +30,7 @@
     "three.meshline": "^1.4.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
     "@types/sprintf-js": "^1.1.4",

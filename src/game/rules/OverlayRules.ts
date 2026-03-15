@@ -1,6 +1,7 @@
 import { LandType } from '@/game/type/LandType';
 import { ObjectRules } from '@/game/rules/ObjectRules';
 import { ArmorType } from '@/game/type/ArmorType';
+import { ObjectType } from '@/engine/type/ObjectType';
 
 export class OverlayRules extends ObjectRules {
   public armor!: ArmorType;
@@ -15,6 +16,11 @@ export class OverlayRules extends ObjectRules {
   public tiberium!: boolean;
   public wall!: boolean;
   public radarInvisible!: boolean;
+
+  constructor(type: ObjectType, ini: any, index: number = -1, generalRules?: any) {
+    super(type, ini, index, generalRules);
+    this.parse();
+  }
 
   protected parse(): void {
     super.parse();

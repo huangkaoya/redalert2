@@ -50,7 +50,7 @@ export class ReplayManager {
       throw new Error("Replay is not initialized");
     }
 
-    const id = THREE.Math.generateUUID();
+    const id = THREE.MathUtils.generateUUID();
     const serializedData = replay.serialize();
     
     let entry: ReplayManifestEntry = { 

@@ -119,7 +119,7 @@ export class ReplayStorageMigration {
             const oldFileName = 'replay_' + oldEntry.id + Replay.extension;
             if (existingFiles.has(oldFileName)) {
               const newEntry: ReplayMeta = {
-                id: THREE.Math.generateUUID(),
+                id: THREE.MathUtils.generateUUID(),
                 name: Replay.sanitizeFileName(oldEntry.name),
                 keep: oldEntry.keep,
                 timestamp: oldEntry.timestamp,

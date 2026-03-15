@@ -1,6 +1,7 @@
 import { Coords } from '@/game/Coords';
 import * as THREE from 'three';
 import * as SPE from 'shader-particle-engine';
+import { patchSpeGroup } from './speCompat';
 
 export class SparkFx {
   private static readonly PARTICLE_LIFETIME = 1;
@@ -52,6 +53,7 @@ export class SparkFx {
         texture: { value: SparkFx.sparkTex },
         maxParticleCount: SparkFx.MAX_PARTICLE_COUNT,
       });
+      patchSpeGroup(this.particleGroup);
 
       this.particleGroup.mesh.name = "fx_spark";
       this.particleGroup.mesh.frustumCulled = false;

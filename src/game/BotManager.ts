@@ -74,7 +74,7 @@ export class BotManager {
       action.process();
       const actionLog = action.print();
       if (actionLog) {
-        this.actionLogger.debug(`(${action.player.name})@${gameState.currentTick}: ${actionLog}`);
+        this.actionLogger?.debug?.(`(${action.player.name})@${gameState.currentTick}: ${actionLog}`);
       }
     }
 

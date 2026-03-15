@@ -14,6 +14,11 @@ export class GameTurnManager {
   // Used by GameScreen to await send completion
   public readonly onActionsSent = new EventDispatcher<this, void>();
 
+  constructor(
+    private game?: { update(): void },
+    private actionQueue?: { dequeueAll(): any[] }
+  ) {}
+
   init(): void {
     // No-op: real implementation handled in networked managers in the original project
   }
@@ -29,7 +34,17 @@ export class GameTurnManager {
   }
 
   doGameTurn(_timestamp: number): boolean {
-    // In SP placeholder we just signal a successful tick
+    if (this.actionQueue) {
+      const actions = this.actionQueue.dequeueAll();
+      if (actions.length) {
+        for (const action of actions) {
+          action.process?.();
+        }
+        this.onActionsSent.dispatch(this);
+      }
+    }
+
+    this.game?.update();
     return true;
   }
 

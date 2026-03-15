@@ -95,12 +95,6 @@ class GrowingPacker {
   }
 }
 
-function disposeHandler(event: any): void {
-  const target = event.target;
-  target.isDisposed = true;
-  target.removeEventListener('dispose', disposeHandler);
-}
-
 function createAtlasBitmap(
   blocks: any[], 
   width: number, 
@@ -123,6 +117,21 @@ function createAtlasBitmap(
   });
   
   return atlasBitmap;
+}
+
+function createAtlasRgbaData(bitmap: IndexedBitmap): Uint8Array {
+  const rgbaData = new Uint8Array(bitmap.width * bitmap.height * 4);
+
+  for (let i = 0; i < bitmap.data.length; i++) {
+    const rgbaIndex = i * 4;
+    const paletteIndex = bitmap.data[i];
+    rgbaData[rgbaIndex] = 0;
+    rgbaData[rgbaIndex + 1] = 0;
+    rgbaData[rgbaIndex + 2] = 0;
+    rgbaData[rgbaIndex + 3] = paletteIndex;
+  }
+
+  return rgbaData;
 }
 
 export class TextureAtlas {
@@ -172,16 +181,7 @@ export class TextureAtlas {
     
     const atlasBitmap = createAtlasBitmap(blocks, width, height, imageRects);
     
-    // 将单通道调色板索引转换为RGBA格式，调色板索引放在alpha通道中
-    const rgbaData = new Uint8Array(width * height * 4);
-    for (let i = 0; i < atlasBitmap.data.length; i++) {
-      const rgbaIndex = i * 4;
-      const paletteIndex = atlasBitmap.data[i];
-      rgbaData[rgbaIndex] = 0;     // R
-      rgbaData[rgbaIndex + 1] = 0; // G  
-      rgbaData[rgbaIndex + 2] = 0; // B
-      rgbaData[rgbaIndex + 3] = paletteIndex; // A (调色板索引)
-    }
+    const rgbaData = createAtlasRgbaData(atlasBitmap);
     
     const texture = new THREE.DataTexture(
       rgbaData, 
@@ -194,26 +194,7 @@ export class TextureAtlas {
     texture.flipY = true;
     texture.minFilter = THREE.NearestFilter;
     texture.magFilter = THREE.NearestFilter;
-    
-    // 设置颜色空间为线性空间，避免颜色管理问题
-    texture.colorSpace = THREE.LinearSRGBColorSpace;
-    
-    // Set up onUpdate handler (like original)
-    texture.onUpdate = (texture: THREE.DataTexture) => {
-      (texture as any).image = {
-        width: (texture as any).image.width,
-        height: (texture as any).image.height,
-        get data() {
-          if ((texture as any).isDisposed) {
-            return new Uint8Array(this.width * this.height);
-          } else {
-            console.log('TextureAtlas: Rebuilding texture for upload to GPU...');
-            return createAtlasBitmap(blocks, width, height).data;
-          }
-        }
-      };
-      texture.addEventListener('dispose', disposeHandler);
-    };
+    texture.colorSpace = THREE.NoColorSpace;
     
     this.width = width;
     this.height = height;

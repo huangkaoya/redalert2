@@ -8,6 +8,7 @@ import { ShpFile } from '../../../data/ShpFile';
 import { JsxRenderer } from '../../jsx/JsxRenderer';
 import { LazyResourceCollection } from '../../../engine/LazyResourceCollection';
 import { MessageBoxApi } from '../../component/MessageBoxApi';
+import { Config } from '../../../Config';
 
 export interface UiScene {
   menuViewport: { x: number; y: number; width: number; height: number };
@@ -33,6 +34,7 @@ export class MainMenuRootScreen extends RootScreen {
   private mixer?: any;
   private keyBinds?: any;
   private rootController?: any;
+  private config: Config;
 
   // Components
   private mainMenu?: MainMenu;
@@ -46,6 +48,7 @@ export class MainMenuRootScreen extends RootScreen {
     jsxRenderer: JsxRenderer,
     messageBoxApi: MessageBoxApi,
     appVersion: string,
+    config: Config,
     videoSrc?: string | File,
     sound?: any,
     music?: any,
@@ -64,6 +67,7 @@ export class MainMenuRootScreen extends RootScreen {
     this.jsxRenderer = jsxRenderer;
     this.messageBoxApi = messageBoxApi;
     this.appVersion = appVersion;
+    this.config = config;
     this.videoSrc = videoSrc;
     this.sound = sound;
     this.music = music;
@@ -217,7 +221,7 @@ export class MainMenuRootScreen extends RootScreen {
         
         // MapFileLoader需要ResourceLoader和VFS
         const { ResourceLoader } = await import('../../../engine/ResourceLoader.js');
-        const mapResourceLoader = new ResourceLoader(''); // 空URL，使用VFS
+        const mapResourceLoader = new ResourceLoader(this.config.mapsBaseUrl ?? '');
         const mapFileLoader = new MapFileLoader(mapResourceLoader, Engine.vfs);
         
         // 获取Engine的地图列表和游戏模式
@@ -250,7 +254,7 @@ export class MainMenuRootScreen extends RootScreen {
         
         // MapFileLoader需要ResourceLoader和VFS
         const { ResourceLoader } = await import('../../../engine/ResourceLoader.js');
-        const mapResourceLoader = new ResourceLoader(''); // 空URL，使用VFS
+        const mapResourceLoader = new ResourceLoader(this.config.mapsBaseUrl ?? '');
         const mapFileLoader = new MapFileLoader(mapResourceLoader, Engine.vfs);
         
         // 获取Engine的地图列表和游戏模式
@@ -293,7 +297,7 @@ export class MainMenuRootScreen extends RootScreen {
           this.jsxRenderer,
           this.messageBoxApi,
           this.localPrefs,
-          (this as any).config || {},
+          this.config,
           (this as any).wolService
         );
       } else {

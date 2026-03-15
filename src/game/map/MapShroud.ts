@@ -364,16 +364,25 @@ export class MapShroud {
           newFlags &= ~flags.clearFlags;
         }
 
-        if (
-          (oldValue === undefined ||
-            (Array.isArray(oldValue) ? !oldValue.includes(currentType) : oldValue !== currentType)) &&
-          (x - center.sx) * (x - center.sx) + (y - center.sy) * (y - center.sy) <= radius * radius + 1 &&
-          this.tileElevation[index] < maxElevation + 4
-        ) {
-          this.tiles[index] = (newValue ?? currentType) | newFlags;
-          if (currentType !== newValue || currentFlags !== newFlags) {
-            changedCoords.push({ sx: x, sy: y });
-          }
+        const matchesOldValue =
+          oldValue === undefined
+            ? true
+            : Array.isArray(oldValue)
+              ? oldValue.includes(currentType)
+              : oldValue === currentType;
+        const inRadius =
+          (x - center.sx) * (x - center.sx) + (y - center.sy) * (y - center.sy) <=
+          radius * radius + 1;
+        const belowElevationLimit = this.tileElevation[index] < maxElevation + 4;
+
+        if (!matchesOldValue || !inRadius || !belowElevationLimit) {
+          continue;
+        }
+
+        const nextType = newValue ?? currentType;
+        this.tiles[index] = nextType | newFlags;
+        if (currentType !== nextType || currentFlags !== newFlags) {
+          changedCoords.push({ sx: x, sy: y });
         }
       }
     }

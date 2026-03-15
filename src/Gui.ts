@@ -41,6 +41,7 @@ import { GameResConfig } from './engine/gameRes/GameResConfig.js';
 export class Gui {
   private appVersion: string;
   private strings: Strings;
+  private config: Config;
   private viewport: BoxedVar<{ x: number; y: number; width: number; height: number }>;
   private rootEl: HTMLElement;
 
@@ -83,6 +84,7 @@ export class Gui {
   constructor(
     appVersion: string,
     strings: Strings,
+    config: Config,
     viewport: BoxedVar<{ x: number; y: number; width: number; height: number }>,
     rootEl: HTMLElement,
     cdnResourceLoader?: any,
@@ -90,6 +92,7 @@ export class Gui {
   ) {
     this.appVersion = appVersion;
     this.strings = strings;
+    this.config = config;
     this.viewport = viewport;
     this.rootEl = rootEl;
     this.localPrefs = new LocalPrefs(localStorage);
@@ -450,6 +453,7 @@ export class Gui {
       this.jsxRenderer,
       this.messageBoxApi,  // Pass MessageBoxApi to MainMenuRootScreen
       this.appVersion,
+      this.config,
       videoSrc,  // Pass video source
       this.sound,  // Pass sound system
       this.music,   // Pass music system
@@ -466,7 +470,10 @@ export class Gui {
     // Register Game and Replay screens like original
     const { GameScreen } = await import('./gui/screen/game/GameScreen.js');
     const errorHandler = new ErrorHandler(this.messageBoxApi, this.strings);
-    const mapsBaseUrl = (this as any).config?.mapsBaseUrl ?? '';
+    const gameResBaseUrl = this.config.gameresBaseUrl ?? '';
+    const mapsBaseUrl = this.config.mapsBaseUrl ?? '';
+    console.log('[Gui] Creating game loaders', { gameResBaseUrl, mapsBaseUrl });
+    const gameResLoader = this.cdnResourceLoader ?? new ResourceLoader(gameResBaseUrl);
     const mapResLoader = new ResourceLoader(mapsBaseUrl);
     const mapFileLoader = new MapFileLoader(mapResLoader, (Engine as any).vfs);
     const rules = new Rules(Engine.getRules(), undefined);
@@ -553,7 +560,7 @@ export class Gui {
       loadingScreenApiFactory, // loadingScreenApiFactory
       undefined, // gameOptsParser
       undefined, // gameOptsSerializer
-      (this as any).config || {}, // config
+      this.config, // config
       this.strings, // strings
       this.renderer, // renderer
       this.uiScene, // uiScene
@@ -580,8 +587,8 @@ export class Gui {
       new GameLoader(
         this.appVersion,
         undefined, // Worker disabled temporarily; see GameLoader for notes
-        mapResLoader,
-        mapResLoader,
+        gameResLoader,
+        gameResLoader,
         rules,
         gameModes,
         this.sound,
@@ -592,7 +599,7 @@ export class Gui {
         sharedVxlGeometryPool,
         buildingImageDataCache,
         (this as any).runtimeVars?.debugBotIndex,
-        (this as any).config?.devMode ?? false
+        this.config.devMode ?? false
       ), // gameLoader
       sharedVxlGeometryPool, // vxlGeometryPool
       buildingImageDataCache, // buildingImageDataCache

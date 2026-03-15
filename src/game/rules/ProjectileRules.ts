@@ -1,4 +1,5 @@
 import { ObjectRules } from './ObjectRules';
+import { ObjectType } from '@/engine/type/ObjectType';
 
 export class ProjectileRules extends ObjectRules {
   public acceleration!: number;
@@ -21,6 +22,11 @@ export class ProjectileRules extends ObjectRules {
   public subjectToElevation!: boolean;
   public subjectToWalls!: boolean;
   public vertical!: boolean;
+
+  constructor(type: ObjectType, ini: any, index: number = -1, generalRules?: any) {
+    super(type, ini, index, generalRules);
+    this.parse();
+  }
 
   protected parse(): void {
     super.parse();

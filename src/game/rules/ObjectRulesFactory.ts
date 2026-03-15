@@ -15,13 +15,13 @@ export class ObjectRulesFactory {
       case ObjectType.Vehicle:
         return new TechnoRules(type, ini, index, generalRules);
       case ObjectType.Overlay:
-        return new OverlayRules(type, ini, generalRules);
+        return new OverlayRules(type, ini, index, generalRules);
       case ObjectType.Terrain:
-        return new TerrainRules(type, ini, generalRules);
+        return new TerrainRules(type, ini, index, generalRules);
       case ObjectType.Smudge:
-        return new SmudgeRules(type, ini, generalRules);
+        return new SmudgeRules(type, ini, index, generalRules);
       case ObjectType.VoxelAnim:
-        return new DebrisRules(type, ini, generalRules);
+        return new DebrisRules(type, ini, index, generalRules);
       default:
         return new ObjectRules(type, ini, index, generalRules);
     }

@@ -51,6 +51,8 @@ import { SidebarModel } from '@/gui/screen/game/component/hud/viewmodel/SidebarM
 import { Engine } from '@/engine/Engine';
 import * as A from '@/gui/screen/game/worldInteraction/WorldInteractionFactory';
 import { ChatMessageFormat } from '@/gui/chat/ChatMessageFormat';
+import { ActionsApi } from '@/game/api/ActionsApi';
+import { OrderType } from '@/game/order/OrderType';
 
 /**
  * Main game screen that orchestrates the entire game UI and logic
@@ -313,7 +315,7 @@ export class GameScreen extends RootScreen {
     };
 
     // Create a basic game turn manager
-    this.gameTurnMgr = new GameTurnManager();
+    this.gameTurnMgr = new GameTurnManager(game, actionQueue);
     
     if (this.isSinglePlayer) {
       // Single player logic would go here
@@ -754,6 +756,51 @@ export class GameScreen extends RootScreen {
       })));
       console.log('[GameScreen.onGameStart] worldScene.scene children', worldScene.scene?.children?.length);
     }
+    const debugRoot = ((window as any).__ra2debug ??= {});
+    const actionsApi = new ActionsApi(game, actionFactory, actionQueue, localPlayer);
+    debugRoot.gameScreen = this;
+    debugRoot.renderer = this.renderer;
+    debugRoot.uiScene = this.uiScene;
+    debugRoot.worldScene = worldScene;
+    debugRoot.localPlayer = localPlayer;
+    debugRoot.game = game;
+    debugRoot.actionQueue = actionQueue;
+    debugRoot.actionFactory = actionFactory;
+    debugRoot.actionsApi = actionsApi;
+    debugRoot.unitSelection = game.getUnitSelection();
+    debugRoot.helpers = {
+      getSelectedUnitIds: () => game.getUnitSelection().getSelectedUnits().map((unit: any) => unit.id),
+      getOwnedUnits: () =>
+        localPlayer.getOwnedObjects().map((unit: any) => ({
+          id: unit.id,
+          name: unit.name,
+          type: unit.constructor?.name,
+          isSpawned: unit.isSpawned,
+          tile: unit.tile ? { rx: unit.tile.rx, ry: unit.tile.ry, z: unit.tile.z } : undefined,
+        })),
+      selectOwnedUnitByName: (unitName: string) => {
+        const unit = localPlayer
+          .getOwnedObjects()
+          .find((ownedUnit: any) => ownedUnit.name === unitName && ownedUnit.isSpawned);
+        if (!unit) {
+          throw new Error(`No spawned owned unit found with name "${unitName}"`);
+        }
+        game.getUnitSelection().deselectAll();
+        game.getUnitSelection().addToSelection(unit);
+        return unit.id;
+      },
+      deploySelectedUnits: () => {
+        const selectedUnits = game.getUnitSelection().getSelectedUnits();
+        if (!selectedUnits.length) {
+          throw new Error('No selected units to deploy');
+        }
+        actionsApi.orderUnits(
+          selectedUnits.map((unit: any) => unit.id),
+          OrderType.DeploySelected,
+        );
+        return selectedUnits.map((unit: any) => unit.id);
+      },
+    };
 
     this.pointer.setVisible(true);
 

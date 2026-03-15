@@ -2,6 +2,7 @@ import { AnimProps } from '@/engine/AnimProps';
 import { ImageUtils } from '@/engine/gfx/ImageUtils';
 import * as THREE from 'three';
 import SPE from 'shader-particle-engine';
+import { patchSpeGroup } from './speCompat';
 
 const PARTICLE_COUNT = 1000;
 
@@ -72,6 +73,7 @@ export class DamageSmokeFx {
         alphaTest: 0,
         blending: THREE.NormalBlending
       });
+      patchSpeGroup(this.particleGroup);
 
       this.particleGroup.mesh.name = "fx_damage_smoke";
       this.particleGroup.mesh.frustumCulled = false;

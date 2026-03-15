@@ -2,7 +2,6 @@ import { ObjectType } from "@/engine/type/ObjectType";
 import { GarrisonTrait } from "@/game/gameobject/trait/GarrisonTrait";
 import { TurretTrait } from "@/game/gameobject/trait/TurretTrait";
 import { TechnoRules, FactoryType } from "@/game/rules/TechnoRules";
-import { BuildStatusChangeEvent } from "@/game/event/BuildStatusChangeEvent";
 import { PoweredTrait } from "@/game/gameobject/trait/PoweredTrait";
 import { FactoryTrait } from "@/game/gameobject/trait/FactoryTrait";
 import { DockTrait } from "@/game/gameobject/trait/DockTrait";
@@ -26,7 +25,6 @@ import { PsychicDetectorTrait } from "@/game/gameobject/trait/PsychicDetectorTra
 import { HospitalTrait } from "@/game/gameobject/trait/HospitalTrait";
 import { Vector2 } from "@/game/math/Vector2";
 import { DelayedKillTrait } from "@/game/gameobject/trait/DelayedKillTrait";
-import { NotifyBuildStatus } from "@/game/gameobject/trait/interface/NotifyBuildStatus";
 
 export enum BuildStatus {
   BuildUp = 0,
@@ -213,46 +211,19 @@ export class Building extends Techno {
   }
 
   update(context: any): void {
-    // Add build up task if not building and no tasks
     if (
-      this.buildStatus !== BuildStatus.BuildUp ||
-      this.unitOrderTrait.hasTasks()
+      this.buildStatus === BuildStatus.BuildUp &&
+      !this.unitOrderTrait.hasTasks()
     ) {
-      // No action needed
-    } else {
       this.unitOrderTrait.addTask(
-        new WaitForBuildUpTask(context.rules.general.buildupTime)
+        new WaitForBuildUpTask(context.rules.general.buildupTime, context)
       );
     }
 
-    // Handle build status changes
-    const previousBuildStatus = this.lastBuildStatus;
-    if (this.buildStatus !== previousBuildStatus) {
-      this.lastBuildStatus = this.buildStatus;
-
-      // Notify traits that implement NotifyBuildStatus
-      this.traits
-        .filter((trait): trait is NotifyBuildStatus => 
-          trait && typeof (trait as any)[NotifyBuildStatus.onStatusChange] === 'function'
-        )
-        .forEach((trait) => {
-          trait[NotifyBuildStatus.onStatusChange](previousBuildStatus, this, context);
-        });
-
-      // Dispatch build status change event
-      context.events.dispatch(
-        new BuildStatusChangeEvent(this, this.buildStatus)
-      );
-    }
-
-    // Update attack trait based on build status and power
-    if (this.attackTrait) {
-      const shouldDisable = 
-        this.buildStatus !== BuildStatus.Ready ||
-        (this.poweredTrait && !this.poweredTrait.isPoweredOn());
-      
-      this.attackTrait.setDisabled(shouldDisable);
-    }
+    this.attackTrait?.setDisabled(
+      this.buildStatus !== BuildStatus.Ready ||
+        (!!this.poweredTrait && !this.poweredTrait.isPoweredOn())
+    );
 
     super.update(context);
   }

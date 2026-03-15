@@ -138,7 +138,7 @@ export class ReplayStorageFileSystem {
       for (const file of replayFiles.values()) {
         const timestamp = file.lastModified;
         newManifest.unshift({
-          id: THREE.Math.generateUUID(),
+          id: THREE.MathUtils.generateUUID(),
           name: file.name
             .replace(ReplayStorageFileSystem.unsavedReplayPrefix, '')
             .replace(Replay.extension, ''),

@@ -30,12 +30,14 @@ export class VirtualFile {
 
   /**
    * Creates a VirtualFile from a Uint8Array of bytes.
-   * @param bytes The Uint8Array containing the file data.
+   * @param bytes The binary file data.
    * @param filename The name of the file.
    * @returns A VirtualFile instance.
    */
-  public static fromBytes(bytes: Uint8Array, filename: string): VirtualFile {
-    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  public static fromBytes(bytes: ArrayBuffer | ArrayBufferView, filename: string): VirtualFile {
+    const view = bytes instanceof ArrayBuffer
+      ? new DataView(bytes)
+      : new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     const dataStream = new DataStream(view); // Pass the DataView directly
     return new VirtualFile(dataStream, filename);
   }

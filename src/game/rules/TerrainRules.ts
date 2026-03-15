@@ -1,5 +1,6 @@
 import { ObjectRules } from './ObjectRules';
 import { TheaterType } from '@/engine/TheaterType';
+import { ObjectType } from '@/engine/type/ObjectType';
 
 export enum OccupationBits {
   All = 7,
@@ -35,6 +36,11 @@ export class TerrainRules extends ObjectRules {
   public strength!: number;
   public radarInvisible!: boolean;
   public temperateOccupationBits!: number;
+
+  constructor(type: ObjectType, ini: any, index: number = -1, generalRules?: any) {
+    super(type, ini, index, generalRules);
+    this.parse();
+  }
 
   protected parse(): void {
     super.parse();

@@ -146,7 +146,7 @@ export class GameLoader {
     }
 
     // Load side-specific resources
-    let cdnResources: Map<ResourceType, Uint8Array> | undefined;
+    let cdnResources: any;
     if (this.gameResConfig.isCdn()) {
       cdnResources = await this.cdnResourceLoader.loadResources(
         [
@@ -164,7 +164,7 @@ export class GameLoader {
     // Add cameo resources
     if (cdnResources) {
       Engine.vfs.addArchive(
-        new MixFile(new DataStream(cdnResources.get(ResourceType.Cameo)!)),
+        new MixFile(new DataStream(cdnResources.pop(ResourceType.Cameo))),
         this.cdnResourceLoader.getResourceFileName(ResourceType.Cameo)
       );
       await Engine.vfs.addMixFile('cameocd.mix');
@@ -186,7 +186,7 @@ export class GameLoader {
 
       for (const resourceType of soundResources) {
         Engine.vfs.addArchive(
-          new MixFile(new DataStream(cdnResources.get(resourceType)!)),
+          new MixFile(new DataStream(cdnResources.pop(resourceType))),
           this.cdnResourceLoader.getResourceFileName(resourceType)
         );
       }
@@ -364,7 +364,7 @@ export class GameLoader {
 
       for (const resourceType of resourceTypes) {
         Engine.vfs.addArchive(
-          new MixFile(new DataStream(resources.get(resourceType)!)),
+          new MixFile(new DataStream(resources.pop(resourceType))),
           this.cdnResourceLoader.getResourceFileName(resourceType)
         );
       }
@@ -430,7 +430,7 @@ export class GameLoader {
     }
   }
 
-  private async loadHudSideImages(cdnResources?: Map<ResourceType, Uint8Array>, hudSide: SideType = SideType.GDI): Promise<void> {
+  private async loadHudSideImages(cdnResources?: any, hudSide: SideType = SideType.GDI): Promise<void> {
     if (!Engine.vfs) throw new Error('VFS is not initialized');
 
     // Remove existing side mix files
@@ -449,7 +449,7 @@ export class GameLoader {
       }
 
       Engine.vfs.addArchive(
-        new MixFile(new DataStream(cdnResources.get(resourceType)!)),
+        new MixFile(new DataStream(cdnResources.pop(resourceType))),
         fileName
       );
     } else {
@@ -714,7 +714,7 @@ export class GameLoader {
       const fileName = this.appResourceLoader.getResourceFileName(festiveResource);
       if (!Engine.vfs.hasArchive(fileName)) {
         const resources = await this.appResourceLoader.loadResources([festiveResource], cancellationToken);
-        const resourceData = resources.get(festiveResource)!;
+        const resourceData = resources.pop(festiveResource);
         const mixFile = new MixFile(new DataStream(resourceData));
         Engine.vfs.addArchive(mixFile, fileName);
       }

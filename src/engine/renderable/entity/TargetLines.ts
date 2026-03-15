@@ -1,7 +1,7 @@
+import * as THREE from "three";
 import { Coords } from "@/game/Coords";
 import { TargetLinesConfig } from "@/game/gameobject/task/system/TargetLinesConfig";
 import { ZoneType } from "@/game/gameobject/unit/ZoneType";
-import * as THREE from "three";
 
 interface LineObjects {
   root: THREE.Object3D;
@@ -12,8 +12,8 @@ interface LineObjects {
 
 export class TargetLines {
   private obj?: THREE.Object3D;
-  private unitPaths: Map<any, any>;
-  private unitLines: Map<any, LineObjects>;
+  private unitPaths = new Map<any, any>();
+  private unitLines = new Map<any, LineObjects>();
   private lineHeadGeometry: THREE.PlaneGeometry;
   private attackLineMaterial?: THREE.LineBasicMaterial;
   private moveLineMaterial?: THREE.LineBasicMaterial;
@@ -27,50 +27,50 @@ export class TargetLines {
     private unitSelection: any,
     private camera: any,
     private debugPaths: any,
-    private enabled: any
+    private enabled: any,
   ) {
-    this.unitPaths = new Map();
-    this.unitLines = new Map();
     this.lineHeadGeometry = new THREE.PlaneGeometry(
       3 * Coords.ISO_WORLD_SCALE,
-      3 * Coords.ISO_WORLD_SCALE
+      3 * Coords.ISO_WORLD_SCALE,
     );
   }
 
   create3DObject(): void {
-    if (!this.obj) {
-      this.obj = new THREE.Object3D();
-      this.obj.name = "target_lines";
-      this.obj.matrixAutoUpdate = false;
-
-      this.attackLineMaterial = new THREE.LineBasicMaterial({
-        color: 11337728,
-        transparent: true,
-        depthTest: false,
-        depthWrite: false,
-      });
-
-      this.moveLineMaterial = new THREE.LineBasicMaterial({
-        color: 43520,
-        transparent: true,
-        depthTest: false,
-        depthWrite: false,
-      });
-
-      this.attackLineHeadMaterial = new THREE.MeshBasicMaterial({
-        color: 11337728,
-        transparent: true,
-        depthTest: false,
-        depthWrite: false,
-      });
-
-      this.moveLineHeadMaterial = new THREE.MeshBasicMaterial({
-        color: 43520,
-        transparent: true,
-        depthTest: false,
-        depthWrite: false,
-      });
+    if (this.obj) {
+      return;
     }
+
+    this.obj = new THREE.Object3D();
+    this.obj.name = "target_lines";
+    this.obj.matrixAutoUpdate = false;
+
+    this.attackLineMaterial = new THREE.LineBasicMaterial({
+      color: 0xad0000,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+    });
+
+    this.moveLineMaterial = new THREE.LineBasicMaterial({
+      color: 0x00aa00,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+    });
+
+    this.attackLineHeadMaterial = new THREE.MeshBasicMaterial({
+      color: 0xad0000,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+    });
+
+    this.moveLineHeadMaterial = new THREE.MeshBasicMaterial({
+      color: 0x00aa00,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+    });
   }
 
   get3DObject(): THREE.Object3D | undefined {
@@ -81,107 +81,87 @@ export class TargetLines {
     this.selectionHash = undefined;
   }
 
-  update(n: number): void {
+  update(now: number): void {
     if (this.obj) {
       this.obj.visible = this.enabled.value;
     }
 
-    if (this.enabled.value) {
-      const hash = this.unitSelection.getHash();
-      if (this.selectionHash === undefined || this.selectionHash !== hash) {
-        this.selectionHash = hash;
-        this.hideAllLines();
-        this.unitPaths.clear();
-        this.disposeUnitLines();
+    if (!this.enabled.value) {
+      return;
+    }
 
-        this.unitSelection.getSelectedUnits().forEach((unit: any) => {
-          if (
-            unit.isUnit() &&
-            (!this.currentPlayer || unit.owner === this.currentPlayer)
-          ) {
-            this.unitPaths.set(
-              unit,
-              TargetLinesConfig.cloneConfig(unit.unitOrderTrait.targetLinesConfig)
-            );
-            this.updateLines(unit);
-            if (
-              unit.zone !== ZoneType.Air &&
-              !TargetLinesConfig.configHasTarget(unit.unitOrderTrait.targetLinesConfig)
-            ) {
-              return;
-            }
-            this.showLines(unit, n);
-          }
-        });
-        return;
-      }
+    const selectionHash = this.unitSelection.getHash();
+    if (this.selectionHash === undefined || this.selectionHash !== selectionHash) {
+      this.selectionHash = selectionHash;
+      this.hideAllLines();
+      this.unitPaths.clear();
+      this.disposeUnitLines();
 
-      let needsUpdate = false;
       this.unitSelection.getSelectedUnits().forEach((unit: any) => {
+        if (!unit.isUnit() || (this.currentPlayer && unit.owner !== this.currentPlayer)) {
+          return;
+        }
+
+        this.unitPaths.set(
+          unit,
+          TargetLinesConfig.cloneConfig(unit.unitOrderTrait.targetLinesConfig),
+        );
+        this.updateLines(unit);
+
         if (
-          unit.isUnit() &&
-          (!this.currentPlayer || unit.owner === this.currentPlayer)
+          unit.zone === ZoneType.Air ||
+          TargetLinesConfig.configHasTarget(unit.unitOrderTrait.targetLinesConfig)
         ) {
-          if (
-            !this.unitPaths.has(unit) ||
-            !TargetLinesConfig.configsAreEqual(
-              this.unitPaths.get(unit),
-              unit.unitOrderTrait.targetLinesConfig
-            ) ||
-            unit.unitOrderTrait.targetLinesConfig?.isRecalc
-          ) {
-            this.unitPaths.set(
-              unit,
-              TargetLinesConfig.cloneConfig(unit.unitOrderTrait.targetLinesConfig)
-            );
-            needsUpdate = true;
-            this.updateLines(unit);
-            if (TargetLinesConfig.configHasTarget(unit.unitOrderTrait.targetLinesConfig)) {
-              this.showLines(unit, n);
-            }
-          }
-
-          const lineObjects = this.unitLines.get(unit);
-          const worldPos = unit.position.worldPosition;
-          if (lineObjects) {
-            const srcChanged = !worldPos.equals(lineObjects.srcLineHead.position);
-            const target = unit.unitOrderTrait.targetLinesConfig?.target;
-            const targetPos = target ? target.position.worldPosition : undefined;
-            const destChanged = targetPos && !targetPos.equals(lineObjects.destLineHead.position);
-
-            if (srcChanged || destChanged) {
-              const geometry = lineObjects.line.geometry;
-              geometry.verticesNeedUpdate = true;
-
-              if (srcChanged) {
-                geometry.vertices[geometry.vertices.length - 1].copy(worldPos);
-                lineObjects.srcLineHead.position.copy(worldPos);
-                lineObjects.srcLineHead.updateMatrix();
-              }
-
-              if (targetPos && destChanged) {
-                geometry.vertices[0].copy(targetPos);
-                lineObjects.destLineHead.position.copy(targetPos);
-                lineObjects.destLineHead.updateMatrix();
-              }
-            }
-          }
+          this.showLines(unit, now);
         }
       });
+      return;
+    }
 
-      if (needsUpdate) {
+    let pathsChanged = false;
+
+    this.unitSelection.getSelectedUnits().forEach((unit: any) => {
+      if (!unit.isUnit() || (this.currentPlayer && unit.owner !== this.currentPlayer)) {
         return;
       }
 
-      if (this.showStart !== undefined && n - this.showStart >= 1000) {
-        this.hideAllLines();
+      const targetLinesConfig = unit.unitOrderTrait.targetLinesConfig;
+      const previousConfig = this.unitPaths.get(unit);
+      const configChanged =
+        !this.unitPaths.has(unit) ||
+        !TargetLinesConfig.configsAreEqual(previousConfig, targetLinesConfig) ||
+        !!targetLinesConfig?.isRecalc;
+
+      if (configChanged) {
+        this.unitPaths.set(unit, TargetLinesConfig.cloneConfig(targetLinesConfig));
+        pathsChanged = true;
+        this.updateLines(unit);
+
+        if (TargetLinesConfig.configHasTarget(targetLinesConfig)) {
+          this.showLines(unit, now);
+        }
       }
+
+      this.updateLineEndpoints(unit);
+    });
+
+    if (pathsChanged) {
+      return;
+    }
+
+    if (this.showStart !== undefined && now - this.showStart >= 1000) {
+      this.hideAllLines();
     }
   }
 
-  showLines(unit: any, time: number): void {
-    this.showStart = time;
-    this.unitLines.get(unit)!.root.visible = true;
+  showLines(unit: any, now: number): void {
+    const lineObjects = this.unitLines.get(unit);
+    if (!lineObjects) {
+      return;
+    }
+
+    this.showStart = now;
+    lineObjects.root.visible = true;
   }
 
   hideAllLines(): void {
@@ -193,16 +173,18 @@ export class TargetLines {
 
   updateLines(unit: any): void {
     let config = unit.unitOrderTrait.targetLinesConfig;
+
     if (!config || !TargetLinesConfig.configHasTarget(config)) {
       if (unit.zone !== ZoneType.Air) {
-        if (this.unitLines.has(unit)) {
-          const objects = this.unitLines.get(unit)!;
-          this.obj?.remove(objects.root);
-          this.disposeLineObjects(objects);
+        const existing = this.unitLines.get(unit);
+        if (existing) {
+          this.obj?.remove(existing.root);
+          this.disposeLineObjects(existing);
           this.unitLines.delete(unit);
         }
         return;
       }
+
       config = {
         pathNodes: [
           { tile: unit.tile, onBridge: undefined },
@@ -211,7 +193,7 @@ export class TargetLines {
       };
     }
 
-    const geometry = new THREE.BufferGeometry();
+    const positions: number[] = [];
     let pathNodes = config.pathNodes;
 
     if (pathNodes.length) {
@@ -219,349 +201,170 @@ export class TargetLines {
         pathNodes = [pathNodes[0], pathNodes[pathNodes.length - 1]];
       }
 
-      const positions: number[] = [];
-      pathNodes.forEach((node) => {
-        const pos = Coords.tile3dToWorld(
+      pathNodes.forEach((node: any) => {
+        const position = Coords.tile3dToWorld(
           node.tile.rx + 0.5,
           node.tile.ry + 0.5,
-          node.tile.z + (node.onBridge?.tileElevation ?? 0)
+          node.tile.z + (node.onBridge?.tileElevation ?? 0),
         );
-        positions.push(pos.x, pos.y, pos.z);
+
+        positions.push(position.x, position.y, position.z);
       });
-      // replace last point with unit current world position
-      positions.splice(positions.length - 3, 3, unit.position.worldPosition.x, unit.position.worldPosition.y, unit.position.worldPosition.z);
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+
+      positions.splice(
+        positions.length - 3,
+        3,
+        unit.position.worldPosition.x,
+        unit.position.worldPosition.y,
+        unit.position.worldPosition.z,
+      );
     } else {
       const target = config.target;
-      const positions = new Float32Array([
-        target.position.worldPosition.x, target.position.worldPosition.y, target.position.worldPosition.z,
-        unit.position.worldPosition.x, unit.position.worldPosition.y, unit.position.worldPosition.z,
-      ]);
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      positions.push(
+        target.position.worldPosition.x,
+        target.position.worldPosition.y,
+        target.position.worldPosition.z,
+        unit.position.worldPosition.x,
+        unit.position.worldPosition.y,
+        unit.position.worldPosition.z,
+      );
     }
+
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geometry.computeBoundingSphere();
 
     const isAttack = !!config.isAttack;
-    const material = isAttack ? this.attackLineMaterial! : this.moveLineMaterial!;
-    const line = new THREE.Line(geometry, material);
+    const line = new THREE.Line(
+      geometry,
+      isAttack ? this.attackLineMaterial! : this.moveLineMaterial!,
+    );
     line.matrixAutoUpdate = false;
 
-    const srcHead = this.createLineHead(isAttack);
-    {
-      const pos = (line.geometry.getAttribute('position') as THREE.BufferAttribute);
-      const idx = pos.count - 1;
-      srcHead.position.set(pos.getX(idx), pos.getY(idx), pos.getZ(idx));
-    }
-    srcHead.matrixAutoUpdate = false;
-    srcHead.updateMatrix();
+    const srcLineHead = this.createLineHead(isAttack);
+    const destLineHead = this.createLineHead(isAttack);
+    this.syncLineHeadPositions(line, srcLineHead, destLineHead);
 
-    const destHead = this.createLineHead(isAttack);
-    {
-      const pos = (line.geometry.getAttribute('position') as THREE.BufferAttribute);
-      destHead.position.set(pos.getX(0), pos.getY(0), pos.getZ(0));
-    }
-    destHead.matrixAutoUpdate = false;
-    destHead.updateMatrix();
-
-    line.renderOrder = srcHead.renderOrder = destHead.renderOrder = 1000000;
+    line.renderOrder = 1_000_000;
+    srcLineHead.renderOrder = 1_000_000;
+    destLineHead.renderOrder = 1_000_000;
 
     const root = new THREE.Object3D();
     root.matrixAutoUpdate = false;
     root.visible = false;
     root.add(line);
-    root.add(srcHead);
-    root.add(destHead);
+    root.add(srcLineHead);
+    root.add(destLineHead);
 
-    if (this.unitLines.has(unit)) {
-      const oldObjects = this.unitLines.get(unit)!;
-      this.obj?.remove(oldObjects.root);
-      this.disposeLineObjects(oldObjects);
+    const existing = this.unitLines.get(unit);
+    if (existing) {
+      this.obj?.remove(existing.root);
+      this.disposeLineObjects(existing);
     }
 
     this.unitLines.set(unit, {
       root,
       line,
-      srcLineHead: srcHead,
-      destLineHead: destHead,
+      srcLineHead,
+      destLineHead,
     });
 
     this.obj?.add(root);
   }
 
   createLineHead(isAttack: boolean): THREE.Mesh {
-    const mesh = new THREE.Mesh(
+    const lineHead = new THREE.Mesh(
       this.lineHeadGeometry,
-      isAttack ? this.attackLineHeadMaterial! : this.moveLineHeadMaterial!
+      isAttack ? this.attackLineHeadMaterial! : this.moveLineHeadMaterial!,
     );
-    const quaternion = new THREE.Quaternion().setFromEuler(this.camera.rotation);
-    mesh.setRotationFromQuaternion(quaternion);
-System.register(
-    "engine/renderable/entity/TargetLines",
-    [
-      "@/game/Coords",
-      "@/game/gameobject/task/system/TargetLinesConfig",
-      "@/game/gameobject/unit/ZoneType",
-    ],
-    function (e, t) {
-      "use strict";
-      var h, u, d, i;
-      t && t.id;
-      return {
-        setters: [
-          function (e) {
-            h = e;
-          },
-          function (e) {
-            u = e;
-          },
-          function (e) {
-            d = e;
-          },
-        ],
-        execute: function () {
-          e(
-            "TargetLines",
-            (i = class {
-              constructor(e, t, i, r, s) {
-                (this.currentPlayer = e),
-                  (this.unitSelection = t),
-                  (this.camera = i),
-                  (this.debugPaths = r),
-                  (this.enabled = s),
-                  (this.unitPaths = new Map()),
-                  (this.unitLines = new Map()),
-                  (this.lineHeadGeometry = new THREE.PlaneGeometry(
-                    3 * h.Coords.ISO_WORLD_SCALE,
-                    3 * h.Coords.ISO_WORLD_SCALE,
-                  ));
-              }
-              create3DObject() {
-                this.obj ||
-                  ((this.obj = new THREE.Object3D()),
-                  (this.obj.name = "target_lines"),
-                  (this.obj.matrixAutoUpdate = !1),
-                  (this.attackLineMaterial = new THREE.LineBasicMaterial({
-                    color: 11337728,
-                    transparent: !0,
-                    depthTest: !1,
-                    depthWrite: !1,
-                  })),
-                  (this.moveLineMaterial = new THREE.LineBasicMaterial({
-                    color: 43520,
-                    transparent: !0,
-                    depthTest: !1,
-                    depthWrite: !1,
-                  })),
-                  (this.attackLineHeadMaterial = new THREE.MeshBasicMaterial({
-                    color: 11337728,
-                    transparent: !0,
-                    depthTest: !1,
-                    depthWrite: !1,
-                  })),
-                  (this.moveLineHeadMaterial = new THREE.MeshBasicMaterial({
-                    color: 43520,
-                    transparent: !0,
-                    depthTest: !1,
-                    depthWrite: !1,
-                  })));
-              }
-              get3DObject() {
-                return this.obj;
-              }
-              forceShow() {
-                this.selectionHash = void 0;
-              }
-              update(n) {
-                if (
-                  ((this.obj.visible = this.enabled.value), this.enabled.value)
-                ) {
-                  var e = this.unitSelection.getHash();
-                  if (void 0 === this.selectionHash || this.selectionHash !== e)
-                    return (
-                      (this.selectionHash = e),
-                      this.hideAllLines(),
-                      this.unitPaths.clear(),
-                      this.disposeUnitLines(),
-                      void this.unitSelection
-                        .getSelectedUnits()
-                        .forEach((e) => {
-                          !e.isUnit() ||
-                            (this.currentPlayer &&
-                              e.owner !== this.currentPlayer) ||
-                            (this.unitPaths.set(
-                              e,
-                              u.cloneConfig(e.unitOrderTrait.targetLinesConfig),
-                            ),
-                            this.updateLines(e),
-                            (e.zone !== d.ZoneType.Air &&
-                              !u.configHasTarget(
-                                e.unitOrderTrait.targetLinesConfig,
-                              )) ||
-                              this.showLines(e, n));
-                        })
-                    );
-                  {
-                    let t = !1;
-                    if (
-                      (this.unitSelection.getSelectedUnits().forEach((e) => {
-                        if (
-                          e.isUnit() &&
-                          (!this.currentPlayer ||
-                            e.owner === this.currentPlayer)
-                        ) {
-                          (this.unitPaths.has(e) &&
-                            u.configsAreEqual(
-                              this.unitPaths.get(e),
-                              e.unitOrderTrait.targetLinesConfig,
-                            )) ||
-                            e.unitOrderTrait.targetLinesConfig?.isRecalc ||
-                            (this.unitPaths.set(
-                              e,
-                              u.cloneConfig(e.unitOrderTrait.targetLinesConfig),
-                            ),
-                            (t = !0),
-                            this.updateLines(e),
-                            u.configHasTarget(
-                              e.unitOrderTrait.targetLinesConfig,
-                            ) && this.showLines(e, n));
-                          let i = this.unitLines.get(e),
-                            r = e.position.worldPosition;
-                          if (i) {
-                            var s = !r.equals(i.srcLineHead.position),
-                              a = e.unitOrderTrait.targetLinesConfig?.target;
-                            let t = a ? a.position.worldPosition : void 0;
-                            a = t && !t.equals(i.destLineHead.position);
-                            if (s || a) {
-                              let e = i.line.geometry;
-                              (e.verticesNeedUpdate = !0),
-                                s &&
-                                  (e.vertices[e.vertices.length - 1].copy(r),
-                                  i.srcLineHead.position.copy(r),
-                                  i.srcLineHead.updateMatrix()),
-                                t &&
-                                  a &&
-                                  (e.vertices[0].copy(t),
-                                  i.destLineHead.position.copy(t),
-                                  i.destLineHead.updateMatrix());
-                            }
-                          }
-                        }
-                      }),
-                      t)
-                    )
-                      return;
-                  }
-                  void 0 !== this.showStart &&
-                    1e3 <= n - this.showStart &&
-                    this.hideAllLines();
-                }
-              }
-              showLines(e, t) {
-                (this.showStart = t), (this.unitLines.get(e).root.visible = !0);
-              }
-              hideAllLines() {
-                (this.showStart = void 0),
-                  this.unitLines.forEach((e) => (e.root.visible = !1));
-              }
-              updateLines(e) {
-                let t = e.unitOrderTrait.targetLinesConfig;
-                if (!t || !u.configHasTarget(t)) {
-                  if (e.zone !== d.ZoneType.Air)
-                    return void (
-                      this.unitLines.has(e) &&
-                      ((s = this.unitLines.get(e)),
-                      this.obj?.remove(s.root),
-                      this.disposeLineObjects(s),
-                      this.unitLines.delete(e))
-                    );
-                  t = {
-                    pathNodes: [
-                      { tile: e.tile, onBridge: void 0 },
-                      { tile: e.tile, onBridge: void 0 },
-                    ],
-                  };
-                }
-                let i = new THREE.Geometry(),
-                  r = t.pathNodes;
-                r.length
-                  ? (this.debugPaths.value || (r = [r[0], r[r.length - 1]]),
-                    r.forEach((e) => {
-                      var t = h.Coords.tile3dToWorld(
-                        e.tile.rx + 0.5,
-                        e.tile.ry + 0.5,
-                        e.tile.z + (e.onBridge?.tileElevation ?? 0),
-                      );
-                      i.vertices.push(t);
-                    }),
-                    i.vertices[i.vertices.length - 1].copy(
-                      e.position.worldPosition,
-                    ))
-                  : ((a = t.target),
-                    i.vertices.push(
-                      a.position.worldPosition,
-                      e.position.worldPosition,
-                    ));
-                var s = !!t.isAttack,
-                  a = s ? this.attackLineMaterial : this.moveLineMaterial;
-                let n = new THREE.Line(i, a);
-                n.matrixAutoUpdate = !1;
-                let o = this.createLineHead(s);
-                o.position.copy(i.vertices[i.vertices.length - 1]),
-                  (o.matrixAutoUpdate = !1),
-                  o.updateMatrix();
-                let l = this.createLineHead(s);
-                l.position.copy(i.vertices[0]),
-                  (l.matrixAutoUpdate = !1),
-                  l.updateMatrix(),
-                  (n.renderOrder = o.renderOrder = l.renderOrder = 1e6);
-                let c = new THREE.Object3D();
-                (c.matrixAutoUpdate = !1),
-                  (c.visible = !1),
-                  c.add(n),
-                  c.add(o),
-                  c.add(l),
-                  this.unitLines.has(e) &&
-                    ((s = this.unitLines.get(e)),
-                    this.obj?.remove(s.root),
-                    this.disposeLineObjects(s)),
-                  this.unitLines.set(e, {
-                    root: c,
-                    line: n,
-                    srcLineHead: o,
-                    destLineHead: l,
-                  }),
-                  this.obj?.add(c);
-              }
-              createLineHead(e) {
-                let t = new THREE.Mesh(
-                  this.lineHeadGeometry,
-                  e ? this.attackLineHeadMaterial : this.moveLineHeadMaterial,
-                );
-                var i = new THREE.Quaternion().setFromEuler(
-                  this.camera.rotation,
-                );
-                return t.setRotationFromQuaternion(i), t;
-              }
-              disposeUnitLines() {
-                [...this.unitLines.values()].forEach((e) =>
-                  this.disposeLineObjects(e),
-                ),
-                  this.unitLines.clear();
-              }
-              disposeLineObjects(e) {
-                e.line.geometry.dispose();
-              }
-              dispose() {
-                this.disposeUnitLines(),
-                  this.attackLineMaterial?.dispose(),
-                  this.attackLineHeadMaterial?.dispose(),
-                  this.moveLineMaterial?.dispose(),
-                  this.moveLineHeadMaterial?.dispose(),
-                  this.lineHeadGeometry.dispose();
-              }
-            }),
-          );
-        },
-      };
-    },
-  ),
-  
+
+    const rotation = new THREE.Quaternion().setFromEuler(this.camera.rotation);
+    lineHead.setRotationFromQuaternion(rotation);
+    lineHead.matrixAutoUpdate = false;
+    return lineHead;
+  }
+
+  disposeUnitLines(): void {
+    this.unitLines.forEach((lineObjects) => {
+      this.disposeLineObjects(lineObjects);
+    });
+    this.unitLines.clear();
+  }
+
+  disposeLineObjects(lineObjects: LineObjects): void {
+    lineObjects.line.geometry.dispose();
+  }
+
+  dispose(): void {
+    this.disposeUnitLines();
+    this.attackLineMaterial?.dispose();
+    this.attackLineHeadMaterial?.dispose();
+    this.moveLineMaterial?.dispose();
+    this.moveLineHeadMaterial?.dispose();
+    this.lineHeadGeometry.dispose();
+  }
+
+  private updateLineEndpoints(unit: any): void {
+    const lineObjects = this.unitLines.get(unit);
+    if (!lineObjects) {
+      return;
+    }
+
+    const worldPosition = unit.position.worldPosition;
+    const srcChanged = !worldPosition.equals(lineObjects.srcLineHead.position);
+    const target = unit.unitOrderTrait.targetLinesConfig?.target;
+    const targetPosition = target?.position.worldPosition;
+    const destChanged =
+      !!targetPosition && !targetPosition.equals(lineObjects.destLineHead.position);
+
+    if (!srcChanged && !destChanged) {
+      return;
+    }
+
+    const positions = lineObjects.line.geometry.getAttribute(
+      "position",
+    ) as THREE.BufferAttribute | undefined;
+    if (!positions || positions.count < 2) {
+      return;
+    }
+
+    if (srcChanged) {
+      const srcIndex = positions.count - 1;
+      positions.setXYZ(srcIndex, worldPosition.x, worldPosition.y, worldPosition.z);
+      lineObjects.srcLineHead.position.copy(worldPosition);
+      lineObjects.srcLineHead.updateMatrix();
+    }
+
+    if (targetPosition && destChanged) {
+      positions.setXYZ(0, targetPosition.x, targetPosition.y, targetPosition.z);
+      lineObjects.destLineHead.position.copy(targetPosition);
+      lineObjects.destLineHead.updateMatrix();
+    }
+
+    positions.needsUpdate = true;
+    lineObjects.line.geometry.computeBoundingSphere();
+  }
+
+  private syncLineHeadPositions(
+    line: THREE.Line,
+    srcLineHead: THREE.Mesh,
+    destLineHead: THREE.Mesh,
+  ): void {
+    const positions = line.geometry.getAttribute("position") as THREE.BufferAttribute;
+    const srcIndex = positions.count - 1;
+
+    srcLineHead.position.set(
+      positions.getX(srcIndex),
+      positions.getY(srcIndex),
+      positions.getZ(srcIndex),
+    );
+    srcLineHead.updateMatrix();
+
+    destLineHead.position.set(
+      positions.getX(0),
+      positions.getY(0),
+      positions.getZ(0),
+    );
+    destLineHead.updateMatrix();
+  }
+}

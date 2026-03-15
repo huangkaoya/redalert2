@@ -1,5 +1,6 @@
 import { clamp } from "@/util/math";
 import { ObjectRules } from "./ObjectRules";
+import { ObjectType } from "@/engine/type/ObjectType";
 
 export class DebrisRules extends ObjectRules {
   private damage: number = 0;
@@ -19,6 +20,11 @@ export class DebrisRules extends ObjectRules {
   private trailerAnim?: string;
   private trailerSeparation: number = 0;
   private warhead?: string;
+
+  constructor(type: ObjectType, ini: any, index: number = -1, generalRules?: any) {
+    super(type, ini, index, generalRules);
+    this.parse();
+  }
 
   protected parse(): void {
     super.parse();

@@ -712,6 +712,7 @@ export class Application {
       this.gui = new Gui(
         this.getVersion(),
         this.strings,
+        this.config,
         this.viewport,
         this.rootEl!,
         this.cdnResourceLoader,
