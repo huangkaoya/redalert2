@@ -139,6 +139,55 @@ export class ProductionQueue {
     }
   }
 
+  insertAfterFirst(rules: any, quantity: number, creditsEach: number) {
+    quantity = Math.min(this.maxSize - this.size, quantity);
+    const existingQuantity = this.find(rules).reduce((sum, item) => sum + item.quantity, 0);
+    quantity = Math.min(this.maxItemQuantity - existingQuantity, quantity);
+
+    if (!quantity) {
+      return;
+    }
+
+    if (!this.items.length) {
+      this.push(rules, quantity, creditsEach);
+      return;
+    }
+
+    const first = this.items[0];
+    const firstRemainingQuantity = Math.max(0, first.quantity - 1);
+    first.quantity = 1;
+
+    const items = [first];
+    const tail = this.items.slice(1);
+    items.push({
+      rules,
+      quantity,
+      creditsEach,
+      creditsSpent: 0,
+      creditsSpentLeftover: 0,
+      progress: 0,
+    });
+
+    if (firstRemainingQuantity > 0) {
+      items.push({
+        rules: first.rules,
+        quantity: firstRemainingQuantity,
+        creditsEach: first.creditsEach,
+        creditsSpent: 0,
+        creditsSpentLeftover: 0,
+        progress: 0,
+      });
+    }
+
+    items.push(...tail);
+    this.items = items;
+    this.size += quantity;
+    if (this._status === QueueStatus.Idle) {
+      this._status = QueueStatus.Active;
+    }
+    this._onUpdate.dispatch(this);
+  }
+
   pop(rules: any, quantity: number) {
     this.remove(rules, quantity, false);
   }

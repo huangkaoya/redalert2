@@ -1,15 +1,16 @@
 import { Action } from './Action';
 import { DataStream } from '@/data/DataStream';
-import { ProductionQueue, QueueType, QueueStatus } from '../player/production/ProductionQueue';
+import { QueueType, QueueStatus } from '../player/production/ProductionQueue';
 import { ObjectType } from '@/engine/type/ObjectType';
 import { ActionType } from './ActionType';
 import { Game } from '../Game';
 
-enum UpdateType {
+export enum UpdateType {
   Add = 0,
   Cancel = 1,
   Pause = 2,
-  Resume = 3
+  Resume = 3,
+  AddNext = 4,
 }
 
 export class UpdateQueueAction extends Action {
@@ -29,7 +30,11 @@ export class UpdateQueueAction extends Action {
     this.queueType = stream.readUint8();
     this.updateType = stream.readUint8();
 
-    if (this.updateType === UpdateType.Add || this.updateType === UpdateType.Cancel) {
+    if (
+      this.updateType === UpdateType.Add ||
+      this.updateType === UpdateType.Cancel ||
+      this.updateType === UpdateType.AddNext
+    ) {
       const index = stream.readUint32();
       const type = stream.readUint8();
       this.item = this.game.rules.getTechnoByInternalId(index, type);
@@ -43,7 +48,11 @@ export class UpdateQueueAction extends Action {
     stream.writeUint8(this.queueType);
     stream.writeUint8(this.updateType);
 
-    if (this.updateType === UpdateType.Add || this.updateType === UpdateType.Cancel) {
+    if (
+      this.updateType === UpdateType.Add ||
+      this.updateType === UpdateType.Cancel ||
+      this.updateType === UpdateType.AddNext
+    ) {
       if (this.quantity === undefined) {
         throw new Error("Missing quantity");
       }
@@ -64,6 +73,8 @@ export class UpdateQueueAction extends Action {
         return `Resume queue ${QueueType[this.queueType]}`;
       case UpdateType.Add:
         return `Add to queue ${this.item.name} x ${this.quantity}`;
+      case UpdateType.AddNext:
+        return `Add next in queue ${this.item.name} x ${this.quantity}`;
       case UpdateType.Pause:
         return `Put queue ${QueueType[this.queueType]} on hold.`;
       case UpdateType.Cancel:
@@ -82,7 +93,7 @@ export class UpdateQueueAction extends Action {
       if (queue.status === QueueStatus.OnHold) {
         queue.status = QueueStatus.Active;
       }
-    } else if (this.updateType === UpdateType.Add) {
+    } else if (this.updateType === UpdateType.Add || this.updateType === UpdateType.AddNext) {
       const existingItems = queue.find(item);
       if (
         queue.status === QueueStatus.Active ||
@@ -112,7 +123,11 @@ export class UpdateQueueAction extends Action {
           const quantity = Math.min(this.quantity!, maxQuantity);
           
           if (quantity > 0) {
-            queue.push(item, quantity, item.cost);
+            if (this.updateType === UpdateType.AddNext) {
+              queue.insertAfterFirst(item, quantity, item.cost);
+            } else {
+              queue.push(item, quantity, item.cost);
+            }
           }
         }
       }

@@ -1,5 +1,6 @@
 import { Coords } from "@/game/Coords";
-import { TargetLinesConfig, configHasTarget } from "@/game/gameobject/task/system/TargetLinesConfig";
+import type { TargetLinesConfig } from "@/game/gameobject/task/system/TargetLinesConfig";
+import { configHasTarget } from "@/game/gameobject/task/system/TargetLinesConfig";
 import { equals } from "@/util/Array";
 import { WaypointLine } from "@/engine/renderable/entity/WaypointLine";
 import * as THREE from "three";

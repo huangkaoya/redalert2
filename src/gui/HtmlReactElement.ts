@@ -1,10 +1,11 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot, Root } from 'react-dom/client';
 import { HtmlContainer } from './HtmlContainer';
 
 export class HtmlReactElement<P = any> extends HtmlContainer {
   private options: P;
   private Component: React.ComponentType<P>;
+  private root?: Root;
 
   static factory<P>(Component: React.ComponentType<P>, options: P): HtmlReactElement<P> {
     return new HtmlReactElement(options, Component);
@@ -28,10 +29,8 @@ export class HtmlReactElement<P = any> extends HtmlContainer {
   private renderReactElement(): void {
     const element = this.getElement();
     if (element) {
-      ReactDOM.render(
-        React.createElement(this.Component, this.options),
-        element
-      );
+      this.root ??= createRoot(element);
+      this.root.render(React.createElement(this.Component, this.options));
     }
   }
 
@@ -47,10 +46,10 @@ export class HtmlReactElement<P = any> extends HtmlContainer {
   }
 
   unrender(): void {
-    const element = this.getElement();
-    if (element && this.isRendered()) {
-      ReactDOM.unmountComponentAtNode(element);
+    if (this.root && this.isRendered()) {
+      this.root.unmount();
+      this.root = undefined;
     }
     super.unrender();
   }
-} 
+}

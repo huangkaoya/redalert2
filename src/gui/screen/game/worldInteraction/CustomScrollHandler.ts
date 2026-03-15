@@ -1,14 +1,23 @@
-/**
- * Handles custom scrolling behaviors for map navigation
- */
 export class CustomScrollHandler {
-  constructor(private camera: any, private options: any) {}
+  private isPaused = false;
 
-  handleScroll(deltaX: number, deltaY: number): void {
-    // Handle custom scroll behavior
+  constructor(private readonly mapScrollHandler: any) {}
+
+  requestScroll(direction: any): void {
+    if (!this.isPaused) {
+      this.mapScrollHandler.requestForceScroll(direction);
+    }
   }
 
-  dispose(): void {
-    // Cleanup
+  cancel(): void {
+    this.mapScrollHandler.cancelForceScroll();
+  }
+
+  pause(): void {
+    this.isPaused = true;
+  }
+
+  unpause(): void {
+    this.isPaused = false;
   }
 }

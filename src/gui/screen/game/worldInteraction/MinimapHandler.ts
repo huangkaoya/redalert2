@@ -1,18 +1,30 @@
-/**
- * Handles minimap interactions and camera positioning
- */
 export class MinimapHandler {
-  constructor(private minimap: any, private camera: any) {}
+  constructor(
+    public readonly minimap: any,
+    private readonly map: any,
+    private shroud: any,
+    private readonly worldScene: any,
+    private readonly mapPanningHelper: any,
+  ) {}
 
-  handleClick(x: number, y: number): void {
-    // Handle minimap click for camera positioning
+  setShroud(shroud: any): void {
+    this.shroud = shroud;
   }
 
-  handleDrag(startX: number, startY: number, endX: number, endY: number): void {
-    // Handle minimap drag operations
+  panToTile(tile: any): void {
+    this.worldScene.cameraPan.setPan(this.mapPanningHelper.computeCameraPanFromTile(tile.rx, tile.ry));
   }
 
-  dispose(): void {
-    // Cleanup
+  getHover(tile: any): any {
+    return {
+      entity: undefined,
+      gameObject: this.shroud?.isShrouded(tile)
+        ? undefined
+        : this.map
+            .getObjectsOnTile(tile)
+            .sort((a: any, b: any) => Number(b.isTechno?.()) - Number(a.isTechno?.()))
+            .shift(),
+      tile,
+    };
   }
 }

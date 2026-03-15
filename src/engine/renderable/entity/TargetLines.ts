@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { Coords } from "@/game/Coords";
-import { TargetLinesConfig } from "@/game/gameobject/task/system/TargetLinesConfig";
+import { cloneConfig, configsAreEqual, configHasTarget } from "@/game/gameobject/task/system/TargetLinesConfig";
 import { ZoneType } from "@/game/gameobject/unit/ZoneType";
 
 interface LineObjects {
@@ -104,13 +104,13 @@ export class TargetLines {
 
         this.unitPaths.set(
           unit,
-          TargetLinesConfig.cloneConfig(unit.unitOrderTrait.targetLinesConfig),
+          cloneConfig(unit.unitOrderTrait.targetLinesConfig),
         );
         this.updateLines(unit);
 
         if (
           unit.zone === ZoneType.Air ||
-          TargetLinesConfig.configHasTarget(unit.unitOrderTrait.targetLinesConfig)
+          configHasTarget(unit.unitOrderTrait.targetLinesConfig)
         ) {
           this.showLines(unit, now);
         }
@@ -129,15 +129,15 @@ export class TargetLines {
       const previousConfig = this.unitPaths.get(unit);
       const configChanged =
         !this.unitPaths.has(unit) ||
-        !TargetLinesConfig.configsAreEqual(previousConfig, targetLinesConfig) ||
+        !configsAreEqual(previousConfig, targetLinesConfig) ||
         !!targetLinesConfig?.isRecalc;
 
       if (configChanged) {
-        this.unitPaths.set(unit, TargetLinesConfig.cloneConfig(targetLinesConfig));
+        this.unitPaths.set(unit, cloneConfig(targetLinesConfig));
         pathsChanged = true;
         this.updateLines(unit);
 
-        if (TargetLinesConfig.configHasTarget(targetLinesConfig)) {
+        if (configHasTarget(targetLinesConfig)) {
           this.showLines(unit, now);
         }
       }
@@ -174,7 +174,7 @@ export class TargetLines {
   updateLines(unit: any): void {
     let config = unit.unitOrderTrait.targetLinesConfig;
 
-    if (!config || !TargetLinesConfig.configHasTarget(config)) {
+    if (!config || !configHasTarget(config)) {
       if (unit.zone !== ZoneType.Air) {
         const existing = this.unitLines.get(unit);
         if (existing) {

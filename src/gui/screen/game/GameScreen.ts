@@ -486,6 +486,11 @@ export class GameScreen extends RootScreen {
   }
 
   private saveReplay(replay: any): void {
+    if (!this.replayManager?.saveReplay) {
+      console.warn('[GameScreen.saveReplay] replayManager.saveReplay is unavailable');
+      return;
+    }
+
     (async () => {
       try {
         await this.replayManager.saveReplay(replay);
@@ -758,10 +763,14 @@ export class GameScreen extends RootScreen {
     }
     const debugRoot = ((window as any).__ra2debug ??= {});
     const actionsApi = new ActionsApi(game, actionFactory, actionQueue, localPlayer);
+    const renderableManager = uiInitResult.worldViewInitResult?.renderableManager;
+    const worldInteraction = this.playerUi?.worldInteraction;
     debugRoot.gameScreen = this;
     debugRoot.renderer = this.renderer;
     debugRoot.uiScene = this.uiScene;
     debugRoot.worldScene = worldScene;
+    debugRoot.renderableManager = renderableManager;
+    debugRoot.worldInteraction = worldInteraction;
     debugRoot.localPlayer = localPlayer;
     debugRoot.game = game;
     debugRoot.actionQueue = actionQueue;
@@ -778,6 +787,57 @@ export class GameScreen extends RootScreen {
           isSpawned: unit.isSpawned,
           tile: unit.tile ? { rx: unit.tile.rx, ry: unit.tile.ry, z: unit.tile.z } : undefined,
         })),
+      getOwnedUnitClickPointByName: (unitName: string) => {
+        const unit = localPlayer
+          .getOwnedObjects()
+          .find((ownedUnit: any) => ownedUnit.name === unitName && ownedUnit.isSpawned);
+        if (!unit) {
+          throw new Error(`No spawned owned unit found with name "${unitName}"`);
+        }
+        if (!renderableManager) {
+          throw new Error('Renderable manager is not available');
+        }
+        if (!worldScene?.camera || !worldScene?.viewport) {
+          throw new Error('World scene camera or viewport is not available');
+        }
+
+        const renderable = renderableManager.getRenderableByGameObject(unit);
+        if (!renderable) {
+          throw new Error(`Renderable not found for unit "${unitName}"`);
+        }
+
+        const renderablePosition =
+          renderable.getPosition?.()?.clone?.() ?? unit.position.worldPosition.clone();
+        const projected = renderablePosition.project(worldScene.camera);
+        const viewportPoint = {
+          x: worldScene.viewport.x + ((projected.x + 1) / 2) * worldScene.viewport.width,
+          y: worldScene.viewport.y + ((1 - projected.y) / 2) * worldScene.viewport.height,
+        };
+
+        const clampToViewport = (point: { x: number; y: number }) => ({
+          x: Math.max(
+            worldScene.viewport.x,
+            Math.min(worldScene.viewport.x + worldScene.viewport.width - 1, point.x),
+          ),
+          y: Math.max(
+            worldScene.viewport.y,
+            Math.min(worldScene.viewport.y + worldScene.viewport.height - 1, point.y),
+          ),
+        });
+
+        const resolvedViewportPoint = clampToViewport(viewportPoint);
+
+        const canvas = this.renderer.getCanvas?.() ?? document.querySelector('canvas');
+        const rect = canvas?.getBoundingClientRect?.() ?? { left: 0, top: 0 };
+
+        return {
+          unitId: unit.id,
+          viewportX: resolvedViewportPoint.x,
+          viewportY: resolvedViewportPoint.y,
+          x: rect.left + resolvedViewportPoint.x,
+          y: rect.top + resolvedViewportPoint.y,
+        };
+      },
       selectOwnedUnitByName: (unitName: string) => {
         const unit = localPlayer
           .getOwnedObjects()

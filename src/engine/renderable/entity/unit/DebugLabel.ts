@@ -47,7 +47,6 @@ export class DebugLabel {
       side: THREE.DoubleSide,
       transparent: true,
       depthTest: false,
-      flatShading: true,
     });
 
     const mesh = new THREE.Mesh(geometry, material);
@@ -99,7 +98,11 @@ export class DebugLabel {
 
   dispose(): void {
     this.texture?.dispose();
-    this.mesh?.material?.dispose();
+    if (Array.isArray(this.mesh?.material)) {
+      this.mesh.material.forEach((material) => material.dispose());
+    } else {
+      this.mesh?.material?.dispose();
+    }
     this.mesh?.geometry.dispose();
   }
 }

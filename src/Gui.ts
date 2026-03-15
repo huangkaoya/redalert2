@@ -37,6 +37,8 @@ import { Rules } from './game/rules/Rules.js';
 import { VxlGeometryPool } from './engine/renderable/builder/vxlGeometry/VxlGeometryPool.js';
 import { VxlGeometryCache } from './engine/gfx/geometry/VxlGeometryCache.js';
 import { GameResConfig } from './engine/gameRes/GameResConfig.js';
+import { KeyBinds } from './gui/screen/game/worldInteraction/keyboard/KeyBinds.js';
+import { ClientApi } from './ClientApi.js';
 
 export class Gui {
   private appVersion: string;
@@ -88,7 +90,8 @@ export class Gui {
     viewport: BoxedVar<{ x: number; y: number; width: number; height: number }>,
     rootEl: HTMLElement,
     cdnResourceLoader?: any,
-    gameResConfig?: GameResConfig
+    gameResConfig?: GameResConfig,
+    runtimeVars?: any
   ) {
     this.appVersion = appVersion;
     this.strings = strings;
@@ -98,6 +101,7 @@ export class Gui {
     this.localPrefs = new LocalPrefs(localStorage);
     this.cdnResourceLoader = cdnResourceLoader;
     this.gameResConfig = gameResConfig;
+    this.runtimeVars = runtimeVars;
   }
 
   async init(): Promise<void> {
@@ -116,7 +120,7 @@ export class Gui {
     await this.initAudioSystem();
     
     // Initialize options system
-    this.initOptionsSystem();
+    await this.initOptionsSystem();
     
     // Initialize pointer before JSX renderer (align with original project)
     this.initPointer();
@@ -486,6 +490,16 @@ export class Gui {
       undefined as any
     );
     const gameModes = Engine.getMpModes();
+    const speedCheat = new BoxedVar<boolean>(false);
+    const mutedPlayers = new Set<string>();
+    const tauntsEnabled = new BoxedVar<boolean>(this.localPrefs.getBool(StorageKey.TauntsEnabled, true));
+    tauntsEnabled.onChange.subscribe((value: boolean) => {
+      this.localPrefs.setItem(StorageKey.TauntsEnabled, String(Number(value)));
+    });
+    const clientApi = new ClientApi();
+    window.dispatchEvent(new CustomEvent('CdApiReady', { detail: clientApi }));
+    (window as any).CdApi = clientApi;
+
     const gameMenuSubScreens = new Map<number, any>();
     gameMenuSubScreens.set(
       (await import('./gui/screen/game/gameMenu/ScreenType.js')).ScreenType.Home,
@@ -498,8 +512,8 @@ export class Gui {
         this.jsxRenderer!,
         this.renderer!,
         Engine.getMpModes() as any,
-        new BoxedVar<boolean>(this.localPrefs.getBool(StorageKey.TauntsEnabled, true)),
-        new Set<string>()
+        tauntsEnabled,
+        mutedPlayers
       )
     );
     gameMenuSubScreens.set(
@@ -603,11 +617,11 @@ export class Gui {
       ), // gameLoader
       sharedVxlGeometryPool, // vxlGeometryPool
       buildingImageDataCache, // buildingImageDataCache
-      undefined, // mutedPlayers
-      undefined, // tauntsEnabled
-      undefined, // speedCheat
+      mutedPlayers, // mutedPlayers
+      tauntsEnabled, // tauntsEnabled
+      speedCheat, // speedCheat
       undefined, // sentry
-      undefined // battleControlApi
+      clientApi.battleControl // battleControlApi
     );
     // Ensure GameScreen has controller reference (align with original behavior)
     (gameScreen as any).setController?.(this.rootController);
@@ -895,7 +909,7 @@ export class Gui {
     }
   }
 
-  private initOptionsSystem(): void {
+  private async initOptionsSystem(): Promise<void> {
     console.log('[Gui] Initializing options system');
     
     // 创建GeneralOptions实例
@@ -916,17 +930,31 @@ export class Gui {
     this.fullScreen = new FullScreen(document);
     this.fullScreen.init();
     
-    // 创建KeyBinds实例（暂时使用模拟数据）
-    // TODO: 实现真正的KeyBinds加载逻辑
-    this.keyBinds = null; // 暂时设为null，避免错误
-    // 初始化运行时变量（与原项目一致地提供 debugBotIndex）
-    this.runtimeVars = Object.assign(this.runtimeVars || {}, {
-      debugBotIndex: new BoxedVar<number | undefined>(undefined),
-      debugText: new BoxedVar<boolean>(false),
-      freeCamera: new BoxedVar<boolean>(false),
-      debugPaths: new BoxedVar<boolean>(false),
-      debugWireframes: new BoxedVar<boolean>(false)
+    const keyboardIniFileName = Engine.getFileNameVariant('keyboard.ini');
+    this.keyBinds = new KeyBinds(
+      Engine.rfs?.getRootDirectory?.(),
+      keyboardIniFileName,
+      Engine.getIni(keyboardIniFileName),
+    );
+    await this.keyBinds.load();
+
+    const runtimeVars = this.runtimeVars ?? {};
+    this.runtimeVars = Object.assign(runtimeVars, {
+      debugWireframes: runtimeVars.debugWireframes ?? new BoxedVar<boolean>(false),
+      debugPaths: runtimeVars.debugPaths ?? new BoxedVar<boolean>(false),
+      debugText: runtimeVars.debugText ?? new BoxedVar<boolean>(false),
+      debugBotIndex: runtimeVars.debugBotIndex ?? new BoxedVar<number>(0),
+      debugLogging: runtimeVars.debugLogging ?? new BoxedVar<boolean>(false),
+      debugGameState: runtimeVars.debugGameState ?? new BoxedVar<boolean>(false),
+      forceResolution: runtimeVars.forceResolution ?? new BoxedVar<string | undefined>(undefined),
+      freeCamera: runtimeVars.freeCamera ?? new BoxedVar<boolean>(false),
+      fps: runtimeVars.fps ?? new BoxedVar<boolean>(false),
+      persistentHoverTags: runtimeVars.persistentHoverTags ?? new BoxedVar<boolean>(false),
+      cheatsEnabled: runtimeVars.cheatsEnabled ?? new BoxedVar<boolean>(false),
+      fullScreenZoomOut: runtimeVars.fullScreenZoomOut ?? new BoxedVar<number>(1.3),
     });
+
+    console.log('[Gui] Runtime vars ready', Object.keys(this.runtimeVars));
     
     console.log('[Gui] Options system initialized');
   }

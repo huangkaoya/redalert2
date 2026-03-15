@@ -1,11 +1,12 @@
 import React, { ComponentType, ReactElement } from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot, Root } from 'react-dom/client';
 import { HtmlContainer } from './HtmlContainer';
 
 // P represents the props type for the React component
 export class HtmlReactElement<P extends object> extends HtmlContainer {
     private options: P;
     private Component: ComponentType<P>;
+    private root?: Root;
 
     static factory<P extends object>(
         Component: ComponentType<P>, 
@@ -35,10 +36,8 @@ export class HtmlReactElement<P extends object> extends HtmlContainer {
         const element = this.getElement();
         if (element) {
             const reactElement = React.createElement(this.Component, this.options);
-            
-            // Use legacy ReactDOM.render API (matching original project)
-            // @ts-ignore - Using legacy API for compatibility
-            ReactDOM.render(reactElement, element);
+            this.root ??= createRoot(element);
+            this.root.render(reactElement);
         } else {
             console.warn("HtmlReactElement: Attempted to renderReactElement but no DOM element is set.");
         }
@@ -56,10 +55,9 @@ export class HtmlReactElement<P extends object> extends HtmlContainer {
     }
 
     unrender(): void {
-        const element = this.getElement();
-        if (element && this.isRendered()) {
-            // @ts-ignore - Using legacy API for compatibility
-            ReactDOM.unmountComponentAtNode(element);
+        if (this.root && this.isRendered()) {
+            this.root.unmount();
+            this.root = undefined;
         }
         super.unrender();
     }

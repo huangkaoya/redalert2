@@ -148,7 +148,6 @@ export class MapTileLayerDebug {
       alphaTest: 0.5,
       transparent: true,
       opacity: 0.7,
-      flatShading: true,
     });
     
     this.disposables.add(mergedGeometry, material);

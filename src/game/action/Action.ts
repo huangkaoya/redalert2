@@ -2,6 +2,7 @@ import { ActionType } from './ActionType';
 
 export abstract class Action {
   protected actionType: ActionType;
+  public player: any;
 
   constructor(actionType: ActionType) {
     this.actionType = actionType;

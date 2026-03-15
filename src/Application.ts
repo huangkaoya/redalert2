@@ -22,6 +22,7 @@ import { Gui } from './Gui'; // Import GUI system
 import { BasicErrorBoxApi } from './gui/component/BasicErrorBoxApi'; // Import BasicErrorBoxApi
 import { Engine } from './engine/Engine'; // Import Engine
 import { ImageContext } from './gui/component/ImageContext';
+import { ConsoleVars } from './ConsoleVars';
 
 // Type for the callback function
 export type SplashScreenUpdateCallback = (props: ComponentProps<typeof SplashScreenComponent> | null) => void;
@@ -41,14 +42,11 @@ class MockLocalPrefs extends LocalPrefs {
 }
 
 // Mock for ConsoleVars
-class MockConsoleVars {
-  freeCamera = new BoxedVar<boolean>(false);
-  forceResolution = new BoxedVar<string | undefined>(undefined);
-  debugWireframes = new BoxedVar<boolean>(false);
-  debugPaths = new BoxedVar<boolean>(false);
-  debugText = new BoxedVar<boolean>(false);
-  debugBotIndex = new BoxedVar<number | undefined>(undefined);
-  constructor() { console.log('MockConsoleVars initialized'); }
+class MockConsoleVars extends ConsoleVars {
+  constructor() {
+    super();
+    console.log('MockConsoleVars initialized');
+  }
 }
 
 // Mock for DevToolsApi (static methods)
@@ -716,7 +714,8 @@ export class Application {
         this.viewport,
         this.rootEl!,
         this.cdnResourceLoader,
-        this.gameResConfig
+        this.gameResConfig,
+        this.runtimeVars
       );
       
       await this.gui.init();
