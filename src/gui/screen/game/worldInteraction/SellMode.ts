@@ -74,7 +74,7 @@ export class SellMode {
       this.game.sellTrait.computeRefundValue(gameObject) > 0 &&
       (gameObject.isBuilding?.()
         ? gameObject.buildStatus === BuildStatus.Ready && !gameObject.warpedOutTrait.isActive()
-        : gameObject.traits.find((trait: any) => trait instanceof DockableTrait)?.dock?.rules.unitSell)
+        : gameObject.traits.find(DockableTrait)?.dock?.rules.unitSell)
     );
   }
 

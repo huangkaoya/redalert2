@@ -210,7 +210,7 @@ export class CombatantSidebarModel extends SidebarModel {
         )
         .reduce(
           (sum: number, b: any) =>
-            sum + (b.traits.find((t: any) => t instanceof DockTrait)?.numberOfDocks ?? 0),
+            sum + (b.traits.find(DockTrait)?.numberOfDocks ?? 0),
           0
         );
       const ownedAircraft = [
