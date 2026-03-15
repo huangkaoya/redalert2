@@ -79,6 +79,7 @@ export class GameScreen extends RootScreen {
   private hudFactory?: any;
   private minimap?: any;
   private worldView?: any;
+  private activeWorldScene?: any;
   private playerUi?: any;
   private menu?: any;
   private sidebarModel?: any;
@@ -390,12 +391,15 @@ export class GameScreen extends RootScreen {
 
   async onLeave(): Promise<void> {
     this.pointer.unlock();
-    
+
+    const hadGameAnimationLoop = Boolean(this.gameAnimationLoop);
     if (this.gameAnimationLoop) {
       this.gameAnimationLoop.destroy();
       this.gameAnimationLoop = undefined;
-      this.uiAnimationLoop.start();
     }
+
+    this.restoreRendererToUiOnly();
+    this.clearDebugBridge();
 
     if (this.hud) {
       this.uiScene.remove(this.hud);
@@ -407,12 +411,83 @@ export class GameScreen extends RootScreen {
     this.gameTurnMgr = undefined;
     
     this.disposables.dispose();
+    this.activeWorldScene = undefined;
+
+    if (hadGameAnimationLoop) {
+      this.uiAnimationLoop.start();
+    }
 
     if (!this.isSinglePlayer) {
       this.wolService.setAutoReconnect(false);
       this.gservCon.onClose.unsubscribe(this.onGservClose);
       this.gservCon.close();
     }
+  }
+
+  private restoreRendererToUiOnly(): void {
+    if (!this.renderer) {
+      return;
+    }
+
+    const scenesBefore = this.renderer.getScenes?.() ?? [];
+    console.log(
+      '[GameScreen.onLeave] restoring renderer to UI-only mode',
+      scenesBefore.map((scene: any) => ({
+        type: scene?.constructor?.name,
+        viewport: scene?.viewport,
+      })),
+    );
+
+    if (this.activeWorldScene) {
+      this.renderer.removeScene(this.activeWorldScene);
+    }
+
+    const scenesAfterRemoval = this.renderer.getScenes?.() ?? [];
+    if (!scenesAfterRemoval.includes(this.uiScene)) {
+      this.renderer.addScene(this.uiScene);
+    }
+
+    this.renderer.flush?.();
+
+    const scenesAfter = this.renderer.getScenes?.() ?? [];
+    console.log(
+      '[GameScreen.onLeave] renderer scenes after cleanup',
+      scenesAfter.map((scene: any) => ({
+        type: scene?.constructor?.name,
+        viewport: scene?.viewport,
+      })),
+    );
+  }
+
+  private clearDebugBridge(): void {
+    const debugRoot = (window as any).__ra2debug;
+    if (!debugRoot) {
+      return;
+    }
+
+    const keysToClear = [
+      'gameScreen',
+      'worldView',
+      'worldScene',
+      'mapRenderable',
+      'renderableManager',
+      'worldInteraction',
+      'localPlayer',
+      'game',
+      'actionQueue',
+      'actionFactory',
+      'actionsApi',
+      'unitSelection',
+      'helpers',
+    ];
+
+    for (const key of keysToClear) {
+      if (key in debugRoot) {
+        debugRoot[key] = undefined;
+      }
+    }
+
+    console.log('[GameScreen.onLeave] cleared __ra2debug game references');
   }
 
   onViewportChange(): void {
@@ -753,6 +828,7 @@ export class GameScreen extends RootScreen {
     // Add world scene to renderer (align with original project behavior)
     const worldScene = uiInitResult.worldViewInitResult?.worldScene;
     if (worldScene) {
+      this.activeWorldScene = worldScene;
       console.log('[GameScreen.onGameStart] adding worldScene to renderer');
       this.renderer.removeScene(this.uiScene);
       this.renderer.addScene(worldScene);
