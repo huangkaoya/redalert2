@@ -608,7 +608,7 @@ export class Gui {
         this.sound,
         (console as any),
         undefined,
-        undefined,
+        speedCheat,
         this.gameResConfig!,
         sharedVxlGeometryPool,
         buildingImageDataCache,

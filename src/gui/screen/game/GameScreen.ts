@@ -54,6 +54,7 @@ import { ChatMessageFormat } from '@/gui/chat/ChatMessageFormat';
 import { ActionsApi } from '@/game/api/ActionsApi';
 import { OrderType } from '@/game/order/OrderType';
 import { RadialTileFinder } from '@/game/map/tileFinder/RadialTileFinder';
+import * as THREE from 'three';
 
 /**
  * Main game screen that orchestrates the entire game UI and logic
@@ -847,6 +848,79 @@ export class GameScreen extends RootScreen {
         y: rect.top + resolvedViewportPoint.y,
       };
     };
+    const getSidebarTechnoClickPointByName = (technoName: string) => {
+      const sidebarModel = (this.playerUi as any)?.sidebarModel;
+      const sidebarCard = (this.hud as any)?.sidebarCard;
+      const uiScene = this.uiScene;
+
+      if (!sidebarModel || !sidebarCard) {
+        throw new Error('Sidebar model or sidebar card is not available');
+      }
+      if (!uiScene?.viewport) {
+        throw new Error('UI scene viewport is not available');
+      }
+
+      const targetTabId = sidebarModel.tabs.findIndex((tab: any) =>
+        tab.items.some((item: any) => item.target?.rules?.name === technoName),
+      );
+      if (targetTabId === -1) {
+        throw new Error(`No sidebar item found for techno "${technoName}"`);
+      }
+
+      sidebarModel.selectTab(targetTabId);
+
+      const itemIndex = sidebarModel.activeTab.items.findIndex(
+        (item: any) => item.target?.rules?.name === technoName,
+      );
+      if (itemIndex === -1) {
+        throw new Error(`Sidebar techno "${technoName}" is not available in the active tab`);
+      }
+
+      const normalizedOffset = itemIndex - (itemIndex % 2);
+      if ((sidebarCard as any).pagingOffset !== normalizedOffset) {
+        sidebarCard.scrollToOffset?.(normalizedOffset);
+      }
+
+      const slotIndex = itemIndex - ((sidebarCard as any).pagingOffset ?? 0);
+      const slotContainer = sidebarCard.slotContainers?.[slotIndex];
+      if (!slotContainer?.get3DObject) {
+        throw new Error(
+          `Sidebar slot ${slotIndex} is not available for techno "${technoName}"`,
+        );
+      }
+
+      const cameoSize = {
+        width: sidebarCard.props?.cameoImages?.width ?? 0,
+        height: sidebarCard.props?.cameoImages?.height ?? 0,
+      };
+      const clickWorldPoint = new THREE.Vector3(cameoSize.width / 2, cameoSize.height / 2, 0);
+      slotContainer.get3DObject().localToWorld(clickWorldPoint);
+
+      const camera = uiScene.getCamera?.() ?? (uiScene as any).camera;
+      const projected = clickWorldPoint.project(camera);
+      const viewport = uiScene.viewport;
+      const viewportPoint = {
+        x: viewport.x + ((projected.x + 1) / 2) * viewport.width,
+        y: viewport.y + ((1 - projected.y) / 2) * viewport.height,
+      };
+      const resolvedViewportPoint = {
+        x: Math.max(viewport.x, Math.min(viewport.x + viewport.width - 1, viewportPoint.x)),
+        y: Math.max(viewport.y, Math.min(viewport.y + viewport.height - 1, viewportPoint.y)),
+      };
+      const canvas = this.renderer.getCanvas?.() ?? document.querySelector('canvas');
+      const rect = canvas?.getBoundingClientRect?.() ?? { left: 0, top: 0 };
+
+      return {
+        technoName,
+        tabId: targetTabId,
+        itemIndex,
+        slotIndex,
+        viewportX: resolvedViewportPoint.x,
+        viewportY: resolvedViewportPoint.y,
+        x: rect.left + resolvedViewportPoint.x,
+        y: rect.top + resolvedViewportPoint.y,
+      };
+    };
     const spawnOwnedUnitCopiesById = (unitId: number, count: number, maxDistance: number = 6) => {
       if (!Number.isInteger(count) || count <= 0) {
         throw new Error(`count must be a positive integer, got "${count}"`);
@@ -916,6 +990,8 @@ export class GameScreen extends RootScreen {
       getOwnedUnitClickPointByName: (unitName: string) => {
         return getOwnedUnitClickPoint(resolveOwnedUnitByName(unitName));
       },
+      getSidebarTechnoClickPointByName: (technoName: string) =>
+        getSidebarTechnoClickPointByName(technoName),
       spawnOwnedUnitCopiesById: (unitId: number, count: number, maxDistance?: number) =>
         spawnOwnedUnitCopiesById(unitId, count, maxDistance),
       spawnOwnedUnitCopiesByName: (unitName: string, count: number, maxDistance?: number) =>

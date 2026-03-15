@@ -2,7 +2,7 @@ import { Action } from './Action';
 import { DataStream } from '@/data/DataStream';
 import { BuildingPlaceEvent } from '../event/BuildingPlaceEvent';
 import { ProductionQueue, QueueStatus } from '../player/production/ProductionQueue';
-import { TechnoRules } from '../rules/TechnoRules';
+import { TechnoRules, FactoryType } from '../rules/TechnoRules';
 import { FactoryTrait, FactoryStatus } from '../gameobject/trait/FactoryTrait';
 import { ActionType } from './ActionType';
 import { BuildingFailedPlaceEvent } from '../event/BuildingFailedPlaceEvent';

@@ -1,5 +1,5 @@
 import { ActionType } from '@/game/action/ActionType';
-//import { UpdateType } from '@/game/action/UpdateQueueAction';
+import { UpdateType } from '@/game/action/UpdateQueueAction';
 import { DebugCommand, DebugCommandType } from '@/game/action/DebugAction';
 
 interface Tile {

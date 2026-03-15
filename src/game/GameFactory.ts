@@ -112,8 +112,8 @@ export class GameFactory {
     gameModeRegistry: GameModeRegistry,
     skipStalemate: boolean,
     botConfig: any,
-    networkConfig: any,
     debugFlags: any,
+    speedCheat: any,
     debugBotIndex?: any,
     actionLogger?: any
   ): Game {
@@ -207,7 +207,7 @@ export class GameFactory {
     new ActionFactoryReg().register(actionFactory, game, undefined);
 
     // 13. 添加游戏特性组件
-    this.setupGameTraits(game, rules, gameMap, alliances, gameOpts, skipStalemate);
+    this.setupGameTraits(game, rules, gameMap, alliances, gameOpts, skipStalemate, speedCheat);
 
     // 14. 创建玩家工厂和随机生成器
     const productionTrait: ProductionTrait = game.traits.get(ProductionTrait) as ProductionTrait;
@@ -260,7 +260,8 @@ export class GameFactory {
     gameMap: GameMap,
     alliances: Alliances,
     gameOpts: GameOpts,
-    skipStalemate: boolean
+    skipStalemate: boolean,
+    speedCheat: any
   ): void {
     // 电力特性
     game.traits.add(new PowerTrait());
@@ -274,7 +275,7 @@ export class GameFactory {
     game.traits.add(new RadarTrait());
 
     // 生产特性
-    const productionTrait: ProductionTrait = new ProductionTrait(rules, undefined);
+    const productionTrait: ProductionTrait = new ProductionTrait(rules, speedCheat);
     game.traits.add(productionTrait);
 
     // 地图迷雾特性
