@@ -6,11 +6,11 @@ import { WaitMinutesTask } from "@/game/gameobject/task/system/WaitMinutesTask";
 export class WaitForBuildUpTask extends TaskGroup {
   public cancellable: boolean = false;
 
-  constructor(buildTime: number) {
+  constructor(buildTime: number, game: any) {
     super(
       new WaitMinutesTask(buildTime),
       new CallbackTask((building) => {
-        building.buildStatus = BuildStatus.Ready;
+        building.setBuildStatus(BuildStatus.Ready, game);
       })
     );
   }

@@ -25,6 +25,8 @@ import { PsychicDetectorTrait } from "@/game/gameobject/trait/PsychicDetectorTra
 import { HospitalTrait } from "@/game/gameobject/trait/HospitalTrait";
 import { Vector2 } from "@/game/math/Vector2";
 import { DelayedKillTrait } from "@/game/gameobject/trait/DelayedKillTrait";
+import { BuildStatusChangeEvent } from "@/game/event/BuildStatusChangeEvent";
+import { NotifyBuildStatus } from "@/game/gameobject/trait/interface/NotifyBuildStatus";
 
 export enum BuildStatus {
   BuildUp = 0,
@@ -35,8 +37,8 @@ export enum BuildStatus {
 export class Building extends Techno {
   public showWeaponRange: boolean = false;
   public direction: number = 0;
-  public buildStatus: BuildStatus = BuildStatus.BuildUp;
-  public lastBuildStatus: BuildStatus = this.buildStatus;
+  private _buildStatus: BuildStatus;
+  public lastBuildStatus: BuildStatus;
 
   // Trait properties
   public garrisonTrait?: GarrisonTrait;
@@ -192,10 +194,16 @@ export class Building extends Techno {
 
   constructor(owner: any, rules: TechnoRules, art: any) {
     super(ObjectType.Building, owner, rules, art);
+    this._buildStatus = BuildStatus.BuildUp;
+    this.lastBuildStatus = this.buildStatus;
   }
 
   isBuilding(): boolean {
     return true;
+  }
+
+  get buildStatus(): BuildStatus {
+    return this._buildStatus;
   }
 
   getFoundation(): any {
@@ -226,5 +234,18 @@ export class Building extends Techno {
     );
 
     super.update(context);
+  }
+
+  setBuildStatus(status: BuildStatus, context: any): void {
+    this._buildStatus = status;
+
+    const oldStatus = this.lastBuildStatus;
+    if (this.buildStatus !== oldStatus) {
+      this.lastBuildStatus = this.buildStatus;
+      this.traits.filter(NotifyBuildStatus).forEach((trait: any) => {
+        trait[NotifyBuildStatus.onStatusChange](oldStatus, this, context);
+      });
+      context.events.dispatch(new BuildStatusChangeEvent(this, this.buildStatus));
+    }
   }
 }
