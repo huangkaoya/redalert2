@@ -1,3 +1,3 @@
 export interface PlayerData {
-  id: string;
+    id: string;
 }

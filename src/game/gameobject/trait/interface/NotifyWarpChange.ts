@@ -1,7 +1,6 @@
 export interface NotifyWarpChange {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }
-
 export const NotifyWarpChange = {
-  onChange: Symbol()
+    onChange: Symbol()
 };

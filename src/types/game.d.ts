@@ -1,7 +1,5 @@
 import type { Game } from "@/game/Game";
-
 declare global {
-  type GameContext = Game;
+    type GameContext = Game;
 }
-
-export {}; 
+export {};

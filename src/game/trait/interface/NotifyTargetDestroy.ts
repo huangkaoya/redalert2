@@ -1,7 +1,6 @@
 export const NotifyTargetDestroy = {
-  onDestroy: Symbol()
+    onDestroy: Symbol()
 };
-
 export interface NotifyTargetDestroy {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }

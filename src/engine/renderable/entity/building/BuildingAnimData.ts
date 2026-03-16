@@ -1,3 +1,3 @@
 export class BuildingAnimData {
-  [key: string]: any;
+    [key: string]: any;
 }

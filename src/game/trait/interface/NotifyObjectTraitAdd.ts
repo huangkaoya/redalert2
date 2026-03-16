@@ -1,7 +1,6 @@
 export const NotifyObjectTraitAdd = {
-  onAdd: Symbol()
+    onAdd: Symbol()
 };
-
 export interface NotifyObjectTraitAdd {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }

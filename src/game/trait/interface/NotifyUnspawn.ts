@@ -1,7 +1,6 @@
 export const NotifyUnspawn = {
-  onUnspawn: Symbol()
+    onUnspawn: Symbol()
 };
-
 export interface NotifyUnspawn {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }

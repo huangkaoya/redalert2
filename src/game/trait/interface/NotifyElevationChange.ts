@@ -1,7 +1,6 @@
 export const NotifyElevationChange = {
-  onElevationChange: Symbol()
+    onElevationChange: Symbol()
 };
-
 export interface NotifyElevationChange {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }

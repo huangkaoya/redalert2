@@ -1,12 +1,11 @@
 import * as THREE from 'three';
-
 export const paletteShaderLib = {
-  uniforms: {
-    palette: { type: "t", value: null },
-    paletteOffsetCount: { value: [0, 1] },
-    extraLight: { value: new THREE.Vector3(0, 0, 0) },
-  },
-  instanceParsVertex: `
+    uniforms: {
+        palette: { type: "t", value: null },
+        paletteOffsetCount: { value: [0, 1] },
+        extraLight: { value: new THREE.Vector3(0, 0, 0) },
+    },
+    instanceParsVertex: `
 #ifdef INSTANCE_TRANSFORM
     attribute float instancePaletteOffset;
     varying float vInstancePaletteOffset;
@@ -14,24 +13,24 @@ export const paletteShaderLib = {
     varying vec3 vInstanceExtraLight;
 #endif
 `,
-  instanceVertex: `
+    instanceVertex: `
   #ifdef INSTANCE_TRANSFORM
     vInstancePaletteOffset = instancePaletteOffset;
     vInstanceExtraLight = instanceExtraLight;
   #endif
 `,
-  paletteColorParsVertex: `
+    paletteColorParsVertex: `
 #ifdef VERTEX_PALETTE_OFFSET
     attribute float vertexPaletteOffset;
     varying float vVertexPaletteOffset;
 #endif
 `,
-  paletteColorVertex: `
+    paletteColorVertex: `
   #ifdef VERTEX_PALETTE_OFFSET
     vVertexPaletteOffset = vertexPaletteOffset;
   #endif
 `,
-  paletteColorParsFrag: `
+    paletteColorParsFrag: `
 uniform sampler2D palette;
 #ifdef VERTEX_PALETTE_OFFSET
     varying float vVertexPaletteOffset;
@@ -44,7 +43,7 @@ varying float vInstancePaletteOffset;
 varying vec3 vInstanceExtraLight;
 #endif
 `,
-  paletteColorFrag: `
+    paletteColorFrag: `
   float paletteColorIndex;
 
   #ifdef USE_MAP
@@ -74,7 +73,7 @@ varying vec3 vInstanceExtraLight;
   #endif
   diffuseColor = clamp(diffuseColor, 0.0, 1.0);
 `,
-  paletteBasicLightFragment: `
+    paletteBasicLightFragment: `
   #ifdef INSTANCE_TRANSFORM
   diffuseColor.rgb += vInstanceExtraLight.rgb * diffuseColor.rgb;
   #else
@@ -83,18 +82,16 @@ varying vec3 vInstanceExtraLight;
 
   diffuseColor = clamp(diffuseColor, 0.0, 1.0);
 `,
-  paletteFullLightFragment: `
+    paletteFullLightFragment: `
   #ifdef INSTANCE_TRANSFORM
   vec3 extraIrradiance = vInstanceExtraLight.rgb;
   #else
   vec3 extraIrradiance = extraLight.rgb;
   #endif
 
-  // 修改现有的光照计算，添加额外的光照
   #if ( NUM_DIR_LIGHTS > 0 )
     #pragma unroll_loop_start
     for ( int i = 0; i < NUM_DIR_LIGHTS; i ++ ) {
-      // directionalLight 已经在 Three.js 着色器中定义
       vec3 lightDirection = normalize( directionalLights[ i ].direction );
       float dotNL = saturate( dot( geometryNormal, lightDirection ) );
       vec3 customIrradiance = dotNL * directionalLights[ i ].color * extraIrradiance;
@@ -107,28 +104,27 @@ varying vec3 vInstanceExtraLight;
     #pragma unroll_loop_end
   #endif
 
-  // 环境光
   vec3 ambientIrradiance = getAmbientLightIrradiance( ambientLightColor );
   ambientIrradiance *= extraIrradiance;
   reflectedLight.indirectDiffuse += ambientIrradiance * BRDF_Lambert( material.diffuseColor );
 `,
-  vertexColorMultParsVertex: `
+    vertexColorMultParsVertex: `
 #ifdef USE_VERTEX_COLOR_MULT
 attribute vec4 vertexColorMult;
 varying vec4 vVertexColorMult;
 #endif
 `,
-  vertexColorMultVertex: `
+    vertexColorMultVertex: `
   #ifdef USE_VERTEX_COLOR_MULT
   vVertexColorMult = vertexColorMult;
   #endif
 `,
-  vertexColorMultParsFrag: `
+    vertexColorMultParsFrag: `
 #ifdef USE_VERTEX_COLOR_MULT
 varying vec4 vVertexColorMult;
 #endif
 `,
-  vertexColorMultFrag: `
+    vertexColorMultFrag: `
   #ifdef USE_VERTEX_COLOR_MULT
   diffuseColor.rgba *= vVertexColorMult.rgba;
   #endif

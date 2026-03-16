@@ -1,4 +1,4 @@
 export class SpanOffsets {
-  constructor() {
-  }
+    constructor() {
+    }
 }

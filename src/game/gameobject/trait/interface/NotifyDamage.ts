@@ -1,8 +1,6 @@
 export const NotifyDamage = {
-  onDamage: Symbol()
+    onDamage: Symbol()
 };
-
 export interface NotifyDamage {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }
-  

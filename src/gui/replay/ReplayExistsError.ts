@@ -1,1 +1,2 @@
-export class ReplayExistsError extends Error {}
+export class ReplayExistsError extends Error {
+}

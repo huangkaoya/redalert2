@@ -1,7 +1,6 @@
 export const NotifyHealthChange = {
-  onChange: Symbol()
+    onChange: Symbol()
 };
-
 export interface NotifyHealthChange {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }

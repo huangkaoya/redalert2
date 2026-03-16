@@ -1,3 +1,3 @@
 export class Locomotor {
-  constructor() {}
+    constructor() { }
 }

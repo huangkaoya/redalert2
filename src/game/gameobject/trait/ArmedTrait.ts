@@ -4,244 +4,182 @@ import { NotifyTick } from "@/game/gameobject/trait/interface/NotifyTick";
 import { NotifyDestroy } from "@/game/gameobject/trait/interface/NotifyDestroy";
 import { VeteranLevel } from "@/game/gameobject/unit/VeteranLevel";
 import { isNotNullOrUndefined } from "@/util/typeGuard";
-
 interface GameObject {
-  veteranLevel: VeteranLevel;
-  rules: GameObjectRules;
-  art: GameObjectArt;
-  name: string;
-  explodes: boolean;
-  crashableTrait?: any;
-  isCrashing?: boolean;
-  tile: any;
-  transportTrait?: {
-    units: GameObject[];
-  };
-  isVehicle(): boolean;
+    veteranLevel: VeteranLevel;
+    rules: GameObjectRules;
+    art: GameObjectArt;
+    name: string;
+    explodes: boolean;
+    crashableTrait?: any;
+    isCrashing?: boolean;
+    tile: any;
+    transportTrait?: {
+        units: GameObject[];
+    };
+    isVehicle(): boolean;
 }
-
 interface GameObjectRules {
-  weaponCount?: number;
-  elitePrimary?: string;
-  primary?: string;
-  eliteSecondary?: string;
-  secondary?: string;
-  deathWeapon?: string;
-  combatDamage: {
+    weaponCount?: number;
+    elitePrimary?: string;
+    primary?: string;
+    eliteSecondary?: string;
+    secondary?: string;
     deathWeapon?: string;
-  };
-  guardRange: number;
-  deployFire?: boolean;
-  deployFireWeapon?: WeaponType;
-  getEliteWeaponAtIndex(index: number): string | undefined;
-  getWeaponAtIndex(index: number): string | undefined;
+    combatDamage: {
+        deathWeapon?: string;
+    };
+    guardRange: number;
+    deployFire?: boolean;
+    deployFireWeapon?: WeaponType;
+    getEliteWeaponAtIndex(index: number): string | undefined;
+    getWeaponAtIndex(index: number): string | undefined;
 }
-
 interface GameObjectArt {
-  elitePrimaryFireFlh?: any;
-  primaryFireFlh?: any;
-  eliteSecondaryFireFlh?: any;
-  secondaryFireFlh?: any;
-  getSpecialWeaponFlh(index: number): any;
+    elitePrimaryFireFlh?: any;
+    primaryFireFlh?: any;
+    eliteSecondaryFireFlh?: any;
+    secondaryFireFlh?: any;
+    getSpecialWeaponFlh(index: number): any;
 }
-
 interface DestroyContext {
-  weapon?: {
-    warhead: {
-      rules: {
-        temporal: boolean;
-      };
+    weapon?: {
+        warhead: {
+            rules: {
+                temporal: boolean;
+            };
+        };
+        rules: {
+            suicide: boolean;
+        };
     };
-    rules: {
-      suicide: boolean;
-    };
-  };
-  obj?: GameObject;
+    obj?: GameObject;
 }
-
 interface Target {
-  createTarget(obj: GameObject, tile: any): any;
+    createTarget(obj: GameObject, tile: any): any;
 }
-
 export class ArmedTrait implements NotifyTick, NotifyDestroy {
-  private gameObject: GameObject;
-  private rules: GameObjectRules;
-  private specialWeaponIndex: number = 0;
-  private guardWeaponRangeOverride?: number;
-  
-  public primaryWeapon?: Weapon;
-  public secondaryWeapon?: Weapon;
-  public deathWeapon?: Weapon;
-
-  constructor(gameObject: GameObject, rules: GameObjectRules) {
-    this.gameObject = gameObject;
-    this.rules = rules;
-    this.specialWeaponIndex = 0;
-
-    const isElite = gameObject.veteranLevel === VeteranLevel.Elite;
-
-    if (gameObject.rules.weaponCount) {
-      this.selectSpecialWeapon(0, isElite);
-      this.guardWeaponRangeOverride = this.primaryWeapon?.range;
-    } else {
-      this.selectStandardWeapons(isElite);
+    private gameObject: GameObject;
+    private rules: GameObjectRules;
+    private specialWeaponIndex: number = 0;
+    private guardWeaponRangeOverride?: number;
+    public primaryWeapon?: Weapon;
+    public secondaryWeapon?: Weapon;
+    public deathWeapon?: Weapon;
+    constructor(gameObject: GameObject, rules: GameObjectRules) {
+        this.gameObject = gameObject;
+        this.rules = rules;
+        this.specialWeaponIndex = 0;
+        const isElite = gameObject.veteranLevel === VeteranLevel.Elite;
+        if (gameObject.rules.weaponCount) {
+            this.selectSpecialWeapon(0, isElite);
+            this.guardWeaponRangeOverride = this.primaryWeapon?.range;
+        }
+        else {
+            this.selectStandardWeapons(isElite);
+        }
     }
-  }
-
-  private selectStandardWeapons(isElite: boolean = false): void {
-    const gameObject = this.gameObject;
-
-    // Primary weapon
-    const primaryWeaponName = (isElite && gameObject.rules.elitePrimary) || gameObject.rules.primary;
-    if (primaryWeaponName) {
-      const fireFlh = isElite ? gameObject.art.elitePrimaryFireFlh : gameObject.art.primaryFireFlh;
-      this.primaryWeapon = Weapon.factory(
-        primaryWeaponName,
-        WeaponType.Primary,
-        gameObject,
-        this.rules,
-        fireFlh
-      );
-    } else {
-      this.primaryWeapon = undefined;
+    private selectStandardWeapons(isElite: boolean = false): void {
+        const gameObject = this.gameObject;
+        const primaryWeaponName = (isElite && gameObject.rules.elitePrimary) || gameObject.rules.primary;
+        if (primaryWeaponName) {
+            const fireFlh = isElite ? gameObject.art.elitePrimaryFireFlh : gameObject.art.primaryFireFlh;
+            this.primaryWeapon = Weapon.factory(primaryWeaponName, WeaponType.Primary, gameObject, this.rules, fireFlh);
+        }
+        else {
+            this.primaryWeapon = undefined;
+        }
+        const secondaryWeaponName = (isElite && gameObject.rules.eliteSecondary) || gameObject.rules.secondary;
+        if (secondaryWeaponName) {
+            const fireFlh = isElite ? gameObject.art.eliteSecondaryFireFlh : gameObject.art.secondaryFireFlh;
+            this.secondaryWeapon = Weapon.factory(secondaryWeaponName, WeaponType.Secondary, gameObject, this.rules, fireFlh);
+        }
+        else {
+            this.secondaryWeapon = undefined;
+        }
+        if (gameObject.explodes || gameObject.crashableTrait) {
+            const deathWeaponName = gameObject.rules.deathWeapon ||
+                (gameObject.crashableTrait && this.secondaryWeapon?.rules.name) ||
+                this.primaryWeapon?.rules.name ||
+                this.rules.combatDamage.deathWeapon;
+            this.deathWeapon = Weapon.factory(deathWeaponName, WeaponType.DeathWeapon, gameObject, this.rules);
+        }
     }
-
-    // Secondary weapon
-    const secondaryWeaponName = (isElite && gameObject.rules.eliteSecondary) || gameObject.rules.secondary;
-    if (secondaryWeaponName) {
-      const fireFlh = isElite ? gameObject.art.eliteSecondaryFireFlh : gameObject.art.secondaryFireFlh;
-      this.secondaryWeapon = Weapon.factory(
-        secondaryWeaponName,
-        WeaponType.Secondary,
-        gameObject,
-        this.rules,
-        fireFlh
-      );
-    } else {
-      this.secondaryWeapon = undefined;
+    private selectSpecialWeapon(index: number, isElite: boolean = false): void {
+        const gameObject = this.gameObject;
+        const weaponCount = gameObject.rules.weaponCount;
+        if (!weaponCount || weaponCount < 1) {
+            throw new Error(`Object "${gameObject.name}" doesn't support special weapons`);
+        }
+        if (weaponCount - 1 < index) {
+            throw new RangeError(`Weapon index ${index} out of bounds (max ${weaponCount}) for object ${gameObject.name}`);
+        }
+        const weaponName = (isElite && gameObject.rules.getEliteWeaponAtIndex(index)) ||
+            gameObject.rules.getWeaponAtIndex(index);
+        if (!weaponName) {
+            throw new Error(`Missing weapon at index ${index} for object "${gameObject.name}"`);
+        }
+        const fireFlh = gameObject.art.getSpecialWeaponFlh(index);
+        this.primaryWeapon = Weapon.factory(weaponName, WeaponType.Primary, gameObject, this.rules, fireFlh);
+        this.secondaryWeapon = undefined;
+        this.specialWeaponIndex = index;
+        this.deathWeapon = this.primaryWeapon.rules.suicide
+            ? Weapon.factory(gameObject.rules.deathWeapon || this.primaryWeapon.name, WeaponType.DeathWeapon, gameObject, this.rules)
+            : undefined;
     }
-
-    // Death weapon
-    if (gameObject.explodes || gameObject.crashableTrait) {
-      const deathWeaponName = 
-        gameObject.rules.deathWeapon ||
-        (gameObject.crashableTrait && this.secondaryWeapon?.rules.name) ||
-        this.primaryWeapon?.rules.name ||
-        this.rules.combatDamage.deathWeapon;
-      
-      this.deathWeapon = Weapon.factory(
-        deathWeaponName,
-        WeaponType.DeathWeapon,
-        gameObject,
-        this.rules
-      );
+    public toggleEliteWeapons(isElite: boolean): void {
+        if (this.gameObject.rules.weaponCount) {
+            this.selectSpecialWeapon(this.specialWeaponIndex, isElite);
+        }
+        else {
+            this.selectStandardWeapons(isElite);
+        }
     }
-  }
-
-  private selectSpecialWeapon(index: number, isElite: boolean = false): void {
-    const gameObject = this.gameObject;
-    const weaponCount = gameObject.rules.weaponCount;
-
-    if (!weaponCount || weaponCount < 1) {
-      throw new Error(`Object "${gameObject.name}" doesn't support special weapons`);
+    public getSpecialWeaponIndex(): number {
+        return this.specialWeaponIndex;
     }
-
-    if (weaponCount - 1 < index) {
-      throw new RangeError(
-        `Weapon index ${index} out of bounds (max ${weaponCount}) for object ${gameObject.name}`
-      );
+    public computeGuardScanRange(weapon?: Weapon): number {
+        const maxWeaponRange = this.guardWeaponRangeOverride ??
+            [this.primaryWeapon, this.secondaryWeapon]
+                .filter(w => w === weapon || w?.rules.neverUse)
+                .reduce((max, w) => Math.max(max, w!.range), 0);
+        const guardRange = Math.max(maxWeaponRange, this.gameObject.rules.guardRange);
+        return Math.min(15, 2 * guardRange - 1);
     }
-
-    const weaponName = 
-      (isElite && gameObject.rules.getEliteWeaponAtIndex(index)) ||
-      gameObject.rules.getWeaponAtIndex(index);
-
-    if (!weaponName) {
-      throw new Error(`Missing weapon at index ${index} for object "${gameObject.name}"`);
+    public getDeployFireWeapon(): Weapon | undefined {
+        if (this.gameObject.rules.deployFire) {
+            return this.gameObject.rules.deployFireWeapon === WeaponType.Primary
+                ? this.primaryWeapon
+                : this.secondaryWeapon;
+        }
+        return undefined;
     }
-
-    const fireFlh = gameObject.art.getSpecialWeaponFlh(index);
-
-    this.primaryWeapon = Weapon.factory(
-      weaponName,
-      WeaponType.Primary,
-      gameObject,
-      this.rules,
-      fireFlh
-    );
-
-    this.secondaryWeapon = undefined;
-    this.specialWeaponIndex = index;
-
-    this.deathWeapon = this.primaryWeapon.rules.suicide
-      ? Weapon.factory(
-          gameObject.rules.deathWeapon || this.primaryWeapon.name,
-          WeaponType.DeathWeapon,
-          gameObject,
-          this.rules
-        )
-      : undefined;
-  }
-
-  public toggleEliteWeapons(isElite: boolean): void {
-    if (this.gameObject.rules.weaponCount) {
-      this.selectSpecialWeapon(this.specialWeaponIndex, isElite);
-    } else {
-      this.selectStandardWeapons(isElite);
+    public isEquippedWithWeapon(weapon: Weapon): boolean {
+        return [this.primaryWeapon, this.secondaryWeapon].includes(weapon);
     }
-  }
-
-  public getSpecialWeaponIndex(): number {
-    return this.specialWeaponIndex;
-  }
-
-  public computeGuardScanRange(weapon?: Weapon): number {
-    const maxWeaponRange = this.guardWeaponRangeOverride ?? 
-      [this.primaryWeapon, this.secondaryWeapon]
-        .filter(w => w === weapon || w?.rules.neverUse)
-        .reduce((max, w) => Math.max(max, w!.range), 0);
-
-    const guardRange = Math.max(maxWeaponRange, this.gameObject.rules.guardRange);
-    return Math.min(15, 2 * guardRange - 1);
-  }
-
-  public getDeployFireWeapon(): Weapon | undefined {
-    if (this.gameObject.rules.deployFire) {
-      return this.gameObject.rules.deployFireWeapon === WeaponType.Primary
-        ? this.primaryWeapon
-        : this.secondaryWeapon;
+    public getWeapons(): Weapon[] {
+        return [this.primaryWeapon, this.secondaryWeapon].filter(isNotNullOrUndefined);
     }
-    return undefined;
-  }
-
-  public isEquippedWithWeapon(weapon: Weapon): boolean {
-    return [this.primaryWeapon, this.secondaryWeapon].includes(weapon);
-  }
-
-  public getWeapons(): Weapon[] {
-    return [this.primaryWeapon, this.secondaryWeapon].filter(isNotNullOrUndefined);
-  }
-
-  [NotifyTick.onTick](): void {
-    this.primaryWeapon?.tick();
-    this.secondaryWeapon?.tick();
-  }
-
-  [NotifyDestroy.onDestroy](gameObject: GameObject, target: Target, context?: DestroyContext): void {
-    if (!this.deathWeapon) return;
-    if (context?.weapon?.warhead.rules.temporal) return;
-    if (gameObject.crashableTrait && !gameObject.isCrashing) return;
-    if (context?.obj?.isVehicle() && 
-        context.weapon?.rules.suicide && 
-        context.obj.transportTrait?.units.find(unit => unit === gameObject)) return;
-
-    this.deathWeapon.fire(target.createTarget(gameObject, gameObject.tile), target);
-  }
-
-  public dispose(): void {
-    this.gameObject = undefined!;
-    this.primaryWeapon = undefined;
-    this.secondaryWeapon = undefined;
-    this.deathWeapon = undefined;
-  }
+    [NotifyTick.onTick](): void {
+        this.primaryWeapon?.tick();
+        this.secondaryWeapon?.tick();
+    }
+    [NotifyDestroy.onDestroy](gameObject: GameObject, target: Target, context?: DestroyContext): void {
+        if (!this.deathWeapon)
+            return;
+        if (context?.weapon?.warhead.rules.temporal)
+            return;
+        if (gameObject.crashableTrait && !gameObject.isCrashing)
+            return;
+        if (context?.obj?.isVehicle() &&
+            context.weapon?.rules.suicide &&
+            context.obj.transportTrait?.units.find(unit => unit === gameObject))
+            return;
+        this.deathWeapon.fire(target.createTarget(gameObject, gameObject.tile), target);
+    }
+    public dispose(): void {
+        this.gameObject = undefined!;
+        this.primaryWeapon = undefined;
+        this.secondaryWeapon = undefined;
+        this.deathWeapon = undefined;
+    }
 }

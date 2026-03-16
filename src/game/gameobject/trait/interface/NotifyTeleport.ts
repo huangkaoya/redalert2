@@ -1,7 +1,6 @@
 export const NotifyTeleport = {
-  onBeforeTeleport: Symbol()
+    onBeforeTeleport: Symbol()
 };
-
 export interface NotifyTeleport {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }

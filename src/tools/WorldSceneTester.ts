@@ -18,126 +18,78 @@ import { Lighting } from "@/engine/Lighting";
 import { LightingDirector } from "@/engine/gfx/lighting/LightingDirector";
 import { IsoCoords } from "@/engine/IsoCoords";
 import { CompositeDisposable } from "@/util/disposable/CompositeDisposable";
-
 declare const THREE: any;
-
 export class WorldSceneTester {
-  private static disposables = new CompositeDisposable();
-  private static renderer?: Renderer;
-  private static worldScene?: WorldScene;
-  private static uiAnimationLoop?: UiAnimationLoop;
-
-  static async main(
-    mixFileLoader: any,
-    gameMapFile: any,
-    parentElement: HTMLElement,
-    _strings: any
-  ): Promise<void> {
-    // 返回主页按钮
-    this.buildHomeButton();
-
-    // Renderer
-    const renderer = (this.renderer = new Renderer(800, 600));
-    renderer.init(parentElement);
-    renderer.initStats(document.body);
-    this.disposables.add(renderer);
-
-    // WorldScene
-    const worldScene = (this.worldScene = WorldScene.factory(
-      { x: 0, y: 0, width: 800, height: 600 },
-      new BoxedVar(true),
-      new BoxedVar(ShadowQuality.High)
-    ));
-    this.disposables.add(worldScene);
-    // 初始化等距坐标系原点（对齐其他 testers）
-    IsoCoords.init({ x: 0, y: 0 });
-    worldScene.create3DObject();
-
-    // 资源（对齐 ShpTester 基础）
-    await mixFileLoader.addMixFile("sidec01.mix");
-    const rules = new Rules(Engine.getRules());
-    const art = new Art(rules, Engine.getArt(), undefined, undefined);
-
-    const theater = await Engine.loadTheater(TheaterType.Temperate);
-    const gameMap = new GameMap(gameMapFile, theater.tileSets, rules, (min: number, max: number) => getRandomInt(min, max));
-
-    // Lighting（简化：使用默认环境光，避免引入完整 Game 结构）
-    const lighting = new Lighting();
-    this.disposables.add(lighting);
-    worldScene.applyLighting(lighting);
-    const lightingDirector = new LightingDirector(lighting.mapLighting as any, renderer, new BoxedVar(1));
-    lightingDirector.init();
-    this.disposables.add(lightingDirector);
-
-    // MapRenderable（仅地图）
-    const imageFinder = new ImageFinder(Engine.getImages() as any, theater);
-    const mapRenderable = new MapRenderable(
-      gameMap,
-      undefined,
-      { onChange: { subscribe() {}, unsubscribe() {} }, getRadLevel() { return 0; } },
-      lighting,
-      theater,
-      rules,
-      art,
-      imageFinder,
-      worldScene.camera,
-      new BoxedVar(false),
-      1,
-      undefined as any,
-      true
-    );
-    (worldScene as any).add(mapRenderable as any);
-    worldScene.processRenderQueue();
-
-    // 设置摄像机初始平移与光照焦点（对齐 WorldView 的做法）
-    try {
-      const localSize = (gameMap as any).mapBounds.getLocalSize();
-      const computeMapScreenBounds = (ls: { x: number; y: number; width: number; height: number }) => {
-        const topLeft = IsoCoords.screenTileToScreen(ls.x, ls.y);
-        const bottomRight = IsoCoords.screenTileToScreen(ls.x + ls.width, ls.y + ls.height - 1);
-        return { x: topLeft.x, y: topLeft.y, width: bottomRight.x - topLeft.x, height: bottomRight.y - topLeft.y };
-      };
-      const mapScreenBounds = computeMapScreenBounds(localSize);
-
-      // 设置平移限制
-      const { MapPanningHelper } = await import("@/engine/util/MapPanningHelper");
-      const panningHelper = new (MapPanningHelper as any)(gameMap);
-      worldScene.cameraPan.setPanLimits((panningHelper as any).computeCameraPanLimits(worldScene.viewport, mapScreenBounds));
-
-      // 以起始点或地图中心为初始摄像机位置
-      const start = (gameMap as any).startingLocations?.[0] ?? { x: Math.floor(localSize.x + localSize.width / 2), y: Math.floor(localSize.y + localSize.height / 2) };
-      const initialPan = (panningHelper as any).computeCameraPanFromTile(start.x, start.y);
-      worldScene.cameraPan.setPan(initialPan);
-
-      // 将光源焦点设置到地图中心
-      const centerWorld = IsoCoords.screenTileToWorld(localSize.x + localSize.width / 2, localSize.y + localSize.height / 2);
-      worldScene.setLightFocusPoint(centerWorld.x, centerWorld.y);
-    } catch (e) {
-      console.warn('[WorldSceneTester] Failed to set initial camera/light focus:', e);
+    private static disposables = new CompositeDisposable();
+    private static renderer?: Renderer;
+    private static worldScene?: WorldScene;
+    private static uiAnimationLoop?: UiAnimationLoop;
+    static async main(mixFileLoader: any, gameMapFile: any, parentElement: HTMLElement, _strings: any): Promise<void> {
+        this.buildHomeButton();
+        const renderer = (this.renderer = new Renderer(800, 600));
+        renderer.init(parentElement);
+        renderer.initStats(document.body);
+        this.disposables.add(renderer);
+        const worldScene = (this.worldScene = WorldScene.factory({ x: 0, y: 0, width: 800, height: 600 }, new BoxedVar(true), new BoxedVar(ShadowQuality.High)));
+        this.disposables.add(worldScene);
+        IsoCoords.init({ x: 0, y: 0 });
+        worldScene.create3DObject();
+        await mixFileLoader.addMixFile("sidec01.mix");
+        const rules = new Rules(Engine.getRules());
+        const art = new Art(rules, Engine.getArt(), undefined, undefined);
+        const theater = await Engine.loadTheater(TheaterType.Temperate);
+        const gameMap = new GameMap(gameMapFile, theater.tileSets, rules, (min: number, max: number) => getRandomInt(min, max));
+        const lighting = new Lighting();
+        this.disposables.add(lighting);
+        worldScene.applyLighting(lighting);
+        const lightingDirector = new LightingDirector(lighting.mapLighting as any, renderer, new BoxedVar(1));
+        lightingDirector.init();
+        this.disposables.add(lightingDirector);
+        const imageFinder = new ImageFinder(Engine.getImages() as any, theater);
+        const mapRenderable = new MapRenderable(gameMap, undefined, { onChange: { subscribe() { }, unsubscribe() { } }, getRadLevel() { return 0; } }, lighting, theater, rules, art, imageFinder, worldScene.camera, new BoxedVar(false), 1, undefined as any, true);
+        (worldScene as any).add(mapRenderable as any);
+        worldScene.processRenderQueue();
+        try {
+            const localSize = (gameMap as any).mapBounds.getLocalSize();
+            const computeMapScreenBounds = (ls: {
+                x: number;
+                y: number;
+                width: number;
+                height: number;
+            }) => {
+                const topLeft = IsoCoords.screenTileToScreen(ls.x, ls.y);
+                const bottomRight = IsoCoords.screenTileToScreen(ls.x + ls.width, ls.y + ls.height - 1);
+                return { x: topLeft.x, y: topLeft.y, width: bottomRight.x - topLeft.x, height: bottomRight.y - topLeft.y };
+            };
+            const mapScreenBounds = computeMapScreenBounds(localSize);
+            const { MapPanningHelper } = await import("@/engine/util/MapPanningHelper");
+            const panningHelper = new (MapPanningHelper as any)(gameMap);
+            worldScene.cameraPan.setPanLimits((panningHelper as any).computeCameraPanLimits(worldScene.viewport, mapScreenBounds));
+            const start = (gameMap as any).startingLocations?.[0] ?? { x: Math.floor(localSize.x + localSize.width / 2), y: Math.floor(localSize.y + localSize.height / 2) };
+            const initialPan = (panningHelper as any).computeCameraPanFromTile(start.x, start.y);
+            worldScene.cameraPan.setPan(initialPan);
+            const centerWorld = IsoCoords.screenTileToWorld(localSize.x + localSize.width / 2, localSize.y + localSize.height / 2);
+            worldScene.setLightFocusPoint(centerWorld.x, centerWorld.y);
+        }
+        catch (e) {
+            console.warn('[WorldSceneTester] Failed to set initial camera/light focus:', e);
+        }
+        (worldScene.scene as any).background = new (THREE as any).Color(0xE0E0E0);
+        const canvasMetrics = new CanvasMetrics(renderer.getCanvas(), window);
+        canvasMetrics.init();
+        this.disposables.add(canvasMetrics);
+        const pointerEvents = new PointerEvents(renderer, { x: 0, y: 0 }, document, canvasMetrics);
+        const cameraZoomControls = new CameraZoomControls(pointerEvents, worldScene.cameraZoom);
+        this.disposables.add(cameraZoomControls, pointerEvents);
+        cameraZoomControls.init();
+        renderer.addScene(worldScene);
+        const loop = (this.uiAnimationLoop = new UiAnimationLoop(renderer));
+        loop.start();
     }
-
-    // 背景色设为浅灰，避免黑底误判
-    (worldScene.scene as any).background = new (THREE as any).Color(0xE0E0E0);
-
-    // 交互与循环
-    const canvasMetrics = new CanvasMetrics(renderer.getCanvas(), window);
-    canvasMetrics.init();
-    this.disposables.add(canvasMetrics);
-
-    const pointerEvents = new PointerEvents(renderer, { x: 0, y: 0 }, document, canvasMetrics);
-    const cameraZoomControls = new CameraZoomControls(pointerEvents, worldScene.cameraZoom);
-    this.disposables.add(cameraZoomControls, pointerEvents);
-    cameraZoomControls.init();
-
-    renderer.addScene(worldScene);
-    const loop = (this.uiAnimationLoop = new UiAnimationLoop(renderer));
-    loop.start();
-  }
-
-  private static buildHomeButton(): void {
-    const homeButton = document.createElement('button');
-    homeButton.innerHTML = '点此返回主页';
-    homeButton.style.cssText = `
+    private static buildHomeButton(): void {
+        const homeButton = document.createElement('button');
+        homeButton.innerHTML = '点此返回主页';
+        homeButton.style.cssText = `
       position: fixed;
       left: 50%;
       top: 10px;
@@ -154,38 +106,33 @@ export class WorldSceneTester {
       transition: all 0.3s ease;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     `;
-    homeButton.onmouseover = () => {
-      homeButton.style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
-      homeButton.style.borderColor = 'rgba(255, 255, 255, 0.6)';
-      homeButton.style.transform = 'translateX(-50%) translateY(-2px)';
-      homeButton.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.4)';
-    };
-    homeButton.onmouseout = () => {
-      homeButton.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-      homeButton.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-      homeButton.style.transform = 'translateX(-50%) translateY(0)';
-      homeButton.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
-    };
-    homeButton.onclick = () => {
-      window.location.hash = '/';
-    };
-    document.body.appendChild(homeButton);
-    this.disposables.add(() => homeButton.remove());
-  }
-
-  static destroy(): void {
-    if (this.uiAnimationLoop) {
-      this.uiAnimationLoop.destroy();
-      this.uiAnimationLoop = undefined;
+        homeButton.onmouseover = () => {
+            homeButton.style.backgroundColor = 'rgba(0, 0, 0, 0.95)';
+            homeButton.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+            homeButton.style.transform = 'translateX(-50%) translateY(-2px)';
+            homeButton.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.4)';
+        };
+        homeButton.onmouseout = () => {
+            homeButton.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+            homeButton.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+            homeButton.style.transform = 'translateX(-50%) translateY(0)';
+            homeButton.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+        };
+        homeButton.onclick = () => {
+            window.location.hash = '/';
+        };
+        document.body.appendChild(homeButton);
+        this.disposables.add(() => homeButton.remove());
     }
-
-    if (this.renderer) {
-      this.renderer.dispose();
-      this.renderer = undefined;
+    static destroy(): void {
+        if (this.uiAnimationLoop) {
+            this.uiAnimationLoop.destroy();
+            this.uiAnimationLoop = undefined;
+        }
+        if (this.renderer) {
+            this.renderer.dispose();
+            this.renderer = undefined;
+        }
+        this.disposables.dispose();
     }
-
-    this.disposables.dispose();
-  }
 }
-
-

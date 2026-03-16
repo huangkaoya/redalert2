@@ -1,1 +1,2 @@
-export class ReplayStorageError extends Error {}
+export class ReplayStorageError extends Error {
+}

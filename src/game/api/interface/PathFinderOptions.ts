@@ -1,3 +1,3 @@
 export interface PathFinderOptions {
-  id: string;
+    id: string;
 }

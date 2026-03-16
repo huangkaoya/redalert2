@@ -1,7 +1,6 @@
 export const NotifyProduceUnit = {
-  onProduce: Symbol()
+    onProduce: Symbol()
 };
-
 export interface NotifyProduceUnit {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }

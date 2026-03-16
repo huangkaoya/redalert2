@@ -1,7 +1,6 @@
 export const NotifyTick = {
-  onTick: Symbol()
+    onTick: Symbol()
 };
-
 export interface NotifyTick {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }

@@ -52,15 +52,12 @@ export class Crc32 {
         1423857449, 601450431, 3009837614, 3294710456, 1567103746,
         711928724, 3020668471, 3272380065, 1510334235, 755167117,
     ]);
-
     private crc: number;
-    private readonly initialCrcValue: number; // Renamed from polynomal for clarity
-
+    private readonly initialCrcValue: number;
     constructor(initialValue: number = 0xFFFFFFFF) {
         this.initialCrcValue = initialValue;
         this.crc = initialValue;
     }
-
     public static calculateCrc(data: Uint8Array, initialValue: number = 0xFFFFFFFF): number {
         let currentCrc = initialValue;
         for (let i = 0; i < data.length; i++) {
@@ -68,14 +65,12 @@ export class Crc32 {
         }
         return (currentCrc ^ initialValue) >>> 0;
     }
-
     public append(data: Uint8Array): void {
         for (let i = 0; i < data.length; i++) {
             this.crc = ((this.crc >>> 8) ^ Crc32.lookUp[(this.crc & 0xFF) ^ data[i]]) >>> 0;
         }
     }
-
     public get(): number {
         return (this.crc ^ this.initialCrcValue) >>> 0;
     }
-} 
+}

@@ -39,292 +39,193 @@ import { Debris } from "@/game/gameobject/Debris";
 import { DebrisRules } from "@/game/rules/DebrisRules";
 import { NotifyTick } from "@/game/gameobject/trait/interface/NotifyTick";
 import { SensorsTrait } from "@/game/gameobject/trait/SensorsTrait";
-
 export class ObjectFactory {
-  private tiles: any;
-  private tileOccupation: any;
-  private bridges: any;
-  private nextObjectId: any;
-
-  constructor(tiles: any, tileOccupation: any, bridges: any, nextObjectId: any) {
-    this.tiles = tiles;
-    this.tileOccupation = tileOccupation;
-    this.bridges = bridges;
-    this.nextObjectId = nextObjectId;
-  }
-
-  create(objectType: any, name: string, rulesIni: any, artIni: any): any {
-    let rules: any;
-    let art: any;
-
-    if (objectType === ObjectType.Debris) {
-      if (rulesIni.hasObject(name, ObjectType.VoxelAnim)) {
-        art = artIni.getObject(name, ObjectType.VoxelAnim);
-        rules = rulesIni.getObject(name, ObjectType.VoxelAnim);
-      } else {
-        art = artIni.getAnimation(name);
-        rules = new DebrisRules(
-          ObjectType.Debris,
-          artIni.getIni().getOrCreateSection(name)
-        );
-      }
-    } else {
-      if (objectType === ObjectType.Projectile) {
-        rules = rulesIni.getProjectile(name);
-        if (rules.inviso) {
-          art = new ObjectArt(
-            ObjectType.Projectile,
-            rules,
-            new IniSection(name)
-          );
-        } else {
-          art = artIni.getProjectile(name);
+    private tiles: any;
+    private tileOccupation: any;
+    private bridges: any;
+    private nextObjectId: any;
+    constructor(tiles: any, tileOccupation: any, bridges: any, nextObjectId: any) {
+        this.tiles = tiles;
+        this.tileOccupation = tileOccupation;
+        this.bridges = bridges;
+        this.nextObjectId = nextObjectId;
+    }
+    create(objectType: any, name: string, rulesIni: any, artIni: any): any {
+        let rules: any;
+        let art: any;
+        if (objectType === ObjectType.Debris) {
+            if (rulesIni.hasObject(name, ObjectType.VoxelAnim)) {
+                art = artIni.getObject(name, ObjectType.VoxelAnim);
+                rules = rulesIni.getObject(name, ObjectType.VoxelAnim);
+            }
+            else {
+                art = artIni.getAnimation(name);
+                rules = new DebrisRules(ObjectType.Debris, artIni.getIni().getOrCreateSection(name));
+            }
         }
-      } else {
-        rules = rulesIni.getObject(name, objectType);
-        art = artIni.getObject(name, objectType);
-      }
-    }
-
-    let gameObject: any;
-
-    switch (objectType) {
-      case ObjectType.Building:
-        gameObject = Building.factory(
-          name,
-          rules,
-          rulesIni,
-          art,
-          this.tiles,
-          this.bridges
-        );
-        break;
-      case ObjectType.Infantry:
-        gameObject = Infantry.factory(name, rules, art, this.tileOccupation);
-        break;
-      case ObjectType.Vehicle:
-        gameObject = Vehicle.factory(name, rules, art, rulesIni, this.tileOccupation);
-        break;
-      case ObjectType.Aircraft:
-        gameObject = Aircraft.factory(name, rules, art, rulesIni, this.tileOccupation);
-        break;
-      case ObjectType.Terrain:
-        gameObject = Terrain.factory(name, rules, art);
-        break;
-      case ObjectType.Overlay:
-        gameObject = Overlay.factory(name, rules, art);
-        break;
-      case ObjectType.Smudge:
-        gameObject = Smudge.factory(name, rules, art);
-        break;
-      case ObjectType.Projectile:
-        gameObject = Projectile.factory(name, rules, art, this.tileOccupation);
-        break;
-      case ObjectType.Debris:
-        gameObject = Debris.factory(name, rules, art, this.tileOccupation);
-        break;
-      default:
-        throw new Error("Not implemented");
-    }
-
-    // 设置基础属性
-    gameObject.id = this.nextObjectId.value++;
-    gameObject.position = new ObjectPosition(this.tiles, this.tileOccupation);
-
-    if (gameObject.isUnit()) {
-      gameObject.position.subCell = 0;
-    } else if (gameObject.isBuilding()) {
-      gameObject.position.setCenterOffset(gameObject.getFoundationCenterOffset());
-    }
-
-    // 为 Techno 对象添加 traits
-    if (gameObject.isTechno()) {
-      // 武装特性
-      if (gameObject.rules.primary || 
-          gameObject.rules.secondary || 
-          gameObject.rules.weaponCount || 
-          gameObject.rules.explodes) {
-        gameObject.armedTrait = new ArmedTrait(gameObject, rulesIni);
-        gameObject.traits.add(gameObject.armedTrait);
-      }
-
-      // 弹药特性
-      if (gameObject.rules.ammo !== -1) {
-        const initialAmmo = gameObject.rules.initialAmmo;
-        gameObject.ammoTrait = new AmmoTrait(
-          gameObject.rules.ammo,
-          initialAmmo !== -1 ? initialAmmo : undefined
-        );
-        gameObject.traits.add(gameObject.ammoTrait);
-      }
-
-      // 单位命令特性
-      gameObject.unitOrderTrait = new UnitOrderTrait(gameObject);
-      gameObject.traits.addToFront(gameObject.unitOrderTrait);
-
-      // 攻击特性
-      if (gameObject.primaryWeapon || gameObject.secondaryWeapon) {
-        gameObject.attackTrait = new AttackTrait(this.tiles, this.tileOccupation);
-        gameObject.traits.add(gameObject.attackTrait);
-      }
-
-      // 部署特性
-      if ((gameObject.isInfantry() || gameObject.isVehicle()) && gameObject.rules.deployer) {
-        gameObject.deployerTrait = new DeployerTrait(gameObject);
-        gameObject.traits.add(gameObject.deployerTrait);
-      }
-
-      // 伪装特性
-      if ((gameObject.isInfantry() || gameObject.isVehicle()) && gameObject.rules.canDisguise) {
-        gameObject.disguiseTrait = new DisguiseTrait();
-        gameObject.traits.add(gameObject.disguiseTrait);
-      }
-
-      // 隐形特性
-      if (gameObject.rules.cloakable) {
-        gameObject.cloakableTrait = new CloakableTrait(
-          gameObject,
-          rulesIni.general.cloakDelay
-        );
-        gameObject.traits.add(gameObject.cloakableTrait);
-      }
-
-      // 传感器特性
-      if (gameObject.rules.sensors) {
-        gameObject.sensorsTrait = new SensorsTrait();
-        gameObject.traits.add(gameObject.sensorsTrait);
-      }
-
-      // 自动修复特性
-      gameObject.autoRepairTrait = new AutoRepairTrait(!gameObject.isBuilding());
-      gameObject.traits.add(gameObject.autoRepairTrait);
-
-      // 老兵特性
-      if (gameObject.rules.trainable) {
-        gameObject.veteranTrait = new VeteranTrait(gameObject, rulesIni.general.veteran);
-        gameObject.traits.add(gameObject.veteranTrait);
-      }
-
-      // 自愈特性
-      if (gameObject.rules.selfHealing) {
-        gameObject.traits.add(new SelfHealingTrait());
-      }
-
-      // 无敌特性
-      gameObject.invulnerableTrait = new InvulnerableTrait();
-      gameObject.traits.add(gameObject.invulnerableTrait);
-
-      // 传送特性
-      gameObject.warpedOutTrait = new WarpedOutTrait(gameObject);
-      gameObject.traits.add(gameObject.warpedOutTrait);
-
-      // 时间特性
-      gameObject.temporalTrait = new TemporalTrait(gameObject);
-      gameObject.traits.add(gameObject.temporalTrait);
-
-      // TNT炸药特性
-      if (gameObject.rules.bombable) {
-        gameObject.tntChargeTrait = new TntChargeTrait();
-        gameObject.traits.add(gameObject.tntChargeTrait);
-      }
-
-      // 心灵控制相关特性
-      if (!gameObject.rules.immuneToPsionics && !gameObject.isBuilding()) {
-        gameObject.mindControllableTrait = new MindControllableTrait(gameObject);
-        gameObject.traits.add(gameObject.mindControllableTrait);
-      }
-
-      const weapons = [gameObject.primaryWeapon, gameObject.secondaryWeapon];
-      if (weapons.some(weapon => weapon?.warhead.rules.mindControl)) {
-        gameObject.mindControllerTrait = new MindControllerTrait(gameObject);
-        gameObject.traits.add(gameObject.mindControllerTrait);
-      }
-
-      // 生成单位特性
-      if (gameObject.rules.spawns) {
-        gameObject.airSpawnTrait = new AirSpawnTrait();
-        gameObject.traits.add(gameObject.airSpawnTrait);
-      }
-
-      // 生成碎片特性
-      if (gameObject.rules.maxDebris) {
-        gameObject.traits.add(new SpawnDebrisTrait());
-      }
-    }
-
-    // 为 Techno、Overlay 和 Terrain 对象添加生命值特性
-    if (gameObject.isTechno() || gameObject.isOverlay() || gameObject.isTerrain()) {
-      const isBridgeOverlay = gameObject.isOverlay() && 
-        BridgeOverlayTypes.isBridge(rulesIni.getOverlayId(gameObject.name));
-
-      let strength = gameObject.rules.strength;
-      
-      if (!strength && gameObject.isTerrain()) {
-        strength = rulesIni.general.treeStrength;
-      }
-      
-      if (isBridgeOverlay) {
-        strength = rulesIni.combatDamage.bridgeStrength;
-      }
-
-      // 使用规则 Strength 字段作为生命值上限，但必须保证它是一个有效的整数。
-      // 某些条目可能缺失 Strength 或被错误解析为 NaN / undefined，从而导致 HealthTrait 抛出
-      // "Value undefined is not an integer"。原版逻辑在这种情况下会跳过该对象或者给出 0，
-      // 为了保持行为一致，缺失或非法数值时退化为 0。
-
-      const hitPointsRaw = strength;
-      let hitPoints =
-        typeof hitPointsRaw === "number" && Number.isFinite(hitPointsRaw)
-          ? Math.floor(hitPointsRaw)
-          : 0;
-
-      // 避免 0 / 0 产生 NaN；Strength 为 0 时仍给 1 点血量保持对象"存活"。
-      if (hitPoints <= 0) {
-        hitPoints = 1;
-      }
-
-      if (hitPoints || gameObject.isTechno()) {
-        gameObject.healthTrait = new HealthTrait(
-          hitPoints,
-          gameObject,
-          rulesIni.audioVisual.conditionYellow,
-          rulesIni.audioVisual.conditionRed
-        );
-        gameObject.traits.add(gameObject.healthTrait);
-      }
-
-      // 桥梁特性
-      if (gameObject.isOverlay() && isBridgeOverlay) {
-        gameObject.bridgeTrait = new BridgeTrait(this.bridges);
-        gameObject.traits.add(gameObject.bridgeTrait);
-
-        if (BridgeOverlayTypes.getOverlayBridgeType(
-          rulesIni.getOverlayId(gameObject.name)
-        ) === OverlayBridgeType.Concrete) {
-          gameObject.traits.add(new SpawnDebrisTrait());
+        else {
+            if (objectType === ObjectType.Projectile) {
+                rules = rulesIni.getProjectile(name);
+                if (rules.inviso) {
+                    art = new ObjectArt(ObjectType.Projectile, rules, new IniSection(name));
+                }
+                else {
+                    art = artIni.getProjectile(name);
+                }
+            }
+            else {
+                rules = rulesIni.getObject(name, objectType);
+                art = artIni.getObject(name, objectType);
+            }
         }
-      }
+        let gameObject: any;
+        switch (objectType) {
+            case ObjectType.Building:
+                gameObject = Building.factory(name, rules, rulesIni, art, this.tiles, this.bridges);
+                break;
+            case ObjectType.Infantry:
+                gameObject = Infantry.factory(name, rules, art, this.tileOccupation);
+                break;
+            case ObjectType.Vehicle:
+                gameObject = Vehicle.factory(name, rules, art, rulesIni, this.tileOccupation);
+                break;
+            case ObjectType.Aircraft:
+                gameObject = Aircraft.factory(name, rules, art, rulesIni, this.tileOccupation);
+                break;
+            case ObjectType.Terrain:
+                gameObject = Terrain.factory(name, rules, art);
+                break;
+            case ObjectType.Overlay:
+                gameObject = Overlay.factory(name, rules, art);
+                break;
+            case ObjectType.Smudge:
+                gameObject = Smudge.factory(name, rules, art);
+                break;
+            case ObjectType.Projectile:
+                gameObject = Projectile.factory(name, rules, art, this.tileOccupation);
+                break;
+            case ObjectType.Debris:
+                gameObject = Debris.factory(name, rules, art, this.tileOccupation);
+                break;
+            default:
+                throw new Error("Not implemented");
+        }
+        gameObject.id = this.nextObjectId.value++;
+        gameObject.position = new ObjectPosition(this.tiles, this.tileOccupation);
+        if (gameObject.isUnit()) {
+            gameObject.position.subCell = 0;
+        }
+        else if (gameObject.isBuilding()) {
+            gameObject.position.setCenterOffset(gameObject.getFoundationCenterOffset());
+        }
+        if (gameObject.isTechno()) {
+            if (gameObject.rules.primary ||
+                gameObject.rules.secondary ||
+                gameObject.rules.weaponCount ||
+                gameObject.rules.explodes) {
+                gameObject.armedTrait = new ArmedTrait(gameObject, rulesIni);
+                gameObject.traits.add(gameObject.armedTrait);
+            }
+            if (gameObject.rules.ammo !== -1) {
+                const initialAmmo = gameObject.rules.initialAmmo;
+                gameObject.ammoTrait = new AmmoTrait(gameObject.rules.ammo, initialAmmo !== -1 ? initialAmmo : undefined);
+                gameObject.traits.add(gameObject.ammoTrait);
+            }
+            gameObject.unitOrderTrait = new UnitOrderTrait(gameObject);
+            gameObject.traits.addToFront(gameObject.unitOrderTrait);
+            if (gameObject.primaryWeapon || gameObject.secondaryWeapon) {
+                gameObject.attackTrait = new AttackTrait(this.tiles, this.tileOccupation);
+                gameObject.traits.add(gameObject.attackTrait);
+            }
+            if ((gameObject.isInfantry() || gameObject.isVehicle()) && gameObject.rules.deployer) {
+                gameObject.deployerTrait = new DeployerTrait(gameObject);
+                gameObject.traits.add(gameObject.deployerTrait);
+            }
+            if ((gameObject.isInfantry() || gameObject.isVehicle()) && gameObject.rules.canDisguise) {
+                gameObject.disguiseTrait = new DisguiseTrait();
+                gameObject.traits.add(gameObject.disguiseTrait);
+            }
+            if (gameObject.rules.cloakable) {
+                gameObject.cloakableTrait = new CloakableTrait(gameObject, rulesIni.general.cloakDelay);
+                gameObject.traits.add(gameObject.cloakableTrait);
+            }
+            if (gameObject.rules.sensors) {
+                gameObject.sensorsTrait = new SensorsTrait();
+                gameObject.traits.add(gameObject.sensorsTrait);
+            }
+            gameObject.autoRepairTrait = new AutoRepairTrait(!gameObject.isBuilding());
+            gameObject.traits.add(gameObject.autoRepairTrait);
+            if (gameObject.rules.trainable) {
+                gameObject.veteranTrait = new VeteranTrait(gameObject, rulesIni.general.veteran);
+                gameObject.traits.add(gameObject.veteranTrait);
+            }
+            if (gameObject.rules.selfHealing) {
+                gameObject.traits.add(new SelfHealingTrait());
+            }
+            gameObject.invulnerableTrait = new InvulnerableTrait();
+            gameObject.traits.add(gameObject.invulnerableTrait);
+            gameObject.warpedOutTrait = new WarpedOutTrait(gameObject);
+            gameObject.traits.add(gameObject.warpedOutTrait);
+            gameObject.temporalTrait = new TemporalTrait(gameObject);
+            gameObject.traits.add(gameObject.temporalTrait);
+            if (gameObject.rules.bombable) {
+                gameObject.tntChargeTrait = new TntChargeTrait();
+                gameObject.traits.add(gameObject.tntChargeTrait);
+            }
+            if (!gameObject.rules.immuneToPsionics && !gameObject.isBuilding()) {
+                gameObject.mindControllableTrait = new MindControllableTrait(gameObject);
+                gameObject.traits.add(gameObject.mindControllableTrait);
+            }
+            const weapons = [gameObject.primaryWeapon, gameObject.secondaryWeapon];
+            if (weapons.some(weapon => weapon?.warhead.rules.mindControl)) {
+                gameObject.mindControllerTrait = new MindControllerTrait(gameObject);
+                gameObject.traits.add(gameObject.mindControllerTrait);
+            }
+            if (gameObject.rules.spawns) {
+                gameObject.airSpawnTrait = new AirSpawnTrait();
+                gameObject.traits.add(gameObject.airSpawnTrait);
+            }
+            if (gameObject.rules.maxDebris) {
+                gameObject.traits.add(new SpawnDebrisTrait());
+            }
+        }
+        if (gameObject.isTechno() || gameObject.isOverlay() || gameObject.isTerrain()) {
+            const isBridgeOverlay = gameObject.isOverlay() &&
+                BridgeOverlayTypes.isBridge(rulesIni.getOverlayId(gameObject.name));
+            let strength = gameObject.rules.strength;
+            if (!strength && gameObject.isTerrain()) {
+                strength = rulesIni.general.treeStrength;
+            }
+            if (isBridgeOverlay) {
+                strength = rulesIni.combatDamage.bridgeStrength;
+            }
+            const hitPointsRaw = strength;
+            let hitPoints = typeof hitPointsRaw === "number" && Number.isFinite(hitPointsRaw)
+                ? Math.floor(hitPointsRaw)
+                : 0;
+            if (hitPoints <= 0) {
+                hitPoints = 1;
+            }
+            if (hitPoints || gameObject.isTechno()) {
+                gameObject.healthTrait = new HealthTrait(hitPoints, gameObject, rulesIni.audioVisual.conditionYellow, rulesIni.audioVisual.conditionRed);
+                gameObject.traits.add(gameObject.healthTrait);
+            }
+            if (gameObject.isOverlay() && isBridgeOverlay) {
+                gameObject.bridgeTrait = new BridgeTrait(this.bridges);
+                gameObject.traits.add(gameObject.bridgeTrait);
+                if (BridgeOverlayTypes.getOverlayBridgeType(rulesIni.getOverlayId(gameObject.name)) === OverlayBridgeType.Concrete) {
+                    gameObject.traits.add(new SpawnDebrisTrait());
+                }
+            }
+        }
+        if (gameObject.isOverlay() &&
+            OreOverlayTypes.getOverlayTibType(rulesIni.getOverlayId(gameObject.name)) !== OverlayTibType.NotSpecial) {
+            gameObject.traits.add(new TiberiumTrait(gameObject));
+        }
+        if (gameObject.isTerrain() && gameObject.rules.spawnsTiberium) {
+            gameObject.traits.add(new TiberiumTreeTrait(gameObject.rules));
+        }
+        gameObject.cachedTraits.tick.push(...gameObject.traits.filter(NotifyTick));
+        return gameObject;
     }
-
-    // 矿石特性
-    if (gameObject.isOverlay() && 
-        OreOverlayTypes.getOverlayTibType(
-          rulesIni.getOverlayId(gameObject.name)
-        ) !== OverlayTibType.NotSpecial) {
-      gameObject.traits.add(new TiberiumTrait(gameObject));
-    }
-
-    // 矿石树特性
-    if (gameObject.isTerrain() && gameObject.rules.spawnsTiberium) {
-      gameObject.traits.add(new TiberiumTreeTrait(gameObject.rules));
-    }
-
-    // 使用接口对象 NotifyTick 过滤实现 onTick 的 traits，与原版保持一致
-    gameObject.cachedTraits.tick.push(
-      ...gameObject.traits.filter(NotifyTick)
-    );
-
-    return gameObject;
-  }
 }
-  

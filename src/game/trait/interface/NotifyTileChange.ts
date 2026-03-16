@@ -1,7 +1,6 @@
 export const NotifyTileChange = {
-  onTileChange: Symbol()
+    onTileChange: Symbol()
 };
-
 export interface NotifyTileChange {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }

@@ -1,7 +1,6 @@
 export const NotifyCrash = {
-  onCrash: Symbol()
+    onCrash: Symbol()
 };
-
 export interface NotifyCrash {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }

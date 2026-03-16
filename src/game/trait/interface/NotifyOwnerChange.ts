@@ -1,7 +1,6 @@
 export const NotifyOwnerChange = {
-  onChange: Symbol()
+    onChange: Symbol()
 };
-
 export interface NotifyOwnerChange {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }

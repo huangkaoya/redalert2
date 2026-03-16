@@ -1,7 +1,6 @@
 export const NotifyHeal = {
-  onHeal: Symbol()
+    onHeal: Symbol()
 };
-
 export interface NotifyHeal {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }

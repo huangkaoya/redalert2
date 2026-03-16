@@ -1,5 +1,4 @@
 import { Vector3 } from 'three';
-
 export const normals1: Vector3[] = [
     new Vector3(0.54946297, -183e-6, -0.835518),
     new Vector3(0.00014400001, 0.54940403, -0.83555698),
@@ -18,7 +17,6 @@ export const normals1: Vector3[] = [
     new Vector3(-0.55238003, 57000001e-12, 0.83359301),
     new Vector3(-66000001e-12, -0.55237001, 0.83359897),
 ];
-
 export const normals2: Vector3[] = [
     new Vector3(0.67121398, 0.19849201, -0.714194),
     new Vector3(0.26964301, 0.58439398, -0.76536),
@@ -57,7 +55,6 @@ export const normals2: Vector3[] = [
     new Vector3(-0.506455, -0.39697701, 0.76544899),
     new Vector3(0.070569001, -0.47847399, 0.87526202),
 ];
-
 export const normals3: Vector3[] = [
     new Vector3(0.45651099, -0.073968001, -0.88663799),
     new Vector3(0.50769401, 0.38511699, -0.77067),
@@ -124,7 +121,6 @@ export const normals3: Vector3[] = [
     new Vector3(-0.106662, -0.445115, 0.88909799),
     new Vector3(0.086796001, -0.059307002, 0.99445897),
 ];
-
 export const normals4: Vector3[] = [
     new Vector3(0.52657801, -0.35962099, -0.77031702),
     new Vector3(0.150482, 0.43598399, 0.88728398),
@@ -371,4 +367,4 @@ export const normals4: Vector3[] = [
     new Vector3(-0.328188, 0.140251, 0.93414301),
     new Vector3(-0.328188, 0.140251, 0.93414301),
     new Vector3(-0.328188, 0.140251, 0.93414301),
-  ];
+];

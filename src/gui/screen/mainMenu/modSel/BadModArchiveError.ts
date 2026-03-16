@@ -1,1 +1,2 @@
-export class BadModArchiveError extends Error {}
+export class BadModArchiveError extends Error {
+}

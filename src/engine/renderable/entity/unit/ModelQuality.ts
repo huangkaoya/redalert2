@@ -1,4 +1,4 @@
 export enum ModelQuality {
-  Low = 0,
-  High = 1,
-} 
+    Low = 0,
+    High = 1
+}

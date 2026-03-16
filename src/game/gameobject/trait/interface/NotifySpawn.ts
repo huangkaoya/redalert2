@@ -1,7 +1,6 @@
 export const NotifySpawn = {
-  onSpawn: Symbol()
+    onSpawn: Symbol()
 };
-
 export interface NotifySpawn {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }

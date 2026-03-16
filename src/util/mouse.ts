@@ -1,8 +1,6 @@
 export class Mouse {
     private static instance: Mouse;
-    
-    private constructor() {}
-    
+    private constructor() { }
     public static getInstance(): Mouse {
         if (!Mouse.instance) {
             Mouse.instance = new Mouse();

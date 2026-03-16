@@ -1,1 +1,2 @@
-export class DuplicateModError extends Error {}
+export class DuplicateModError extends Error {
+}

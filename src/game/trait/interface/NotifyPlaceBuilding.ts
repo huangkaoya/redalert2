@@ -1,7 +1,6 @@
 export const NotifyPlaceBuilding = {
-  onPlace: Symbol()
+    onPlace: Symbol()
 };
-
 export interface NotifyPlaceBuilding {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }

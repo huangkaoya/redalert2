@@ -1,3 +1,3 @@
 export interface BuildingPlacementData {
-  id: string;
+    id: string;
 }

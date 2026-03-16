@@ -1,7 +1,6 @@
 export const NotifyAllianceChange = {
-  onChange: Symbol()
+    onChange: Symbol()
 };
-
 export interface NotifyAllianceChange {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }

@@ -1,7 +1,6 @@
 export const NotifySell = {
-  onSell: Symbol()
+    onSell: Symbol()
 };
-
 export interface NotifySell {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }

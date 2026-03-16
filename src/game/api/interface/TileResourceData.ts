@@ -1,3 +1,3 @@
 export interface TileResourceData {
-  id: string;
+    id: string;
 }

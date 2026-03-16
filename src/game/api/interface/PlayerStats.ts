@@ -1,4 +1,3 @@
 export interface PlayerStats {
-  id: string;
+    id: string;
 }
-  

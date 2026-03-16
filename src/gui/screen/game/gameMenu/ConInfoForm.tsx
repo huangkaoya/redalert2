@@ -3,89 +3,62 @@ import { CountryIcon } from '@/gui/component/CountryIcon';
 import { OBS_COUNTRY_NAME } from '@/game/gameopts/constants';
 import { RECIPIENT_ALL, RECIPIENT_TEAM } from '@/network/gservConfig';
 import { Chat } from '@/gui/component/Chat';
-
-// Type definitions
 interface Color {
-  asHexString(): string;
+    asHexString(): string;
 }
-
 interface Country {
-  name: string;
+    name: string;
 }
-
 interface Player {
-  name: string;
-  color: Color;
-  country?: Country;
-  isAi: boolean;
+    name: string;
+    color: Color;
+    country?: Country;
+    isAi: boolean;
 }
-
 interface ConInfo {
-  name: string;
-  status: string;
-  ping?: number;
-  lagAllowanceMillis?: number;
+    name: string;
+    status: string;
+    ping?: number;
+    lagAllowanceMillis?: number;
 }
-
 interface Strings {
-  get(key: string, ...args: any[]): string;
+    get(key: string, ...args: any[]): string;
 }
-
 interface ChatHistory {
-  lastComposeTarget?: {
-    value: {
-      type: any;
-      name: string;
+    lastComposeTarget?: {
+        value: {
+            type: any;
+            name: string;
+        };
     };
-  };
 }
-
 interface ConInfoFormProps {
-  strings: Strings;
-  conInfos?: ConInfo[];
-  players: Player[];
-  localPlayer: Player;
-  messages: any[];
-  chatHistory?: ChatHistory;
-  onSendMessage: (message: string) => void;
+    strings: Strings;
+    conInfos?: ConInfo[];
+    players: Player[];
+    localPlayer: Player;
+    messages: any[];
+    chatHistory?: ChatHistory;
+    onSendMessage: (message: string) => void;
 }
-
-// Constants - these would normally come from gservConfig
 const TURN_TIMEOUT_MILLIS = 60000;
 const LAG_STATE_THRESH_MILLIS = 5000;
 const CON_INFO_THRESH_MILLIS = 3000;
-
 const PlayerConnectionStatus = {
-  Connected: 'Connected',
-  Disconnected: 'Disconnected',
-  Lagging: 'Lagging'
+    Connected: 'Connected',
+    Disconnected: 'Disconnected',
+    Lagging: 'Lagging'
 };
-
-export const ConInfoForm: React.FC<ConInfoFormProps> = ({
-  strings,
-  conInfos,
-  players,
-  localPlayer,
-  messages,
-  chatHistory,
-  onSendMessage,
-}) => {
-  const [timeRemaining, setTimeRemaining] = useState(() =>
-    Math.floor(
-      (TURN_TIMEOUT_MILLIS -
+export const ConInfoForm: React.FC<ConInfoFormProps> = ({ strings, conInfos, players, localPlayer, messages, chatHistory, onSendMessage, }) => {
+    const [timeRemaining, setTimeRemaining] = useState(() => Math.floor((TURN_TIMEOUT_MILLIS -
         LAG_STATE_THRESH_MILLIS -
         CON_INFO_THRESH_MILLIS) /
-        1000,
-    ),
-  );
-
-  useEffect(() => {
-    const interval = setInterval(() => setTimeRemaining(Math.max(0, timeRemaining - 1)), 1000);
-    return () => clearInterval(interval);
-  }, [timeRemaining]);
-
-  return (
-    <div className="con-info-form">
+        1000));
+    useEffect(() => {
+        const interval = setInterval(() => setTimeRemaining(Math.max(0, timeRemaining - 1)), 1000);
+        return () => clearInterval(interval);
+    }, [timeRemaining]);
+    return (<div className="con-info-form">
       <div className="con-info-form-content">
         <table>
           <thead>
@@ -104,48 +77,34 @@ export const ConInfoForm: React.FC<ConInfoFormProps> = ({
           </thead>
           <tbody>
             {players
-              .filter((player) => !player.isAi)
-              .map((player) => {
-                const conInfo = conInfos?.find((info) => info.name === player.name);
-                return (
-                  <tr
-                    key={player.name}
-                    style={{
-                      color: player.color.asHexString(),
-                      opacity:
-                        conInfo &&
+            .filter((player) => !player.isAi)
+            .map((player) => {
+            const conInfo = conInfos?.find((info) => info.name === player.name);
+            return (<tr key={player.name} style={{
+                    color: player.color.asHexString(),
+                    opacity: conInfo &&
                         conInfo.status !== PlayerConnectionStatus.Connected
-                          ? 0.5
-                          : 1,
-                    }}
-                  >
+                        ? 0.5
+                        : 1,
+                }}>
                     <td>
-                      <CountryIcon
-                        country={player.country
-                          ? player.country.name
-                          : OBS_COUNTRY_NAME}
-                      />
+                      <CountryIcon country={player.country
+                    ? player.country.name
+                    : OBS_COUNTRY_NAME}/>
                     </td>
                     <td className="player-name">
                       {player.name}
                     </td>
                     <td className="player-ping">
-                      <meter
-                        value={conInfo?.ping ?? 1000}
-                        max={1000}
-                        low={150}
-                        high={500}
-                        optimum={0}
-                      />
+                      <meter value={conInfo?.ping ?? 1000} max={1000} low={150} high={500} optimum={0}/>
                     </td>
                     <td className="player-time">
                       {conInfo
-                        ? Math.floor((conInfo.lagAllowanceMillis ?? 0) / 1000)
-                        : undefined}
+                    ? Math.floor((conInfo.lagAllowanceMillis ?? 0) / 1000)
+                    : undefined}
                     </td>
-                  </tr>
-                );
-              })}
+                  </tr>);
+        })}
           </tbody>
         </table>
       </div>
@@ -154,20 +113,8 @@ export const ConInfoForm: React.FC<ConInfoFormProps> = ({
           {strings.get("TXT_TIME_ALLOWED", timeRemaining)}
         </div>
         <div className="chat">
-          <Chat
-            strings={strings}
-            messages={messages}
-            channels={[RECIPIENT_ALL, RECIPIENT_TEAM]}
-            chatHistory={chatHistory}
-            userColors={new Map(
-              players.map((player) => [player.name, player.color.asHexString()]),
-            )}
-            localUsername={localPlayer.name}
-            onSendMessage={onSendMessage}
-          />
+          <Chat strings={strings} messages={messages} channels={[RECIPIENT_ALL, RECIPIENT_TEAM]} chatHistory={chatHistory} userColors={new Map(players.map((player) => [player.name, player.color.asHexString()]))} localUsername={localPlayer.name} onSendMessage={onSendMessage}/>
         </div>
       </div>
-    </div>
-  );
+    </div>);
 };
-  

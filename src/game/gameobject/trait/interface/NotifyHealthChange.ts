@@ -1,3 +1,3 @@
 export const NotifyHealthChange = {
-  onChange: Symbol()
+    onChange: Symbol()
 };

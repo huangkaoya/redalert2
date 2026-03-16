@@ -2,201 +2,164 @@ import { SpeedType } from '@/game/type/SpeedType';
 import { TiberiumTrait } from '@/game/gameobject/trait/TiberiumTrait';
 import { TiberiumType } from '@/engine/type/TiberiumType';
 import { Vector2 } from '@/game/math/Vector2';
-
 interface Game {
-  map: Map;
-  getPlayerByName(name: string): Player;
-  getWorld(): World;
-  mapShroudTrait: {
-    getPlayerShroud(player: Player): {
-      isShrouded(tile: any, level: number): boolean;
-      revealAll?(): void;
-    } | undefined;
-  };
+    map: Map;
+    getPlayerByName(name: string): Player;
+    getWorld(): World;
+    mapShroudTrait: {
+        getPlayerShroud(player: Player): {
+            isShrouded(tile: any, level: number): boolean;
+            revealAll?(): void;
+        } | undefined;
+    };
 }
-
 interface Map {
-  tiles: {
-    getMapSize(): any;
-    getByMapCoords(x: number, y: number): any;
-    getInRectangle(rect: any, rect2?: any): any[];
-  };
-  startingLocations: { x: number; y: number }[];
-  getTheaterType(): any;
-  mapBounds: {
-    isWithinBounds(tile: any): boolean;
-  };
-  getObjectsOnTile(tile: any): any[];
-  tileOccupation: {
-    getBridgeOnTile(tile: any): { isHighBridge(): boolean };
-  };
-  terrain: {
-    getPassableSpeed(tile: any, speedType: SpeedType, isFoot: boolean, options: any): number;
-    computePath(
-      tile: any,
-      isFoot: boolean,
-      startTile: any,
-      startOnBridge: boolean,
-      endTile: any,
-      endOnBridge: boolean,
-      options: any
-    ): any[];
-  };
+    tiles: {
+        getMapSize(): any;
+        getByMapCoords(x: number, y: number): any;
+        getInRectangle(rect: any, rect2?: any): any[];
+    };
+    startingLocations: {
+        x: number;
+        y: number;
+    }[];
+    getTheaterType(): any;
+    mapBounds: {
+        isWithinBounds(tile: any): boolean;
+    };
+    getObjectsOnTile(tile: any): any[];
+    tileOccupation: {
+        getBridgeOnTile(tile: any): {
+            isHighBridge(): boolean;
+        };
+    };
+    terrain: {
+        getPassableSpeed(tile: any, speedType: SpeedType, isFoot: boolean, options: any): number;
+        computePath(tile: any, isFoot: boolean, startTile: any, startOnBridge: boolean, endTile: any, endOnBridge: boolean, options: any): any[];
+    };
 }
-
 interface Player {
-  // Add player properties
 }
-
 interface World {
-  getAllObjects(): any[];
+    getAllObjects(): any[];
 }
-
 interface Tile {
-  onBridgeLandType?: any;
-  id: string;
-  isOverlay(): boolean;
-  isTiberium(): boolean;
-  isTerrain(): boolean;
-  rules: {
-    spawnsTiberium: boolean;
-  };
-  traits: {
-    get(trait: any): any;
-  };
-  tile: any;
+    onBridgeLandType?: any;
+    id: string;
+    isOverlay(): boolean;
+    isTiberium(): boolean;
+    isTerrain(): boolean;
+    rules: {
+        spawnsTiberium: boolean;
+    };
+    traits: {
+        get(trait: any): any;
+    };
+    tile: any;
 }
-
 interface ResourceData {
-  tile: any;
-  ore: number;
-  gems: number;
-  spawnsOre: boolean;
+    tile: any;
+    ore: number;
+    gems: number;
+    spawnsOre: boolean;
 }
-
 export class MapApi {
-  private game: Game;
-  private map: Map;
-
-  constructor(game: Game) {
-    this.game = game;
-    this.map = game.map;
-  }
-
-  getRealMapSize() {
-    return this.map.tiles.getMapSize();
-  }
-
-  getStartingLocations() {
-    return this.map.startingLocations.map(loc => new Vector2(loc.x, loc.y));
-  }
-
-  getTheaterType() {
-    return this.map.getTheaterType();
-  }
-
-  getTile(x: number, y: number) {
-    const tile = this.map.tiles.getByMapCoords(x, y);
-    if (tile && this.map.mapBounds.isWithinBounds(tile)) {
-      return tile;
+    private game: Game;
+    private map: Map;
+    constructor(game: Game) {
+        this.game = game;
+        this.map = game.map;
     }
-  }
-
-  getTilesInRect(rect: any, rect2?: any) {
-    const tiles = rect2
-      ? this.map.tiles.getInRectangle(rect, rect2)
-      : this.map.tiles.getInRectangle(rect);
-    return tiles.filter(tile => this.map.mapBounds.isWithinBounds(tile));
-  }
-
-  getObjectsOnTile(tile: Tile) {
-    return this.map.getObjectsOnTile(tile).map(obj => obj.id);
-  }
-
-  hasBridgeOnTile(tile: Tile) {
-    return !!tile.onBridgeLandType;
-  }
-
-  hasHighBridgeOnTile(tile: Tile) {
-    return !!this.map.tileOccupation.getBridgeOnTile(tile)?.isHighBridge();
-  }
-
-  isPassableTile(tile: any, speedType: SpeedType, options: any, isFoot?: boolean) {
-    isFoot = isFoot ?? speedType === SpeedType.Foot;
-    return this.map.terrain.getPassableSpeed(tile, speedType, isFoot, options) > 0;
-  }
-
-  findPath(tile: any, ...args: any[]) {
-    const [isFoot, start, end, options] = args[0] !== 'boolean' 
-      ? [tile === SpeedType.Foot, ...args]
-      : args;
-
-    const path = this.game.map.terrain.computePath(
-      tile,
-      isFoot,
-      start.tile,
-      start.onBridge,
-      end.tile,
-      end.onBridge,
-      {
-        bestEffort: options?.bestEffort,
-        excludeTiles: options?.excludeNodes
-          ? (node: any) => options.excludeNodes({
-              tile: node.tile,
-              onBridge: !!node.onBridge,
-            })
-          : undefined,
-        maxExpandedNodes: options?.maxExpandedNodes,
-      }
-    );
-
-    return path.map(node => ({ tile: node.tile, onBridge: !!node.onBridge }));
-  }
-
-  isVisibleTile(tile: any, playerName: string, level: number = 0) {
-    const player = this.game.getPlayerByName(playerName);
-    if (!player) {
-      throw new Error(`Player "${playerName}" doesn't exist`);
+    getRealMapSize() {
+        return this.map.tiles.getMapSize();
     }
-    return !this.game.mapShroudTrait.getPlayerShroud(player)?.isShrouded(tile, level);
-  }
-
-  private getResourceData(obj: any): ResourceData | undefined {
-    if (obj.isOverlay() && obj.isTiberium()) {
-      const trait = obj.traits.get(TiberiumTrait);
-      const type = trait.getTiberiumType();
-      const count = trait.getBailCount();
-      return {
-        tile: obj.tile,
-        ore: type === TiberiumType.Ore ? count : 0,
-        gems: type === TiberiumType.Gems ? count : 0,
-        spawnsOre: false,
-      };
-    } else if (obj.isTerrain() && obj.rules.spawnsTiberium) {
-      return {
-        tile: obj.tile,
-        ore: 0,
-        gems: 0,
-        spawnsOre: true,
-      };
+    getStartingLocations() {
+        return this.map.startingLocations.map(loc => new Vector2(loc.x, loc.y));
     }
-  }
-
-  getTileResourceData(tile: any) {
-    const obj = this.map.getObjectsOnTile(tile).find(
-      obj => (obj.isOverlay() && obj.isTiberium()) || (obj.isTerrain() && obj.rules.spawnsTiberium)
-    );
-    return obj ? this.getResourceData(obj) : undefined;
-  }
-
-  getAllTilesResourceData() {
-    const data: ResourceData[] = [];
-    for (const obj of this.game.getWorld().getAllObjects()) {
-      const resourceData = this.getResourceData(obj);
-      if (resourceData) {
-        data.push(resourceData);
-      }
+    getTheaterType() {
+        return this.map.getTheaterType();
     }
-    return data;
-  }
+    getTile(x: number, y: number) {
+        const tile = this.map.tiles.getByMapCoords(x, y);
+        if (tile && this.map.mapBounds.isWithinBounds(tile)) {
+            return tile;
+        }
+    }
+    getTilesInRect(rect: any, rect2?: any) {
+        const tiles = rect2
+            ? this.map.tiles.getInRectangle(rect, rect2)
+            : this.map.tiles.getInRectangle(rect);
+        return tiles.filter(tile => this.map.mapBounds.isWithinBounds(tile));
+    }
+    getObjectsOnTile(tile: Tile) {
+        return this.map.getObjectsOnTile(tile).map(obj => obj.id);
+    }
+    hasBridgeOnTile(tile: Tile) {
+        return !!tile.onBridgeLandType;
+    }
+    hasHighBridgeOnTile(tile: Tile) {
+        return !!this.map.tileOccupation.getBridgeOnTile(tile)?.isHighBridge();
+    }
+    isPassableTile(tile: any, speedType: SpeedType, options: any, isFoot?: boolean) {
+        isFoot = isFoot ?? speedType === SpeedType.Foot;
+        return this.map.terrain.getPassableSpeed(tile, speedType, isFoot, options) > 0;
+    }
+    findPath(tile: any, ...args: any[]) {
+        const [isFoot, start, end, options] = args[0] !== 'boolean'
+            ? [tile === SpeedType.Foot, ...args]
+            : args;
+        const path = this.game.map.terrain.computePath(tile, isFoot, start.tile, start.onBridge, end.tile, end.onBridge, {
+            bestEffort: options?.bestEffort,
+            excludeTiles: options?.excludeNodes
+                ? (node: any) => options.excludeNodes({
+                    tile: node.tile,
+                    onBridge: !!node.onBridge,
+                })
+                : undefined,
+            maxExpandedNodes: options?.maxExpandedNodes,
+        });
+        return path.map(node => ({ tile: node.tile, onBridge: !!node.onBridge }));
+    }
+    isVisibleTile(tile: any, playerName: string, level: number = 0) {
+        const player = this.game.getPlayerByName(playerName);
+        if (!player) {
+            throw new Error(`Player "${playerName}" doesn't exist`);
+        }
+        return !this.game.mapShroudTrait.getPlayerShroud(player)?.isShrouded(tile, level);
+    }
+    private getResourceData(obj: any): ResourceData | undefined {
+        if (obj.isOverlay() && obj.isTiberium()) {
+            const trait = obj.traits.get(TiberiumTrait);
+            const type = trait.getTiberiumType();
+            const count = trait.getBailCount();
+            return {
+                tile: obj.tile,
+                ore: type === TiberiumType.Ore ? count : 0,
+                gems: type === TiberiumType.Gems ? count : 0,
+                spawnsOre: false,
+            };
+        }
+        else if (obj.isTerrain() && obj.rules.spawnsTiberium) {
+            return {
+                tile: obj.tile,
+                ore: 0,
+                gems: 0,
+                spawnsOre: true,
+            };
+        }
+    }
+    getTileResourceData(tile: any) {
+        const obj = this.map.getObjectsOnTile(tile).find(obj => (obj.isOverlay() && obj.isTiberium()) || (obj.isTerrain() && obj.rules.spawnsTiberium));
+        return obj ? this.getResourceData(obj) : undefined;
+    }
+    getAllTilesResourceData() {
+        const data: ResourceData[] = [];
+        for (const obj of this.game.getWorld().getAllObjects()) {
+            const resourceData = this.getResourceData(obj);
+            if (resourceData) {
+                data.push(resourceData);
+            }
+        }
+        return data;
+    }
 }

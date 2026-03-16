@@ -1,3 +1,3 @@
 export interface GameObjectData {
-  id: string;
+    id: string;
 }

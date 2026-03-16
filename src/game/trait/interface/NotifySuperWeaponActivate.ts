@@ -1,7 +1,6 @@
 export const NotifySuperWeaponActivate = {
-  onActivate: Symbol()
+    onActivate: Symbol()
 };
-
 export interface NotifySuperWeaponActivate {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }

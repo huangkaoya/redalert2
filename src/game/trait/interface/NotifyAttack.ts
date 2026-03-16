@@ -1,7 +1,6 @@
 export const NotifyAttack = {
-  onAttack: Symbol()
+    onAttack: Symbol()
 };
-
 export interface NotifyAttack {
-  [key: symbol]: (...args: any[]) => void;
+    [key: symbol]: (...args: any[]) => void;
 }
