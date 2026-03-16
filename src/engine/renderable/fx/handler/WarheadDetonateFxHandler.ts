@@ -34,6 +34,7 @@ export class WarheadDetonateFxHandler {
   private game: Game;
   private renderableManager: RenderableManager;
   private disposables: CompositeDisposable;
+  private handleWarheadDetonation: (event: WarheadDetonateEvent) => void;
 
   constructor(game: Game, renderableManager: RenderableManager) {
     this.game = game;

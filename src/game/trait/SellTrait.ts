@@ -20,7 +20,7 @@ export class SellTrait {
         }
 
         target.traits
-          .filter((trait: any) => NotifySell.isImplementedBy(trait))
+          .filter(NotifySell)
           .forEach((trait: any) => {
             trait[NotifySell.onSell](target, this.game);
           });

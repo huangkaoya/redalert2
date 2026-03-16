@@ -1,8 +1,8 @@
 export class CrewRules {
-  private alliedCrew: string = '';
+  public alliedCrew: string = '';
   private alliedSurvivorDivisor: number = 0;
   private crewEscape: number = 0;
-  private sovietCrew: string = '';
+  public sovietCrew: string = '';
   private sovietSurvivorDivisor: number = 0;
   private survivorRate: number = 0;
 

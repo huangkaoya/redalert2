@@ -31,6 +31,7 @@ interface GameObject {
   isBuilding(): boolean;
   isDestroyed: boolean;
   isCrashing: boolean;
+  id?: string | number;
 }
 
 interface Renderable {
@@ -129,12 +130,27 @@ export class EntityIntersectHelper {
     }
 
     const container = this.renderableManager.getRenderableContainer();
-    if (!container) return undefined;
+    const tile = this.mapTileIntersectHelper.getTileAtScreenPoint(screenPoint);
+    const buildingOnTile = this.getBuildingRenderableOnTile(tile);
+    if (!container) {
+      return buildingOnTile
+        ? {
+            renderable: buildingOnTile,
+            point: this.createFallbackPoint(buildingOnTile),
+          }
+        : undefined;
+    }
 
     const intersectTargets = this.collectIntersectTargets(container.get3DObject());
     const intersections = this.raycastHelper.intersect(screenPoint, intersectTargets, false);
-    
-    if (intersections.length === 0) return undefined;
+    if (intersections.length === 0) {
+      return buildingOnTile
+        ? {
+            renderable: buildingOnTile,
+            point: this.createFallbackPoint(buildingOnTile),
+          }
+        : undefined;
+    }
 
     // Convert intersections to renderable results
     const renderableIntersections = intersections.map(intersection => ({
@@ -150,34 +166,44 @@ export class EntityIntersectHelper {
     );
     if (unitResult) return unitResult;
 
+    if (buildingOnTile) {
+      const tileBuildingResult = renderableIntersections.find(
+        (result) => result.renderable.gameObject === buildingOnTile.gameObject,
+      );
+      return {
+        renderable: buildingOnTile,
+        point: tileBuildingResult?.point ?? this.createFallbackPoint(buildingOnTile),
+      };
+    }
+
     // Then prioritize buildings with intersect targets
     const buildingResult = renderableIntersections.find(result =>
       result.renderable.gameObject.isBuilding() && 
       result.renderable.getIntersectTarget?.()
     );
-    
-    if (!buildingResult) {
-      return renderableIntersections[0];
+    return buildingResult ?? renderableIntersections[0];
+  }
+
+  private getBuildingRenderableOnTile(tile: MapTile | undefined): Renderable | undefined {
+    if (!tile) {
+      return undefined;
     }
 
-    // For buildings, check if there's a building on the tile that has an intersect target
-    const tile = this.mapTileIntersectHelper.getTileAtScreenPoint(screenPoint);
-    if (tile) {
-      const buildingOnTile = this.map.getObjectsOnTile(tile).find(obj => {
-        if (!obj.isBuilding()) return false;
-        const renderable = this.renderableManager.getRenderableByGameObject(obj);
-        return renderable.getIntersectTarget?.() !== undefined;
-      });
-
-      if (buildingOnTile) {
-        return {
-          renderable: this.renderableManager.getRenderableByGameObject(buildingOnTile),
-          point: buildingResult.point
-        };
+    const building = this.map.getObjectsOnTile(tile).find((obj) => {
+      if (!obj.isBuilding() || obj.isDestroyed || obj.isCrashing) {
+        return false;
       }
-    }
 
-    return buildingResult;
+      const renderable = this.renderableManager.getRenderableByGameObject(obj);
+      return Boolean(renderable);
+    });
+
+    return building ? this.renderableManager.getRenderableByGameObject(building) : undefined;
+  }
+
+  private createFallbackPoint(renderable: Renderable): THREE.Vector3 {
+    const { worldPosition } = renderable.gameObject.position;
+    return new THREE.Vector3(worldPosition.x, worldPosition.y, worldPosition.z);
   }
 
   private collectIntersectTargets(object3d: THREE.Object3D | undefined): THREE.Object3D[] {

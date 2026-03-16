@@ -3,3 +3,7 @@ export const NotifyPower = {
   onPowerRestore: Symbol(),
   onPowerChange: Symbol()
 };
+
+export interface NotifyPower {
+  [key: symbol]: (...args: any[]) => void;
+}

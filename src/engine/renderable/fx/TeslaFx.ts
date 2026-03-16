@@ -1,14 +1,22 @@
 import { Coords } from '@/game/Coords';
 import * as THREE from 'three';
 
+type TeslaBoltRuntime = {
+  line: THREE.Line;
+  material: THREE.LineBasicMaterial;
+  seed: number;
+  update: (elapsedSeconds: number) => void;
+  dispose: () => void;
+};
+
 export class TeslaFx {
   private sourcePos: THREE.Vector3;
   private targetPos: THREE.Vector3;
   private primaryColor: THREE.Color;
   private secondaryColor: THREE.Color;
   private durationSeconds: number;
-  private bolts: THREE.LightningStrike[];
-  private boltMeshes: THREE.Mesh[];
+  private bolts: TeslaBoltRuntime[];
+  private boltMeshes: THREE.Object3D[];
   private container?: any;
   private target?: THREE.Object3D;
   private firstUpdateMillis?: number;
@@ -79,26 +87,59 @@ export class TeslaFx {
     }
   }
 
-  private createBolt(color: number): { mesh: THREE.Mesh; bolt: THREE.LightningStrike } {
+  private createBolt(color: number): { mesh: THREE.Line; bolt: TeslaBoltRuntime } {
     const sourceOffset = this.sourcePos.clone();
     const destOffset = this.targetPos.clone();
-    
-    const bolt = new THREE.LightningStrike({
-      sourceOffset,
-      destOffset,
-      radius0: 0.3 * Coords.ISO_WORLD_SCALE,
-      radius1: 0.3 * Coords.ISO_WORLD_SCALE,
-      isEternal: true,
-      timeScale: 2,
-      propagationTimeFactor: 0.05,
-      vanishingTimeFactor: 0.95,
-      ramification: 0,
-      roughness: 0.85,
-      straightness: 0.7,
+
+    const material = new THREE.LineBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.9,
     });
-    
-    const material = new THREE.MeshBasicMaterial({ color });
-    return { mesh: new THREE.Mesh(bolt, material), bolt };
+    const line = new THREE.Line(new THREE.BufferGeometry(), material);
+    const seed = Math.random() * Math.PI * 2;
+    const pointCount = 10;
+
+    const rebuildGeometry = (elapsedSeconds: number) => {
+      const direction = destOffset.clone().sub(sourceOffset);
+      const distance = Math.max(direction.length(), 1);
+      const forward = direction.normalize();
+      const reference =
+        Math.abs(forward.y) > 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+      const right = new THREE.Vector3().crossVectors(forward, reference).normalize();
+      const up = new THREE.Vector3().crossVectors(forward, right).normalize();
+      const amplitude = Math.max(0.18 * Coords.ISO_WORLD_SCALE, distance * 0.02);
+      const points: THREE.Vector3[] = [];
+
+      for (let i = 0; i < pointCount; i++) {
+        const t = pointCount === 1 ? 0 : i / (pointCount - 1);
+        const point = sourceOffset.clone().lerp(destOffset, t);
+        if (i !== 0 && i !== pointCount - 1) {
+          const envelope = Math.sin(t * Math.PI);
+          const phase = elapsedSeconds * 18 + seed + t * Math.PI * 4;
+          point.addScaledVector(right, Math.sin(phase) * amplitude * envelope);
+          point.addScaledVector(up, Math.cos(phase * 1.31) * amplitude * envelope * 0.6);
+        }
+        points.push(point);
+      }
+
+      line.geometry.dispose();
+      line.geometry = new THREE.BufferGeometry().setFromPoints(points);
+    };
+
+    const bolt: TeslaBoltRuntime = {
+      line,
+      material,
+      seed,
+      update: rebuildGeometry,
+      dispose: () => {
+        line.geometry.dispose();
+        material.dispose();
+      },
+    };
+
+    bolt.update(0);
+    return { mesh: line, bolt };
   }
 
   isFinished(): boolean {
@@ -106,9 +147,6 @@ export class TeslaFx {
   }
 
   dispose(): void {
-    this.boltMeshes.forEach(mesh => {
-      mesh.geometry.dispose();
-      mesh.material.dispose();
-    });
+    this.bolts.forEach((bolt) => bolt.dispose());
   }
 }

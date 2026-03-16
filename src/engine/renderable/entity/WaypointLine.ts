@@ -254,7 +254,12 @@ export class WaypointLine {
     [this.fgLineMesh, this.bgLineMesh].forEach((mesh) => {
       if (mesh) {
         mesh.geometry.dispose();
-        mesh.material.dispose();
+        const material = mesh.material;
+        if (Array.isArray(material)) {
+          material.forEach((entry) => entry.dispose());
+        } else {
+          material.dispose();
+        }
       }
     });
     

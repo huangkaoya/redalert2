@@ -5,7 +5,7 @@ export class Target {
   private tileOccupation: any;
   private isOre: boolean;
   private bridge?: any;
-  private tile: any;
+  public tile: any;
   public obj?: any;
 
   constructor(obj: any, tile: any, tileOccupation: any) {

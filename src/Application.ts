@@ -90,6 +90,10 @@ class ViewportAdapter implements Viewport {
 // --- End Stubs/Mocks ---
 
 export class Application {
+  private async importOptionalDevModule<T = any>(path: string): Promise<T> {
+    return import(/* @vite-ignore */ path) as Promise<T>;
+  }
+
   // 一个帮助函数，用于格式化字符串并替换%s占位符
   private formatString(template: string, ...args: any[]): string {
     if (!args || args.length === 0) return template;
@@ -728,7 +732,7 @@ export class Application {
       }
       console.log('[Application] Initializing VxlTester');
       
-      const { VxlTester } = await import('./tools/VxlTester');
+      const { VxlTester } = await this.importOptionalDevModule('./tools/VxlTester');
       await VxlTester.main(Engine.vfs, this.runtimeVars);
       currentHandler = VxlTester;
     });
@@ -739,7 +743,7 @@ export class Application {
       }
       console.log('[Application] Initializing LobbyFormTester');
 
-      const { LobbyFormTester } = await import('./tools/LobbyFormTester');
+      const { LobbyFormTester } = await this.importOptionalDevModule('./tools/LobbyFormTester');
       await LobbyFormTester.main(this.rootEl!, this.strings);
       currentHandler = LobbyFormTester;
     });
@@ -750,7 +754,7 @@ export class Application {
       }
       console.log('[Application] Initializing SoundTester');
 
-      const { SoundTester } = await import('./tools/SoundTester');
+      const { SoundTester } = await this.importOptionalDevModule('./tools/SoundTester');
       await SoundTester.main(Engine.vfs, this.rootEl!);
       currentHandler = SoundTester;
     });
@@ -761,7 +765,7 @@ export class Application {
       }
       console.log('[Application] Initializing BuildingTester');
 
-      const { BuildingTester } = await import('./tools/BuildingTester');
+      const { BuildingTester } = await this.importOptionalDevModule('./tools/BuildingTester');
       await BuildingTester.main([]);
       currentHandler = BuildingTester;
     });
@@ -772,7 +776,7 @@ export class Application {
       }
       console.log('[Application] Initializing InfantryTester');
 
-      const { InfantryTester } = await import('./tools/InfantryTester');
+      const { InfantryTester } = await this.importOptionalDevModule('./tools/InfantryTester');
       await InfantryTester.main(this.runtimeVars);
       currentHandler = InfantryTester;
     });
@@ -783,7 +787,7 @@ export class Application {
       }
       console.log('[Application] Initializing AircraftTester');
 
-      const { AircraftTester } = await import('./tools/AircraftTester');
+      const { AircraftTester } = await this.importOptionalDevModule('./tools/AircraftTester');
       await AircraftTester.main(this.runtimeVars);
       currentHandler = AircraftTester;
     });
@@ -794,7 +798,7 @@ export class Application {
       }
       console.log('[Application] Initializing VehicleTester');
 
-      const { VehicleTester } = await import('./tools/VehicleTester');
+      const { VehicleTester } = await this.importOptionalDevModule('./tools/VehicleTester');
       await VehicleTester.main(this.runtimeVars);
       currentHandler = VehicleTester;
     });
@@ -809,7 +813,7 @@ export class Application {
       const { MapFile } = await import('./data/MapFile');
       const gameMap = new MapFile(Engine.vfs.openFile("mp03t4.map"));
       
-      const { ShpTester } = await import('./tools/ShpTester');
+      const { ShpTester } = await this.importOptionalDevModule('./tools/ShpTester');
       await ShpTester.main(Engine.vfs, gameMap, this.rootEl!, this.strings);
       currentHandler = ShpTester;
     });
@@ -823,7 +827,7 @@ export class Application {
       const { MapFile } = await import('./data/MapFile');
       const gameMap = new MapFile(Engine.vfs.openFile("mp03t4.map"));
 
-      const { WorldSceneTester } = await import('./tools/WorldSceneTester');
+      const { WorldSceneTester } = await this.importOptionalDevModule('./tools/WorldSceneTester');
       await WorldSceneTester.main(Engine.vfs, gameMap, this.rootEl!, this.strings);
       currentHandler = WorldSceneTester;
     });
@@ -837,7 +841,7 @@ export class Application {
       const { MapFile } = await import('./data/MapFile');
       const gameMap = new MapFile(Engine.vfs.openFile("mp03t4.map"));
 
-      const { UnitMovementTester } = await import('./tools/UnitMovementTester');
+      const { UnitMovementTester } = await this.importOptionalDevModule('./tools/UnitMovementTester');
       await UnitMovementTester.main(Engine.vfs, gameMap, this.rootEl!, this.strings);
       currentHandler = UnitMovementTester;
     });

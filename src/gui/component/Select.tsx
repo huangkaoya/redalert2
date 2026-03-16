@@ -9,7 +9,7 @@ interface SelectProps {
   className?: string;
   onSelect?: (value: any) => void;
   labelStyle?: (value: any) => React.CSSProperties;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export const Select: React.FC<SelectProps> = ({
@@ -37,7 +37,8 @@ export const Select: React.FC<SelectProps> = ({
     if (isOpen) {
       setHoverValue(value);
       const handleClickOutside = (e: MouseEvent) => {
-        if (!contains(containerRef.current, e.target as Node)) {
+        const target = e.target instanceof Element ? e.target : null;
+        if (containerRef.current && !contains(containerRef.current, target)) {
           setIsOpen(false);
         }
       };
@@ -68,11 +69,12 @@ export const Select: React.FC<SelectProps> = ({
           <div className="select-layer">
             {React.Children.map(children, (child) => {
               if (!React.isValidElement(child)) return null;
-              const childValue = child.props.value;
-              const isDisabled = child.props.disabled;
+              const optionChild = child as React.ReactElement<any>;
+              const childValue = optionChild.props.value;
+              const isDisabled = optionChild.props.disabled;
               return (
                 <div onMouseEnter={() => !isDisabled && setHoverValue(childValue)}>
-                  {React.cloneElement(child, {
+                  {React.cloneElement(optionChild, {
                     selected: childValue === hoverValue,
                     labelStyle: labelStyle?.(childValue),
                     onClick: () => {

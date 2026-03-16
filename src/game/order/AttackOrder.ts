@@ -18,15 +18,15 @@ interface AttackOrderOptions {
 }
 
 export class AttackOrder extends Order {
-  private game: any;
-  private isC4: boolean = false;
-  private forceAttack: boolean;
-  private ivanBombAllowed: boolean;
-  private targetOptional: boolean = false;
-  private feedbackType: OrderFeedbackType;
-  private rangeHelper: RangeHelper;
-  private losHelper: LosHelper;
-  private terminal?: boolean;
+  protected game: any;
+  protected isC4: boolean = false;
+  protected forceAttack: boolean;
+  protected ivanBombAllowed: boolean;
+  public targetOptional: boolean = false;
+  public feedbackType: OrderFeedbackType = OrderFeedbackType.None;
+  protected rangeHelper: RangeHelper;
+  protected losHelper: LosHelper;
+  public terminal: boolean = false;
 
   constructor(game: any, options: AttackOrderOptions = {}) {
     const { forceAttack = false, noIvanBomb = false } = options;
@@ -36,7 +36,6 @@ export class AttackOrder extends Order {
     this.game = game;
     this.forceAttack = forceAttack;
     this.ivanBombAllowed = !noIvanBomb || forceAttack;
-    this.feedbackType = OrderFeedbackType.None;
     this.rangeHelper = new RangeHelper(this.game.map.tileOccupation);
     this.losHelper = new LosHelper(this.game.map.tiles, game.map.tileOccupation);
   }

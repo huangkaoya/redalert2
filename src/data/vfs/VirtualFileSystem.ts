@@ -10,6 +10,12 @@ import type { VirtualFile } from "./VirtualFile";
 import AppLogger from "../../util/Logger"; // Import the default export
 import type { RealFileSystem } from "./RealFileSystem"; // Assuming RFS interface/type
 
+interface VfsLogger {
+  info(message: string, ...args: unknown[]): void;
+  warn(message: string, ...args: unknown[]): void;
+  error(message: string, ...args: unknown[]): void;
+}
+
 // Define a generic interface for archive types for better type safety
 interface Archive {
   containsFile(filename: string): boolean;
@@ -19,11 +25,11 @@ interface Archive {
 
 export class VirtualFileSystem {
   private rfs: RealFileSystem;
-  private logger: typeof AppLogger;
+  private logger: VfsLogger;
   private allArchives: Map<string, Archive>;
   private archivesByPriority: Archive[];
 
-  constructor(rfs: RealFileSystem, logger: typeof AppLogger) {
+  constructor(rfs: RealFileSystem, logger: VfsLogger) {
     this.rfs = rfs;
     this.logger = logger;
     this.allArchives = new Map<string, Archive>();

@@ -30,8 +30,8 @@ export class GameMenuController extends Controller {
     return super.goToScreenBlocking(screenType, params);
   }
 
-  goToScreen(screenType: any, params?: any): Promise<any> {
-    return super.goToScreen(screenType, params);
+  goToScreen(screenType: any, params?: any): void {
+    super.goToScreen(screenType, params);
   }
 
   async pushScreen(screenType: any, params?: any): Promise<void> {
@@ -81,7 +81,6 @@ export class GameMenuController extends Controller {
   }
 
   rerenderCurrentScreen(): void {
-    super.rerenderCurrentScreen();
     if (this.sidebarButtons) {
       this.hud.showSidebarMenu(this.sidebarButtons);
     }

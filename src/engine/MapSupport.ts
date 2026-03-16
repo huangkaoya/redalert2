@@ -1,44 +1,10 @@
+import { MapFile } from "@/data/MapFile";
+import { Strings } from "@/data/Strings";
 import { Rules } from "@/game/rules/Rules";
 import { Engine } from "@/engine/Engine";
 import { TileSets } from "@/game/theater/TileSets";
 import { TheaterType } from "@/engine/TheaterType";
 import { ObjectType } from "@/engine/type/ObjectType";
-
-// Type definitions for the map and translator objects
-interface Map {
-  iniFormat: number;
-  startingLocations: any[];
-  theaterType: TheaterType;
-  maxTileNum: number;
-  maxOverlayId: string;
-}
-
-interface Translator {
-  get(key: string, ...args: any[]): string;
-}
-
-interface WeaponData {
-  projectile: string;
-  warhead: string;
-}
-
-interface General {
-  baseUnit: string[];
-  harvesterUnit: string[];
-  defaultMirageDisguises: string[];
-  engineer: string;
-  crew: {
-    alliedCrew: string;
-    sovietCrew: string;
-  };
-  alliedDisguise: string;
-  sovietDisguise: string;
-}
-
-interface CrateRules {
-  crateImg: string;
-  waterCrateImg: string;
-}
 
 interface BuildingRule {
   undeploysInto?: string;
@@ -50,7 +16,7 @@ interface TechnoRule {
 }
 
 export class MapSupport {
-  static check(map: Map, translator: Translator): string | undefined {
+  static check(map: MapFile, translator: Strings): string | undefined {
     // Check if map format is supported
     if (map.iniFormat < 4) {
       return translator.get("TS:MapUnsupportedGame");
@@ -96,7 +62,7 @@ export class MapSupport {
         return translator.get("TS:MapUnsupportedWeapon", weaponType);
       }
 
-      const weaponData: WeaponData = rules.getWeapon(weaponType);
+      const weaponData = rules.getWeapon(weaponType);
       const projectile = weaponData.projectile;
       const warhead = weaponData.warhead;
 
@@ -117,7 +83,7 @@ export class MapSupport {
     }
 
     // Check base and harvester units
-    const general: General = rules.general;
+    const general = rules.general;
     for (const unit of [...general.baseUnit, ...general.harvesterUnit]) {
       if (unit && !rules.hasObject(unit, ObjectType.Vehicle)) {
         return translator.get("TS:MapUnsupportedTechno", unit);
@@ -147,7 +113,7 @@ export class MapSupport {
     }
 
     // Check crate images
-    const crateRules: CrateRules = rules.crateRules;
+    const crateRules = rules.crateRules;
     for (const crateImg of [crateRules.crateImg, crateRules.waterCrateImg]) {
       if (crateImg && !rules.overlayRules.has(crateImg)) {
         return translator.get("TS:MapUnsupportedOverlay", crateImg);

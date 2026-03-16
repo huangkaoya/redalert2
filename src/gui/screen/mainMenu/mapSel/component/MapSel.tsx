@@ -63,7 +63,7 @@ export const MapSel: React.FC<MapSelProps> = ({
   onSelectMap,
   onSelectSort,
 }) => {
-  const selectedRef = useRef<HTMLElement>(null);
+  const selectedRef = useRef<HTMLDivElement>(null);
   const [filteredMaps, setFilteredMaps] = useState<MapData[]>(maps);
   const [searchFilter, setSearchFilter] = useState<string>("");
   const [sortType, setSortType] = useState<SortType>(initialSortType);

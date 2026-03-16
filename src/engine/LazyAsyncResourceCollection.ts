@@ -1,18 +1,17 @@
-import type { FileSystemDirectoryHandleBrowser } from '../data/vfs/RealFileSystem'; // Assuming this type for rfsDir
 import type { VirtualFile } from '../data/vfs/VirtualFile'; // Type for what rfsDir.getRawFile returns
 
 export class LazyAsyncResourceCollection<T> {
-  private resourceFactory: (file: VirtualFile) => Promise<T> | T;
+  private resourceFactory: (file: VirtualFile | File) => Promise<T> | T;
   private cacheByDefault: boolean;
   private resources: Map<string, T> = new Map();
-  private rfsDir?: FileSystemDirectoryHandleBrowser; // Real File System directory handle
+  private rfsDir?: FileSystemDirectoryHandle; // Real File System directory handle
 
-  constructor(resourceFactory: (file: VirtualFile) => Promise<T> | T, cacheByDefault: boolean = true) {
+  constructor(resourceFactory: (file: VirtualFile | File) => Promise<T> | T, cacheByDefault: boolean = true) {
     this.resourceFactory = resourceFactory;
     this.cacheByDefault = cacheByDefault;
   }
 
-  setDir(rfsDir: FileSystemDirectoryHandleBrowser | undefined): void {
+  setDir(rfsDir: FileSystemDirectoryHandle | undefined): void {
     this.rfsDir = rfsDir;
   }
 
@@ -48,7 +47,7 @@ export class LazyAsyncResourceCollection<T> {
         // This part needs careful review based on what `resourceFactory` actually expects for `Mp3File` and `WavFile` (for taunts).
         // The `Engine.ts` for taunts did: `new WavFile(new Uint8Array(await e.arrayBuffer()))` where e was `fileHandle` from rfsDir.
         // So the factory for taunts expects something with an `arrayBuffer()` method.
-        resource = await this.resourceFactory(file as any); // Cast to any for now as File is not VirtualFile
+        resource = await this.resourceFactory(file);
         if (this.cacheByDefault) {
           this.resources.set(key, resource!);
         }

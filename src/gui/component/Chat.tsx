@@ -13,17 +13,35 @@ interface ChatProps {
   };
   strings: any;
   chatHistory?: {
-    lastComposeTarget: {
+    lastComposeTarget?: {
       value: {
         type: ChatRecipientType;
         name: string;
+      };
+      onChange?: {
+        subscribe: (callback: (value: any) => void) => void;
+        unsubscribe: (callback: (value: any) => void) => void;
+      };
+    };
+    lastWhisperFrom?: {
+      value: string;
+      onChange?: {
+        subscribe: (callback: () => void) => void;
+        unsubscribe: (callback: () => void) => void;
+      };
+    };
+    lastWhisperTo?: {
+      value: string;
+      onChange?: {
+        subscribe: (callback: () => void) => void;
+        unsubscribe: (callback: () => void) => void;
       };
     };
   };
   channels?: any[];
   localUsername?: string;
   userColors?: any;
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: any) => void;
   onCancelMessage: () => void;
 }
 
@@ -35,9 +53,9 @@ const messageTypeMap = new Map<ChatRecipientType, string>()
 export class Chat extends Component<ChatProps> {
   private prevMessageCount = 0;
   private prevOldestMessage: any;
-  private prevScrollHeight: number;
-  private messageList: HTMLDivElement;
-  private textBox: ChatInput;
+  private prevScrollHeight = 0;
+  private messageList?: HTMLDivElement | null;
+  private textBox?: { send: () => void } | null;
 
   render() {
     const { messages, tooltips, strings, chatHistory, channels } = this.props;
@@ -46,14 +64,14 @@ export class Chat extends Component<ChatProps> {
       <div className="chat-wrapper">
         <div 
           className="messages"
-          ref={el => this.messageList = el}
+          ref={el => (this.messageList = el)}
           data-r-tooltip={tooltips?.output}
         >
           {messages.map((message, index) => this.renderMessage(message, index))}
         </div>
         <div className="new-message-wrapper">
           <ChatInput
-            ref={el => this.textBox = el}
+            ref={el => (this.textBox = el)}
             chatHistory={chatHistory}
             channels={channels}
             className="new-message"
@@ -65,7 +83,7 @@ export class Chat extends Component<ChatProps> {
           <button
             className="icon-button send-message-button"
             data-r-tooltip={tooltips?.button}
-            onClick={() => this.textBox.send()}
+            onClick={() => this.textBox?.send()}
           />
         </div>
       </div>
@@ -80,6 +98,10 @@ export class Chat extends Component<ChatProps> {
 
     this.prevMessageCount = this.props.messages.length;
     this.prevOldestMessage = this.props.messages[0];
+
+    if (!this.messageList) {
+      return;
+    }
 
     const scrollHeight = this.messageList.scrollHeight;
     const clientHeight = this.messageList.clientHeight;
@@ -101,13 +123,14 @@ export class Chat extends Component<ChatProps> {
     );
 
     const classes = ["message"];
-    let prefix: string | undefined;
+    let prefix: React.ReactNode;
 
     if (message.from !== undefined) {
       prefix = formatter.formatPrefixHtml(message, (name: string) => {
         if (this.props.chatHistory && 
             message.to && 
-            message.to.type !== ChatRecipientType.Page) {
+            message.to.type !== ChatRecipientType.Page &&
+            this.props.chatHistory.lastComposeTarget) {
           this.props.chatHistory.lastComposeTarget.value = {
             type: ChatRecipientType.Whisper,
             name
@@ -115,9 +138,12 @@ export class Chat extends Component<ChatProps> {
         }
       });
 
-      classes.push(messageTypeMap.get(message.to.type));
+      const messageTypeClass = messageTypeMap.get(message.to.type);
+      if (messageTypeClass) {
+        classes.push(messageTypeClass);
+      }
       if (message.operator) {
-        classes.push({ "operator-message": true });
+        classes.push("operator-message");
       }
     }
 

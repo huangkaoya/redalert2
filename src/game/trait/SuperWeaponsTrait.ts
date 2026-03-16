@@ -1,5 +1,5 @@
 import { NotifyWarpChange } from "@/game/trait/interface/NotifyWarpChange";
-import { SuperWeapon } from "@/game/SuperWeapon";
+import { SuperWeapon, SuperWeaponStatus } from "@/game/SuperWeapon";
 import { SuperWeaponEffect, EffectStatus } from "@/game/superweapon/SuperWeaponEffect";
 import { NotifyPower } from "@/game/trait/interface/NotifyPower";
 import { NotifyTick } from "@/game/trait/interface/NotifyTick";
@@ -104,7 +104,7 @@ export class SuperWeaponsTrait {
       ?.getAll()
       .find((e: any) => e.rules.type === t);
 
-    if (a && a.status === SuperWeapon.SuperWeaponStatus.Ready) {
+    if (a && a.status === SuperWeaponStatus.Ready) {
       if (a.oneTimeOnly) {
         e.superWeaponsTrait.remove(a.name);
         for (const n of e.buildings) {

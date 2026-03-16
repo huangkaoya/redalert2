@@ -21,7 +21,7 @@ export class ShpBuilder {
   private forceTransparent!: boolean;
   private offset!: { x: number; y: number };
   private frameOffset!: number;
-  private flat!: boolean;
+  public flat!: boolean;
   private uiAnchorCompensation!: boolean;
   private shpFile: any;
   private palette: any;

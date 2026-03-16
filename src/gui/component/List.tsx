@@ -2,7 +2,7 @@ import React, { ReactNode, Ref } from "react";
 import classNames from "classnames";
 
 interface ListProps {
-  children: ReactNode;
+  children?: ReactNode;
   className?: string;
   title?: ReactNode;
   innerRef?: Ref<HTMLDivElement>;
@@ -29,7 +29,7 @@ export const List: React.FC<ListProps> = ({
 );
 
 interface ListItemProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: ReactNode;
+  children?: ReactNode;
   selected?: boolean;
   disabled?: boolean;
   tooltip?: string;
@@ -57,7 +57,7 @@ export const ListItem: React.FC<ListItemProps> = ({
 );
 
 interface ListHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: ReactNode;
+  children?: ReactNode;
   tooltip?: string;
   className?: string;
   innerRef?: Ref<HTMLDivElement>;

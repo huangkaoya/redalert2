@@ -19,11 +19,6 @@ interface MaterialCacheEntry {
   usages: number;
 }
 
-interface PaletteWithHash {
-  hash: string;
-  // Add other palette properties as needed
-}
-
 export class DebugRenderable {
   private static checkerboardTex?: Texture;
   private static geometryCache = new Map<string, BufferGeometry>();
@@ -31,9 +26,9 @@ export class DebugRenderable {
 
   private foundation: Foundation;
   private height: number;
-  private palette: PaletteWithHash;
+  private palette: Palette;
   private options?: DebugRenderableOptions;
-  private batchPalettes: PaletteWithHash[] = [];
+  private batchPalettes: Palette[] = [];
   private useMeshBatching: boolean = false;
   private opacity: number = 1;
   private mesh?: Mesh | BatchedMesh;
@@ -60,7 +55,7 @@ export class DebugRenderable {
   constructor(
     foundation: Foundation,
     height: number,
-    palette: PaletteWithHash,
+    palette: Palette,
     options?: DebugRenderableOptions
   ) {
     this.foundation = foundation;
@@ -120,7 +115,7 @@ export class DebugRenderable {
     this.useMeshBatching = useBatching;
   }
 
-  private getBatchPaletteIndex(palette: PaletteWithHash): number {
+  private getBatchPaletteIndex(palette: Palette): number {
     const index = this.batchPalettes.findIndex((p) => p.hash === palette.hash);
     if (index === -1) {
       throw new Error(
@@ -130,7 +125,7 @@ export class DebugRenderable {
     return index;
   }
 
-  setPalette(palette: PaletteWithHash): void {
+  setPalette(palette: Palette): void {
     this.palette = palette;
     
     if (this.mesh) {
@@ -145,7 +140,7 @@ export class DebugRenderable {
     }
   }
 
-  setBatchPalettes(palettes: PaletteWithHash[]): void {
+  setBatchPalettes(palettes: Palette[]): void {
     if (!this.useMeshBatching) {
       throw new Error("Can't use multiple palettes when not batching");
     }

@@ -26,7 +26,7 @@ interface GameMenuController {
 
 export class QuitConfirmScreen extends GameMenuScreen {
   private strings: Strings;
-  public controller?: GameMenuController;
+  declare controller?: GameMenuController;
 
   constructor(strings: Strings) {
     super();

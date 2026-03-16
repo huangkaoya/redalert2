@@ -2,14 +2,14 @@ import { PointerType } from "@/engine/type/PointerType";
 import { OrderFeedbackType } from "./OrderFeedbackType";
 
 export abstract class Order {
-  protected orderType: any;
-  protected targetOptional: boolean = true;
-  protected minimapAllowed: boolean = true;
-  protected singleSelectionRequired: boolean = false;
-  protected terminal: boolean = false;
-  protected feedbackType: OrderFeedbackType = OrderFeedbackType.None;
-  protected sourceObject: any;
-  protected target: any;
+  public orderType: any;
+  public targetOptional: boolean = true;
+  public minimapAllowed: boolean = true;
+  public singleSelectionRequired: boolean = false;
+  public terminal: boolean = false;
+  public feedbackType: OrderFeedbackType = OrderFeedbackType.None;
+  public sourceObject: any;
+  public target: any;
 
   constructor(orderType: any) {
     this.orderType = orderType;

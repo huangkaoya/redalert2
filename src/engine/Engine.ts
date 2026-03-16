@@ -20,8 +20,27 @@ import * as stringUtils from '../util/string';
 import { MapList } from './MapList';
 import { HvaFile } from '../data/HvaFile';
 import { MixinRulesType } from '../game/ini/MixinRulesType';
-import type { AppLogger as AppLoggerType } from '../util/Logger'; // Changed to lowercase, aliased for clarity
-import type { DataStream } from '../data/DataStream'; // For VFS openFile result stream
+import { AppLogger } from '../util/Logger';
+
+type AppLoggerType = typeof AppLogger;
+
+interface TheaterSettings {
+  type: TheaterType;
+  theaterIni: string;
+  mixes: string[];
+  extension: string;
+  newTheaterChar: string;
+  isoPaletteName: string;
+  unitPaletteName: string;
+  overlayPaletteName: string;
+  libPaletteName: string;
+}
+
+interface VfsLogger {
+  info(message: string, ...args: unknown[]): void;
+  warn(message: string, ...args: unknown[]): void;
+  error(message: string, ...args: unknown[]): void;
+}
 
 export enum EngineType {
   AutoDetect = 0,
@@ -47,20 +66,25 @@ export class Engine {
 
   public static supportedMapTypes = ["mpr", "map"];
 
-  public static images = new LazyResourceCollection((data: DataStream) => new ShpFile(data));
-  public static voxels = new LazyResourceCollection((data: DataStream) => new VxlFile(data));
-  public static voxelAnims = new LazyResourceCollection((data: DataStream) => new HvaFile(data));
-  public static sounds = new LazyResourceCollection((data: DataStream) => new WavFile(data));
+  public static images = new LazyResourceCollection((file) => new ShpFile(file));
+  public static voxels = new LazyResourceCollection((file) => new VxlFile(file));
+  public static voxelAnims = new LazyResourceCollection((file) => new HvaFile(file));
+  public static sounds = new LazyResourceCollection((file) => new WavFile(file));
   public static themes = new LazyAsyncResourceCollection(
-    (data: DataStream) => new Mp3File(data),
+    (file) => new Mp3File(file),
     false,
   );
   public static taunts = new LazyAsyncResourceCollection(
-    async (fileHandle: any) => new WavFile(new Uint8Array(await fileHandle.arrayBuffer()) as unknown as DataStream) // Needs review for DataStream conversion
+    async (file) =>
+      new WavFile(
+        file instanceof File
+          ? new Uint8Array(await file.arrayBuffer())
+          : file.getBytes(),
+      )
   );
-  public static iniFiles = new LazyResourceCollection((data: DataStream) => new IniFile(data));
-  public static tileData = new LazyResourceCollection((data: DataStream) => new TmpFile(data));
-  public static palettes = new LazyResourceCollection((data: DataStream) => new Palette(data));
+  public static iniFiles = new LazyResourceCollection((file) => new IniFile(file));
+  public static tileData = new LazyResourceCollection((file) => new TmpFile(file));
+  public static palettes = new LazyResourceCollection((file) => new Palette(file));
 
   public static theaters = new Map<TheaterType, Theater>();
 
@@ -241,7 +265,7 @@ export class Engine {
     return rfsInstance;
   }
 
-  static async initVfs(rfsInstance: RealFileSystem | undefined, logger: AppLoggerType): Promise<VirtualFileSystem> {
+  static async initVfs(rfsInstance: RealFileSystem | undefined, logger: VfsLogger): Promise<VirtualFileSystem> {
     this.vfs = new VirtualFileSystem(rfsInstance, logger);
     this.iniFiles.setVfs(this.vfs);
     this.palettes.setVfs(this.vfs);
@@ -270,7 +294,8 @@ export class Engine {
     } else {
       console.warn('[Engine] Music directory not found in RFS');
     }
-    this.taunts.setDir(await this.rfs?.findDirectory(this.rfsSettings.tauntsDir));
+    const tauntsDir = await this.rfs?.findDirectory(this.rfsSettings.tauntsDir);
+    this.taunts.setDir(tauntsDir?.getNativeHandle());
     return this.vfs;
   }
 
@@ -417,10 +442,7 @@ export class Engine {
       if (!this.vfs.fileExists(fileName)) {
         throw new Error(`File ${fileName} not found for hashing`);
       }
-      const fileStream = this.vfs.openFile(fileName).stream as DataStream; // Assuming stream property exists and is DataStream
-      // Original used: new Uint8Array(o.buffer, o.byteOffset, o.byteLength)
-      // Assuming DataStream has a getBytes() or similar method for Uint8Array
-      crc.append(fileStream.getBytes()); // This needs DataStream to have getBytes()
+      crc.append(this.vfs.openFile(fileName).getBytes());
     }
 
     crc.append(stringUtils.binaryStringToUint8Array(this.getVersion()));
@@ -581,8 +603,13 @@ export class Engine {
     const currentMod = this.getActiveMod();
     if (currentMod) {
       const modDirRoot = await this.getModDir();
-      const modSpecificDir = await modDirRoot?.getDirectory(currentMod); // Assuming getDirectory on FileSystemDirectoryHandle
-      return await modSpecificDir?.getOrCreateDirectory(this.rfsSettings.replayDir); // Assuming getOrCreateDirectory on FileSystemDirectoryHandle
+      const modSpecificDir = await modDirRoot?.getDirectoryHandle(currentMod, {
+        create: true,
+      });
+      return await modSpecificDir?.getDirectoryHandle(
+        this.rfsSettings.replayDir,
+        { create: true },
+      );
     }
     return await this.getOrCreateDir(this.rfsSettings.replayDir);
   }

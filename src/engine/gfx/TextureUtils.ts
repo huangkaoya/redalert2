@@ -1,13 +1,14 @@
 import { RgbaBitmap } from "../../data/Bitmap";
+import { Palette } from "../../data/Palette";
 import { fnv32a } from "../../util/math";
 import { CanvasUtils } from "./CanvasUtils";
 import { PalDrawable } from "./drawable/PalDrawable";
 import * as THREE from 'three';
 
 class TextureUtilsClass {
-  static cache = new Map<string, THREE.Texture>();
+  static cache = new Map<number, THREE.Texture>();
 
-  static textureFromPalette(palette: { hash: string }): THREE.Texture {
+  static textureFromPalette(palette: Palette): THREE.Texture {
     const hash = palette.hash;
     let texture = TextureUtilsClass.cache.get(hash);
     
@@ -21,7 +22,7 @@ class TextureUtilsClass {
     return texture;
   }
 
-  static textureFromPalettes(palettes: Array<{ hash: string }>): THREE.Texture {
+  static textureFromPalettes(palettes: Palette[]): THREE.Texture {
     if (!palettes.length) {
       throw new Error("At least one palette is required");
     }

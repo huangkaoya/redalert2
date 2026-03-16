@@ -6,16 +6,19 @@ export class SimpleRunner {
   constructor() {}
 
   tick(time: number): void {
-    let animation = this.animation;
+    const animation = this.animation;
     if (animation) {
       switch (animation.getState()) {
         case AnimationState.STOPPED:
           return;
         case AnimationState.NOT_STARTED:
           animation.start(time);
+          animation.update(time);
+          return;
         case AnimationState.RUNNING:
         default:
           animation.update(time);
+          return;
       }
     }
   }

@@ -16,11 +16,11 @@ const whiteColor = new THREE.Color(0xffffff);
 
 export class DetectionLineFx {
   private camera: Camera;
-  private sourcePos: THREE.Vector3;
-  private targetPos: THREE.Vector3;
-  private color: THREE.Color;
+  public sourcePos: THREE.Vector3;
+  public targetPos: THREE.Vector3;
+  public color: THREE.Color;
   private renderOrder: number;
-  private needsUpdate: boolean;
+  public needsUpdate: boolean;
   private cameraHash: string;
   private computedColor: THREE.Color;
   private lineHeadMaterial: THREE.MeshBasicMaterial;

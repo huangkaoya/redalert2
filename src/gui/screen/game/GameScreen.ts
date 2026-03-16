@@ -54,6 +54,7 @@ import { ChatMessageFormat } from '@/gui/chat/ChatMessageFormat';
 import { ActionsApi } from '@/game/api/ActionsApi';
 import { OrderType } from '@/game/order/OrderType';
 import { RadialTileFinder } from '@/game/map/tileFinder/RadialTileFinder';
+import { Coords } from '@/game/Coords';
 import * as THREE from 'three';
 
 /**
@@ -882,27 +883,38 @@ export class GameScreen extends RootScreen {
       }
       return unit;
     };
-    const getOwnedUnitClickPoint = (unit: any) => {
-      if (!renderableManager) {
-        throw new Error('Renderable manager is not available');
+    const resolveOwnedBuildingById = (buildingId: number) => {
+      const building = localPlayer.getOwnedObjectById(buildingId);
+      if (!building) {
+        throw new Error(`No owned building found with id "${buildingId}"`);
       }
+      if (!building.isBuilding?.()) {
+        throw new Error(`Owned object "${building.name}"#${building.id} is not a building`);
+      }
+      if (!building.isSpawned) {
+        throw new Error(`Owned building "${building.name}"#${building.id} is not spawned`);
+      }
+      return building;
+    };
+    const resolveOwnedBuildingByName = (buildingName: string) => {
+      const building = localPlayer
+        .getOwnedObjects()
+        .find((ownedObject: any) => ownedObject.name === buildingName && ownedObject.isBuilding?.() && ownedObject.isSpawned);
+      if (!building) {
+        throw new Error(`No spawned owned building found with name "${buildingName}"`);
+      }
+      return building;
+    };
+    const projectWorldPointToCanvasPoint = (worldPoint: THREE.Vector3) => {
       if (!worldScene?.camera || !worldScene?.viewport) {
         throw new Error('World scene camera or viewport is not available');
       }
 
-      const renderable = renderableManager.getRenderableByGameObject(unit);
-      if (!renderable) {
-        throw new Error(`Renderable not found for unit "${unit.name}"#${unit.id}`);
-      }
-
-      const renderablePosition =
-        renderable.getPosition?.()?.clone?.() ?? unit.position.worldPosition.clone();
-      const projected = renderablePosition.project(worldScene.camera);
+      const projected = worldPoint.clone().project(worldScene.camera);
       const viewportPoint = {
         x: worldScene.viewport.x + ((projected.x + 1) / 2) * worldScene.viewport.width,
         y: worldScene.viewport.y + ((1 - projected.y) / 2) * worldScene.viewport.height,
       };
-
       const resolvedViewportPoint = {
         x: Math.max(
           worldScene.viewport.x,
@@ -913,16 +925,76 @@ export class GameScreen extends RootScreen {
           Math.min(worldScene.viewport.y + worldScene.viewport.height - 1, viewportPoint.y),
         ),
       };
-
       const canvas = this.renderer.getCanvas?.() ?? document.querySelector('canvas');
       const rect = canvas?.getBoundingClientRect?.() ?? { left: 0, top: 0 };
 
       return {
-        unitId: unit.id,
         viewportX: resolvedViewportPoint.x,
         viewportY: resolvedViewportPoint.y,
         x: rect.left + resolvedViewportPoint.x,
         y: rect.top + resolvedViewportPoint.y,
+      };
+    };
+    const getOwnedUnitClickPoint = (unit: any) => {
+      if (!renderableManager) {
+        throw new Error('Renderable manager is not available');
+      }
+
+      const renderable = renderableManager.getRenderableByGameObject(unit);
+      if (!renderable) {
+        throw new Error(`Renderable not found for unit "${unit.name}"#${unit.id}`);
+      }
+
+      const renderablePosition =
+        renderable.getPosition?.()?.clone?.() ?? unit.position.worldPosition.clone();
+
+      return {
+        unitId: unit.id,
+        ...projectWorldPointToCanvasPoint(renderablePosition),
+      };
+    };
+    const getOwnedBuildingClickTargets = (building: any) => {
+      const foundation = building.getFoundation?.() ?? { width: 1, height: 1 };
+      const baseTile = building.tile;
+      if (!baseTile) {
+        throw new Error(`Building "${building.name}"#${building.id} does not have a tile`);
+      }
+
+      const candidatePoints = [];
+      const seen = new Set<string>();
+      const pushTilePoint = (tileX: number, tileY: number, label: string) => {
+        const key = `${tileX}:${tileY}`;
+        if (seen.has(key)) {
+          return;
+        }
+        seen.add(key);
+        const worldPoint = Coords.tile3dToWorld(tileX + 0.5, tileY + 0.5, baseTile.z);
+        candidatePoints.push({
+          label,
+          tile: { rx: tileX, ry: tileY, z: baseTile.z },
+          ...projectWorldPointToCanvasPoint(new THREE.Vector3(worldPoint.x, worldPoint.y, worldPoint.z)),
+        });
+      };
+
+      pushTilePoint(
+        baseTile.rx + Math.floor((foundation.width - 1) / 2),
+        baseTile.ry + Math.floor((foundation.height - 1) / 2),
+        'center',
+      );
+      pushTilePoint(baseTile.rx, baseTile.ry, 'topLeft');
+      pushTilePoint(baseTile.rx + foundation.width - 1, baseTile.ry, 'topRight');
+      pushTilePoint(baseTile.rx, baseTile.ry + foundation.height - 1, 'bottomLeft');
+      pushTilePoint(
+        baseTile.rx + foundation.width - 1,
+        baseTile.ry + foundation.height - 1,
+        'bottomRight',
+      );
+
+      return {
+        buildingId: building.id,
+        buildingName: building.name,
+        candidates: candidatePoints,
+        centerScreenPoint: candidatePoints[0],
       };
     };
     const resolveSidebarTechnoSlot = (technoName: string) => {
@@ -1149,6 +1221,10 @@ export class GameScreen extends RootScreen {
       getOwnedUnitClickPointByName: (unitName: string) => {
         return getOwnedUnitClickPoint(resolveOwnedUnitByName(unitName));
       },
+      getOwnedBuildingClickTargetsById: (buildingId: number) =>
+        getOwnedBuildingClickTargets(resolveOwnedBuildingById(buildingId)),
+      getOwnedBuildingClickTargetsByName: (buildingName: string) =>
+        getOwnedBuildingClickTargets(resolveOwnedBuildingByName(buildingName)),
       getSidebarTechnoClickPointByName: (technoName: string) =>
         getSidebarTechnoClickPointByName(technoName),
       getSidebarTechnoDebugStateByName: (technoName: string) =>
@@ -1174,6 +1250,18 @@ export class GameScreen extends RootScreen {
           OrderType.DeploySelected,
         );
         return selectedUnits.map((unit: any) => unit.id);
+      },
+      activateSellMode: () => {
+        const sellMode = (this.playerUi as any)?.sellMode;
+        if (!sellMode || !worldInteraction) {
+          throw new Error('Sell mode or world interaction is not available');
+        }
+        worldInteraction.setMode(sellMode);
+        return true;
+      },
+      isSellModeActive: () => {
+        const sellMode = (this.playerUi as any)?.sellMode;
+        return Boolean(sellMode && worldInteraction?.getMode?.() === sellMode);
       },
     };
 

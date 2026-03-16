@@ -1,6 +1,7 @@
 import { TextureUtils } from '@/engine/gfx/TextureUtils';
 import { VxlBuilder } from '@/engine/renderable/builder/VxlBuilder';
 import { PalettePhongMaterial } from '@/engine/gfx/material/PalettePhongMaterial';
+import { Palette } from '@/data/Palette';
 import * as THREE from 'three';
 
 // 定义相关类型接口
@@ -26,11 +27,6 @@ interface VxlGeometryPool {
   get(section: VxlSection): THREE.BufferGeometry;
 }
 
-interface Palette {
-  // 调色板的具体结构需要根据实际情况定义
-  [key: string]: any;
-}
-
 export class VxlNonBatchedBuilder extends VxlBuilder {
   private vxlFile: VxlFile;
   private hvaFile: HvaFile | null;
@@ -43,10 +39,10 @@ export class VxlNonBatchedBuilder extends VxlBuilder {
 
   constructor(
     vxlFile: VxlFile,
-    hvaFile: HvaFile | null,
     palette: Palette,
+    hvaFile: HvaFile | null,
     vxlGeometryPool: VxlGeometryPool,
-    parent?: any // 根据父类构造函数参数类型定义
+    parent: THREE.Camera
   ) {
     super(parent);
     this.vxlFile = vxlFile;

@@ -8,14 +8,14 @@ export enum SuperWeaponStatus {
 }
 
 export class SuperWeapon {
-  private name: string;
-  private rules: any;
-  private owner: any;
-  private oneTimeOnly: boolean;
-  private status: SuperWeaponStatus;
-  private isGift: boolean;
-  private rechargeTicks: number;
-  private chargeTicks: number;
+  public name: string;
+  public rules: any;
+  public owner: any;
+  public oneTimeOnly: boolean;
+  public status: SuperWeaponStatus;
+  public isGift: boolean;
+  public rechargeTicks: number;
+  public chargeTicks: number;
 
   constructor(name: string, rules: any, owner: any, oneTimeOnly: boolean = false) {
     this.name = name;

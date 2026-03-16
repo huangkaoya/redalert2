@@ -84,7 +84,7 @@ export class MindControlLinkFx {
     );
 
     const material = new THREE.LineBasicMaterial({
-      vertexColors: THREE.VertexColors,
+      vertexColors: true,
       transparent: true
     });
 
@@ -103,14 +103,14 @@ export class MindControlLinkFx {
     const white = new THREE.Color(0xFFFFFF);
     const colorAnimPos = 1.5 * animProgress;
     const distanceTiles = target.clone().sub(source).length() / Coords.LEPTONS_PER_TILE;
-    const numPoints = Math.floor(15 * distanceTiles);
+    const numPoints = Math.max(2, Math.floor(15 * distanceTiles) + 1);
 
     const positions = new Float32Array(3 * numPoints);
     const colors = new Float32Array(3 * numPoints);
     const tempVec = new THREE.Vector3();
 
-    for (let i = 0; i <= numPoints; i++) {
-      const t = i / numPoints;
+    for (let i = 0; i < numPoints; i++) {
+      const t = numPoints === 1 ? 0 : i / (numPoints - 1);
       tempVec.lerpVectors(source, target, t);
       tempVec.y += Coords.LEPTONS_PER_TILE / 4 + 
         heightTiles * Coords.LEPTONS_PER_TILE * Math.sin(t * Math.PI);
@@ -136,7 +136,7 @@ export class MindControlLinkFx {
   }
 
   removeAndDispose(): void {
-    this.container.remove(this);
+    this.container?.remove(this);
     this.dispose();
   }
 

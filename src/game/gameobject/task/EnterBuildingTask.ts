@@ -5,7 +5,7 @@ import { EnterObjectEvent } from "@/game/event/EnterObjectEvent";
 
 export class EnterBuildingTask extends Task {
   protected game: any;
-  protected target: any;
+  public target: any;
   private aborted: boolean = false;
   private movePerformed: boolean = false;
   public preventOpportunityFire: boolean = false;

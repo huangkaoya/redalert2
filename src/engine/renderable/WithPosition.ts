@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 export class WithPosition {
-  private matrixUpdate: boolean = false;
+  public matrixUpdate: boolean = false;
   private position: THREE.Vector3;
   private target?: any;
 

@@ -22,7 +22,7 @@ export class TagsReader {
       const parts = rawValue.split(',');
       
       if (parts.length < 3) {
-        console.warn(`Invalid tag ${id}=${value}. Skipping.`);
+        console.warn(`Invalid tag ${id}=${rawValue}. Skipping.`);
         continue;
       }
 

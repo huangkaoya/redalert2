@@ -72,20 +72,20 @@ export class Rules {
   private tiberiumTypes = new Map<number, string>();
   private superWeaponTypes = new Map<number, string>();
   private countryTypes = new Map<number, string>();
-  private weaponTypes = new Map<number, string>();
+  readonly weaponTypes = new Map<number, string>();
 
   // Rules maps
   private allObjectRules = new Map<ObjectType, Map<string, ObjectRules>>();
-  private buildingRules = new Map<string, ObjectRules>();
-  private infantryRules = new Map<string, ObjectRules>();
-  private vehicleRules = new Map<string, ObjectRules>();
-  private aircraftRules = new Map<string, ObjectRules>();
-  private terrainRules = new Map<string, ObjectRules>();
-  private overlayRules = new Map<string, ObjectRules>();
+  readonly buildingRules = new Map<string, ObjectRules>();
+  readonly infantryRules = new Map<string, ObjectRules>();
+  readonly vehicleRules = new Map<string, ObjectRules>();
+  readonly aircraftRules = new Map<string, ObjectRules>();
+  readonly terrainRules = new Map<string, ObjectRules>();
+  readonly overlayRules = new Map<string, ObjectRules>();
   private smudgeRules = new Map<string, ObjectRules>();
   private voxelAnimRules = new Map<string, ObjectRules>();
   private countryRules = new Map<string, CountryRules>();
-  private warheadRules = new Map<string, WarheadRules>();
+  readonly warheadRules = new Map<string, WarheadRules>();
 
   // System rules
   public powerups = new PowerupsRules();

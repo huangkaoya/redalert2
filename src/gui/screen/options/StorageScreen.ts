@@ -13,7 +13,7 @@ export class StorageScreen extends MainMenuScreen {
   private appVersion: string;
   private storageEnabled: boolean;
   private quickMatchEnabled: boolean;
-  public title: string;
+  declare title: string;
 
   constructor(
     strings: Strings,

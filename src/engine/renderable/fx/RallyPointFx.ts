@@ -14,12 +14,12 @@ interface Container {
 
 export class RallyPointFx {
   private camera: Camera;
-  private sourcePos: THREE.Vector3;
-  private targetPos: THREE.Vector3;
-  private color: THREE.Color;
+  public sourcePos: THREE.Vector3;
+  public targetPos: THREE.Vector3;
+  public color: THREE.Color;
   private renderOrder?: number;
-  private needsUpdate: boolean = false;
-  private visible: boolean = true;
+  public needsUpdate: boolean = false;
+  public visible: boolean = true;
   private cameraHash: string;
   private container?: Container;
   private wrapper?: THREE.Object3D;

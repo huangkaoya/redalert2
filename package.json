@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
+    "typecheck:entry": "tsc -p tsconfig.build.json",
     "preview": "vite preview",
     "debug:skirmish": "node scripts/skirmish-flow.mjs",
     "debug:refinery-free-unit": "node scripts/refinery-free-unit-flow.mjs"

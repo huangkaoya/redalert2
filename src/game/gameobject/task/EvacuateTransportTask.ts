@@ -85,7 +85,7 @@ export class EvacuateTransportTask extends Task {
   private evacState: EvacuationState = EvacuationState.None;
   private evacTries: number = 0;
   private turnPerformed: boolean = false;
-  private preventLanding: boolean = false;
+  public preventLanding: boolean = false;
 
   constructor(game: Game, soft: boolean) {
     super();

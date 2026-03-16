@@ -2,14 +2,16 @@ import { Color } from '@/util/Color';
 import { ObjectType } from '@/engine/type/ObjectType';
 import { Traits } from '@/game/Traits';
 import { fnv32a } from '@/util/math';
-import { GameObject } from '@/game/GameObject';
 import { Country } from '@/game/Country';
+import type { Production } from '@/game/player/production/Production';
 
-interface Production {
-  getQueueTypeForObject(object: GameObject): string;
-  getFactoryTypeForQueueType(queueType: string): string;
-  hasVeteranType(factoryType: string): boolean;
-  dispose(): void;
+interface PlayerOwnedObject {
+  id: string;
+  name: string;
+  type: ObjectType;
+  owner: Player;
+  buildLimit: number;
+  limboData?: any;
 }
 
 export class Player {
@@ -22,8 +24,8 @@ export class Player {
   public defeated: boolean = false;
   public resigned: boolean = false;
   public dropped: boolean = false;
-  private objectsByType: Map<ObjectType, Set<GameObject>> = new Map();
-  private objectsById: Map<string, GameObject> = new Map();
+  private objectsByType: Map<ObjectType, Set<PlayerOwnedObject>> = new Map();
+  private objectsById: Map<string, PlayerOwnedObject> = new Map();
   public readonly traits: Traits = new Traits();
   public score: number = 0;
   private limitedUnitsBuiltByName: Map<string, number> = new Map();
@@ -35,6 +37,11 @@ export class Player {
   public cheerCooldownTicks: number = 0;
   public readonly isObserver: boolean;
   public readonly isNeutral: boolean;
+  public aiDifficulty?: any;
+  public powerTrait?: any;
+  public radarTrait?: any;
+  public superWeaponsTrait?: any;
+  public sharedDetectDisguiseTrait?: any;
   public production?: Production;
 
   get credits(): number {
@@ -62,7 +69,7 @@ export class Player {
     this.isNeutral = !!country && !country.isPlayable();
   }
 
-  getOrCreateObjectsForType(type: ObjectType): Set<GameObject> {
+  getOrCreateObjectsForType(type: ObjectType): Set<PlayerOwnedObject> {
     let objects = this.objectsByType.get(type);
     if (!objects) {
       objects = new Set();
@@ -71,14 +78,14 @@ export class Player {
     return objects;
   }
 
-  addOwnedObject(object: GameObject): void {
+  addOwnedObject(object: PlayerOwnedObject): void {
     const objects = this.getOrCreateObjectsForType(object.type);
     objects.add(object);
     object.owner = this;
     this.objectsById.set(object.id, object);
   }
 
-  removeOwnedObject(object: GameObject): void {
+  removeOwnedObject(object: PlayerOwnedObject): void {
     const objects = this.objectsByType.get(object.type);
     if (!objects || !objects.has(object)) {
       throw new Error(
@@ -89,11 +96,11 @@ export class Player {
     this.objectsById.delete(object.id);
   }
 
-  getOwnedObjectById(id: string): GameObject | undefined {
+  getOwnedObjectById(id: string): PlayerOwnedObject | undefined {
     return this.objectsById.get(id);
   }
 
-  getOwnedObjectsByType(type: ObjectType, includeLimbo: boolean = false): GameObject[] {
+  getOwnedObjectsByType(type: ObjectType, includeLimbo: boolean = false): PlayerOwnedObject[] {
     let objects = [...(this.objectsByType.get(type) || new Set())];
     if (!includeLimbo) {
       objects = objects.filter(obj => !obj.limboData);
@@ -101,8 +108,8 @@ export class Player {
     return objects;
   }
 
-  getOwnedObjects(includeLimbo: boolean = false): GameObject[] {
-    let objects: GameObject[] = [];
+  getOwnedObjects(includeLimbo: boolean = false): PlayerOwnedObject[] {
+    let objects: PlayerOwnedObject[] = [];
     [...this.objectsByType.values()].forEach(set => {
       set.forEach(obj => objects.push(obj));
     });
@@ -117,11 +124,11 @@ export class Player {
     this.objectsById.clear();
   }
 
-  get buildings(): Set<GameObject> {
+  get buildings(): Set<PlayerOwnedObject> {
     return this.getOrCreateObjectsForType(ObjectType.Building);
   }
 
-  addUnitsBuilt(object: GameObject, count: number): void {
+  addUnitsBuilt(object: PlayerOwnedObject, count: number): void {
     this.unitsBuiltByType.set(
       object.type,
       (this.unitsBuiltByType.get(object.type) ?? 0) + count
@@ -177,7 +184,7 @@ export class Player {
     return !this.isNeutral && !this.isObserver && !this.defeated;
   }
 
-  canProduceVeteran(object: GameObject): boolean {
+  canProduceVeteran(object: PlayerOwnedObject): boolean {
     if (!this.production || !this.country) {
       throw new Error("Non-combatants can't produce units");
     }

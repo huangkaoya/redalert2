@@ -2,6 +2,8 @@ import { IniSection } from './IniSection';
 import { IniParser } from './IniParser';
 import { VirtualFile } from './vfs/VirtualFile';
 
+export { IniSection } from './IniSection';
+
 export class IniFile {
   public sections: Map<string, IniSection>;
 

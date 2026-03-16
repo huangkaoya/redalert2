@@ -5,6 +5,7 @@ export class BoxIntersectObject3D extends THREE.Object3D {
   private static matrix: THREE.Matrix4 = new THREE.Matrix4();
   private static box: THREE.Box3 = new THREE.Box3();
   private static center: THREE.Vector3 = new THREE.Vector3();
+  private boxSize: THREE.Vector3;
 
   constructor(boxSize: THREE.Vector3) {
     super();

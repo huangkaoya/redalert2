@@ -316,7 +316,12 @@ export class BatchShpBuilder {
   dispose(): void {
     if (this.mesh) {
       this.mesh.geometry.dispose();
-      this.mesh.material.dispose();
+      const { material } = this.mesh;
+      if (Array.isArray(material)) {
+        material.forEach((entry) => entry.dispose());
+      } else {
+        material.dispose();
+      }
     }
   }
-} 
+}

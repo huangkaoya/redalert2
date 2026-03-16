@@ -96,7 +96,7 @@ export class ConnectionInfoScreen extends GameMenuScreen {
   private disposables = new CompositeDisposable();
   private params?: ConnectionInfoParams;
   private form?: FormRef;
-  public controller?: GameMenuController;
+  declare controller?: GameMenuController;
 
   constructor(strings: Strings, jsxRenderer: JsxRenderer) {
     super();

@@ -17,7 +17,10 @@ export class MapList {
       throw new Error("Invalid map list. Missing [MultiMaps] section.");
     }
 
-    const newManifests = Array.from(multiMapsSection.entries.values()).map((sectionKey: string) => {
+    const newManifests = Array.from(multiMapsSection.entries.values()).map((rawSectionKey) => {
+      const sectionKey = Array.isArray(rawSectionKey)
+        ? rawSectionKey[0]
+        : rawSectionKey;
       const mapSection = iniFile.getSection(sectionKey);
       if (!mapSection) {
         throw new Error(`Invalid map list. Missing [${sectionKey}] section.`);

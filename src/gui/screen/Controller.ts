@@ -6,7 +6,7 @@ export interface Screen {
   onEnter(params?: any): void | Promise<void>;
   onLeave(): void | Promise<void>;
   onStack?(): void | Promise<void>;
-  onUnstack?(): void | Promise<void>;
+  onUnstack?(params?: any): void | Promise<void>;
   update?(deltaTime: number): void;
   destroy?(): void;
 }

@@ -5,8 +5,8 @@ export class CrateRules {
   private crateRegen: number = 0;
   private unitCrateType?: string;
   private healCrateSound: string = '';
-  private crateImg: string = '';
-  private waterCrateImg: string = '';
+  public crateImg: string = '';
+  public waterCrateImg: string = '';
   private freeMCV: boolean = false;
 
   readIni(ini: any): CrateRules {

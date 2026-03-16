@@ -6,32 +6,32 @@ const IMPLICIT_CHANNEL_NAME = '';
 
 interface ChatInputProps {
   chatHistory?: {
-    lastComposeTarget: {
+    lastComposeTarget?: {
       value: {
         type: ChatRecipientType;
         name: string;
       };
-      onChange: {
+      onChange?: {
         subscribe: (callback: (value: any) => void) => void;
         unsubscribe: (callback: (value: any) => void) => void;
       };
     };
-    lastWhisperFrom: {
+    lastWhisperFrom?: {
       value: string;
-      onChange: {
+      onChange?: {
         subscribe: (callback: () => void) => void;
         unsubscribe: (callback: () => void) => void;
       };
     };
-    lastWhisperTo: {
+    lastWhisperTo?: {
       value: string;
-      onChange: {
+      onChange?: {
         subscribe: (callback: () => void) => void;
         unsubscribe: (callback: () => void) => void;
       };
     };
   };
-  channels: string[];
+  channels?: string[];
   strings: {
     get: (key: string, ...args: any[]) => string;
   };
@@ -49,7 +49,7 @@ interface ChatInputProps {
 
 export const ChatInput = forwardRef<{ send: () => void }, ChatInputProps>(({
   chatHistory: s,
-  channels: r,
+  channels: r = [],
   strings: t,
   className: e,
   tooltip: i,
@@ -65,7 +65,7 @@ export const ChatInput = forwardRef<{ send: () => void }, ChatInputProps>(({
   const p = useRef<HTMLInputElement>(null);
   const [m, f] = useState(() => M());
   const [y, T] = useState(() => {
-    const e = s?.lastComposeTarget.value;
+    const e = s?.lastComposeTarget?.value;
     return A(e) ? e : { type: ChatRecipientType.Channel, name: r[0] ?? IMPLICIT_CHANNEL_NAME };
   });
   const [v, b] = useState<string>();
@@ -80,8 +80,8 @@ export const ChatInput = forwardRef<{ send: () => void }, ChatInputProps>(({
     }));
     let t: string | undefined, i: string | undefined;
     if (s) {
-      t = s.lastWhisperFrom.value;
-      i = s.lastWhisperTo.value;
+      t = s.lastWhisperFrom?.value;
+      i = s.lastWhisperTo?.value;
       if (t) e.push({ type: ChatRecipientType.Whisper, name: t });
       if (i && i !== t) e.push({ type: ChatRecipientType.Whisper, name: i });
     }
@@ -93,7 +93,7 @@ export const ChatInput = forwardRef<{ send: () => void }, ChatInputProps>(({
   }
 
   function R(e: { type: ChatRecipientType; name: string }) {
-    if (s) s.lastComposeTarget.value = e;
+    if (s?.lastComposeTarget) s.lastComposeTarget.value = e;
     T(e);
   }
 
@@ -118,13 +118,13 @@ export const ChatInput = forwardRef<{ send: () => void }, ChatInputProps>(({
       const t = () => {
         f(M());
       };
-      s.lastComposeTarget.onChange.subscribe(e);
-      s.lastWhisperFrom.onChange.subscribe(t);
-      s.lastWhisperTo.onChange.subscribe(t);
+      s.lastComposeTarget?.onChange.subscribe(e);
+      s.lastWhisperFrom?.onChange.subscribe(t);
+      s.lastWhisperTo?.onChange.subscribe(t);
       return () => {
-        s.lastComposeTarget.onChange.unsubscribe(e);
-        s.lastWhisperFrom.onChange.unsubscribe(t);
-        s.lastWhisperTo.onChange.unsubscribe(t);
+        s.lastComposeTarget?.onChange.unsubscribe(e);
+        s.lastWhisperFrom?.onChange.unsubscribe(t);
+        s.lastWhisperTo?.onChange.unsubscribe(t);
       };
     }
   }, [y, s, r]);

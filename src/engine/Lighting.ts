@@ -36,6 +36,10 @@ export class Lighting {
     return this.ambientOverride ?? this.baseAmbient;
   }
 
+  getAmbient(): MapLighting {
+    return this.mapLighting;
+  }
+
   forceUpdate(force?: any) {
     this._onChange.dispatch(this, force);
   }

@@ -6,7 +6,7 @@ import { RangeHelper } from "@/game/gameobject/unit/RangeHelper";
 import { GameSpeed } from "@/game/GameSpeed";
 import { RandomTileFinder } from "@/game/map/tileFinder/RandomTileFinder";
 import { Warhead } from "@/game/Warhead";
-import { SuperWeaponEffect } from "@/game/superweapon/SuperWeaponEffect";
+import { SuperWeaponEffect, TileCoord } from "@/game/superweapon/SuperWeaponEffect";
 import { Game } from "@/game/Game";
 import { Vector3 } from "@/game/math/Vector3";
 

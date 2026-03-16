@@ -18,10 +18,10 @@ export class OrderUnitsAction extends Action {
   private map: any;
   private orderActionContext: any;
   private orderFactory: any;
-  private queue: boolean = false;
+  public queue: boolean = false;
   private isInvalid: boolean = false;
-  private orderType: number;
-  private target: any;
+  public orderType!: number;
+  public target: any;
 
   constructor(game: any, map: any, orderActionContext: any, orderFactory: any) {
     super(ActionType.OrderUnits);

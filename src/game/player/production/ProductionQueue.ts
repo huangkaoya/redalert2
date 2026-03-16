@@ -26,7 +26,7 @@ interface QueueItem {
 }
 
 export class ProductionQueue {
-  private type: QueueType;
+  public readonly type: QueueType;
   private _maxSize: number;
   private maxItemQuantity: number;
   private items: QueueItem[];

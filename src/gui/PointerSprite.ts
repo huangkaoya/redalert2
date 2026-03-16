@@ -1,6 +1,7 @@
 import { UiObject } from "./UiObject";
 import { ImageUtils } from "../engine/gfx/ImageUtils";
 import { HtmlContainer } from "./HtmlContainer";
+import * as THREE from "three";
 
 interface Size {
   width: number;

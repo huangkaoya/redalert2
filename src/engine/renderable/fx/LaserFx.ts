@@ -59,7 +59,8 @@ export class LaserFx {
       1 - (timeMillis - this.firstUpdateMillis) / (1000 * this.durationSeconds)
     );
 
-    this.lineMesh!.material.uniforms.opacity.value = +this.timeLeft;
+    const material = this.lineMesh!.material as MeshLineMaterial;
+    material.uniforms.opacity.value = +this.timeLeft;
 
     if (this.isFinished()) {
       this.container!.remove(this);
@@ -105,7 +106,12 @@ export class LaserFx {
   dispose(): void {
     if (this.lineMesh) {
       this.lineMesh.geometry.dispose();
-      this.lineMesh.material.dispose();
+      const material = this.lineMesh.material;
+      if (Array.isArray(material)) {
+        material.forEach((entry) => entry.dispose());
+      } else {
+        material.dispose();
+      }
     }
   }
 }

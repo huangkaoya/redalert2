@@ -44,12 +44,12 @@ export class ChatMessageFormat {
   formatPrefixHtml(
     message: { to: { type: ChatRecipientType; name: string }; from: string; time: Date },
     onUserClick?: (username: string) => void
-  ) {
+  ): React.ReactNode {
     const displayName = message.to.type === ChatRecipientType.Whisper && message.from === this.localUsername
       ? message.to.name
       : message.from;
 
-    let formattedName = displayName;
+    let formattedName: React.ReactNode = displayName;
     const userPlaceholder = "{user}";
 
     if (message.to.type !== ChatRecipientType.Page) {
@@ -107,7 +107,7 @@ export class ChatMessageFormat {
     );
   }
 
-  formatTextHtml(text: string, formatUrls: boolean) {
+  formatTextHtml(text: string, formatUrls: boolean): React.ReactNode {
     return formatUrls ? ReactFormat.formatUrls(text) : text;
   }
 }

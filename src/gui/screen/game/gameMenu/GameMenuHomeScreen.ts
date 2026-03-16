@@ -35,7 +35,7 @@ export class GameMenuHomeScreen extends GameMenuScreen {
   private strings: Strings;
   private fullScreen: FullScreen;
   private params?: GameMenuHomeParams;
-  public controller?: GameMenuController;
+  declare controller?: GameMenuController;
 
   constructor(strings: Strings, fullScreen: FullScreen) {
     super();

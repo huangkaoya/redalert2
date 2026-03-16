@@ -2,7 +2,7 @@ import { jsx } from "@/gui/jsx/jsx";
 import { MainMenuController } from "@/gui/screen/mainMenu/MainMenuController";
 import { GameMenuController } from "@/gui/screen/game/gameMenu/GameMenuController";
 import { ScreenType as GameScreenType } from "@/gui/screen/game/gameMenu/ScreenType";
-import { ScreenType as MainScreenType } from "@/gui/screen/mainMenu/ScreenType";
+import { MainMenuScreenType } from "@/gui/screen/ScreenType";
 import { StorageKey } from "@/LocalPrefs";
 import { HtmlView } from "@/gui/jsx/HtmlView";
 import { GeneralOpts } from "@/gui/screen/options/component/GeneralOpts";
@@ -75,7 +75,7 @@ export class OptionsScreen {
           if (this.controller instanceof GameMenuController) {
             this.controller.pushScreen(GameScreenType.OptionsSound);
           } else {
-            this.controller?.pushScreen(MainScreenType.OptionsSound);
+            this.controller?.pushScreen(MainMenuScreenType.OptionsSound);
           }
         },
       },
@@ -85,7 +85,7 @@ export class OptionsScreen {
           if (this.controller instanceof GameMenuController) {
             this.controller.pushScreen(GameScreenType.OptionsKeyboard);
           } else {
-            this.controller?.pushScreen(MainScreenType.OptionsKeyboard);
+            this.controller?.pushScreen(MainMenuScreenType.OptionsKeyboard);
           }
         },
       },
@@ -97,7 +97,7 @@ export class OptionsScreen {
         label: this.strings.get("GUI:Storage"),
         onClick: () => {
           (this.controller as MainMenuController).pushScreen(
-            MainScreenType.OptionsStorage,
+            MainMenuScreenType.OptionsStorage,
             {}
           );
         },

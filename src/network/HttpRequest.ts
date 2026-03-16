@@ -54,12 +54,8 @@ export class HttpRequest {
 
   async fetchRaw(url: string, cancellationToken?: CancellationToken, options?: FetchOptions): Promise<ArrayBuffer> {
     const abortController = new AbortController();
-    const unregisterToken = cancellationToken?.register(() => {
-      try {
-        abortController.abort();
-      } catch (e) {
-        // Ignore if already aborted or other minor errors during abort
-      }
+    cancellationToken?.register(() => {
+      abortController.abort();
     });
 
     let response: Response;
@@ -71,8 +67,12 @@ export class HttpRequest {
         headers: options?.headers,
       });
     } catch (error: any) {
-      unregisterToken?.();
-      if (error.name === 'AbortError' || (error instanceof DOMException && error.code === DOMException.ABORT_ERR)) {
+      if (
+        cancellationToken &&
+        (error.name === 'AbortError' ||
+          (error instanceof DOMException && error.code === DOMException.ABORT_ERR) ||
+          cancellationToken.isCancelled())
+      ) {
         throw new OperationCanceledError(cancellationToken);
       }
       console.error('Fetch raw failed:', error);
@@ -80,7 +80,6 @@ export class HttpRequest {
     }
 
     if (!response.ok) {
-      unregisterToken?.();
       throw new DownloadError(
         `Fetch failed with status ${response.status}: ${response.statusText}`,
         undefined,
@@ -90,7 +89,6 @@ export class HttpRequest {
 
     const contentType = response.headers.get("Content-Type");
     if (contentType && contentType.includes("text/html") && !options?.allowHtmlMimeType) {
-        unregisterToken?.();
         throw new DownloadError(
             `Fetch failed with invalid mime type "${contentType}" (HTTP status ${response.status})`,
         );
@@ -98,7 +96,6 @@ export class HttpRequest {
     
     // Handle progress reading, adapted from original to work with modern fetch
     if (!response.body) {
-        unregisterToken?.();
         throw new DownloadError("Response has no body.");
     }
 
@@ -109,8 +106,9 @@ export class HttpRequest {
 
     try {
         while (true) {
+            cancellationToken?.throwIfCancelled();
             const { done, value } = await reader.read();
-            if (cancellationToken?.isCancellationRequested) {
+            if (cancellationToken?.isCancelled()) {
                 reader.cancel('Download cancelled by user');
                 throw new OperationCanceledError(cancellationToken);
             }
@@ -122,15 +120,12 @@ export class HttpRequest {
             options?.onProgress?.(value!.length, contentLength); // Pass delta and total
         }
     } catch (error: any) {
-        unregisterToken?.();
         if (error.name === 'AbortError' || error instanceof OperationCanceledError) {
              throw error; // Already a cancellation error or re-throw OperationCanceledError
         }
         console.error('Error during response body reading:', error);
         throw new DownloadError(`Failed to read response body: ${error.message}`, {cause: error});
     }
-    
-    unregisterToken?.();
 
     // Concatenate chunks into a single Uint8Array, then get its ArrayBuffer
     const completeBuffer = new Uint8Array(receivedLength);

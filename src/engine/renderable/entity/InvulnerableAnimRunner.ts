@@ -8,7 +8,7 @@ export class InvulnerableAnimRunner extends SimpleRunner {
   private minAmount: number;
   private maxAmount: number;
   private steps: number;
-  private animation: Animation;
+  declare animation: Animation;
 
   constructor(
     gameSpeed: number,

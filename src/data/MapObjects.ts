@@ -44,11 +44,29 @@ export class MapObject {
   }
 }
 
-export class TechnoObject extends MapObject {}
+export class PositionedMapObject extends MapObject {
+  rx = 0;
+  ry = 0;
+}
+
+export class NamedMapObject extends PositionedMapObject {
+  name = "";
+}
+
+export class TechnoObject extends NamedMapObject {
+  owner = "";
+  health = 0;
+  direction = 0;
+  tag?: string;
+  veterancy = 0;
+  onBridge = false;
+}
 
 export class TechnoTypeObject extends TechnoObject {}
 
 export class Structure extends TechnoTypeObject {
+  poweredOn = false;
+
   constructor() {
     super(ObjectType.Building);
   }
@@ -61,6 +79,8 @@ export class Vehicle extends TechnoTypeObject {
 }
 
 export class Infantry extends TechnoTypeObject {
+  subCell = 0;
+
   constructor() {
     super(ObjectType.Infantry);
   }
@@ -72,19 +92,22 @@ export class Aircraft extends TechnoTypeObject {
   }
 }
 
-export class Terrain extends TechnoTypeObject {
+export class Terrain extends NamedMapObject {
   constructor() {
     super(ObjectType.Terrain);
   }
 }
 
-export class Smudge extends TechnoObject {
+export class Smudge extends NamedMapObject {
   constructor() {
     super(ObjectType.Smudge);
   }
 }
 
-export class Overlay extends MapObject {
+export class Overlay extends PositionedMapObject {
+  id = 0;
+  value = 0;
+
   constructor() {
     super(ObjectType.Overlay);
   }

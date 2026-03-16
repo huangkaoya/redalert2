@@ -3,7 +3,7 @@ import { ObjectType } from "@/engine/type/ObjectType";
 import { Vector2 } from "@/game/math/Vector2";
 import { Weapon } from "@/game/Weapon";
 import { WeaponType } from "@/game/WeaponType";
-import { SuperWeaponEffect } from "@/game/superweapon/SuperWeaponEffect";
+import { SuperWeaponEffect, TileCoord } from "@/game/superweapon/SuperWeaponEffect";
 import { Game } from "@/game/Game";
 import { Target } from "@/game/Target";
 import { Player } from "../Player";
@@ -11,8 +11,8 @@ import { Player } from "../Player";
 export class NukeEffect extends SuperWeaponEffect {
   private weaponType: string;
 
-  constructor(owner: Player, tile: TileCoord, target: Target, weaponType: string) {
-    super(owner, tile, target);
+  constructor(type: any, owner: Player, tile: TileCoord, weaponType: string) {
+    super(type, owner, tile);
     this.weaponType = weaponType;
   }
 

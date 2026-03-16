@@ -1,5 +1,9 @@
 import * as THREE from 'three';
-import { GrowingPacker } from '@/engine/gfx/GrowingPacker';
+import { GrowingPacker, type GrowingPackerBlock } from '@/engine/gfx/GrowingPacker';
+
+type CanvasTextureAtlasBlock = GrowingPackerBlock & {
+  image: HTMLImageElement;
+};
 
 export class CanvasTextureAtlas {
   private texture?: THREE.Texture;
@@ -24,7 +28,7 @@ export class CanvasTextureAtlas {
   }
 
   pack(images: HTMLImageElement[]): void {
-    let blocks: Array<{ w: number; h: number; image: HTMLImageElement; fit?: { x: number; y: number } }> = [];
+    const blocks: CanvasTextureAtlasBlock[] = [];
     
     images.forEach((image) => {
       blocks.push({ w: image.width, h: image.height, image: image });
@@ -32,7 +36,7 @@ export class CanvasTextureAtlas {
     
     blocks.sort((a, b) => 1000 * (b.w - a.w) + b.h - a.h);
 
-    let packer = new GrowingPacker();
+    const packer = new GrowingPacker();
     packer.fit(blocks);
 
     const atlasWidth = packer.root.w;

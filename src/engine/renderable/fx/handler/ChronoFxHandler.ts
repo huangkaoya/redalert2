@@ -56,6 +56,8 @@ export class ChronoFxHandler {
   private game: Game;
   private renderableManager: RenderableManager;
   private disposables: CompositeDisposable;
+  private handleObjectTeleport: (event: TeleportEvent) => void;
+  private handleObjectDestroy: (event: DestroyEvent) => void;
 
   constructor(game: Game, renderableManager: RenderableManager) {
     this.game = game;

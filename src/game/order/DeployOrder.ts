@@ -158,12 +158,12 @@ export class DeployOrder extends Order {
       this.isAllowed()
     ) {
       const existingEvacTask = tasks.find(
-        (task) =>
+        (task: any) =>
           task.constructor === EvacuateTransportTask &&
           !task.isCancelling(),
-      );
+      ) as any;
       if (existingEvacTask) {
-        (existingEvacTask as EvacuateTransportTask).forceEvac();
+        existingEvacTask.forceEvac();
         return false;
       }
     }

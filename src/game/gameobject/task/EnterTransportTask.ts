@@ -25,7 +25,7 @@ interface QueueingNode {
 
 export class EnterTransportTask extends Task {
   private game: any;
-  private target: any;
+  public target: any;
   private movePerformed: boolean = false;
   private preventOpportunityFire: boolean = false;
   private initialTargetTile: any;

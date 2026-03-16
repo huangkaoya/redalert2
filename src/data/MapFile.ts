@@ -12,6 +12,22 @@ import { CellTagsReader } from "@/data/map/tag/CellTagsReader";
 import { Variable } from "@/data/map/Variable";
 import { SpecialFlags } from "@/data/map/SpecialFlags";
 
+type MapTile = {
+  dx: number;
+  dy: number;
+  rx: number;
+  ry: number;
+  z: number;
+  tileNum: number;
+  subTile: number;
+};
+
+type Waypoint = {
+  number: number;
+  rx: number;
+  ry: number;
+};
+
 export class MapFile extends IniFile {
   static artSectionPrefix = "ART";
 
@@ -19,17 +35,17 @@ export class MapFile extends IniFile {
   declare localSize: { x: number; y: number; width: number; height: number };
   declare theaterType: TheaterType;
   declare iniFormat: number;
-  declare tiles: any[];
+  declare tiles: MapTile[];
   declare maxTileNum: number;
-  declare waypoints: any[];
-  declare structures: any[];
-  declare vehicles: any[];
-  declare infantries: any[];
-  declare aircrafts: any[];
-  declare terrains: any[];
-  declare overlays: any[];
+  declare waypoints: Waypoint[];
+  declare structures: mapObjects.Structure[];
+  declare vehicles: mapObjects.Vehicle[];
+  declare infantries: mapObjects.Infantry[];
+  declare aircrafts: mapObjects.Aircraft[];
+  declare terrains: mapObjects.Terrain[];
+  declare overlays: mapObjects.Overlay[];
   declare maxOverlayId: number;
-  declare smudges: any[];
+  declare smudges: mapObjects.Smudge[];
   declare lighting: MapLighting;
   declare ionLighting: MapLighting;
   declare tags: any;
@@ -42,60 +58,62 @@ export class MapFile extends IniFile {
   declare specialFlags: SpecialFlags;
   declare artOverrides?: IniFile;
 
-  fromString(e: string) {
-    super.fromString(e);
-    let t = this.getSection("Map");
-    if (!t) throw new Error("[Map] section not found");
-    var i = t.getNumberArray("Size");
-    if (
-      ((this.fullSize = {
-        x: i[0],
-        y: i[1],
-        width: i[2],
-        height: i[3],
-      }),
-      (i = t.getNumberArray("LocalSize")),
-      (this.localSize = {
-        x: i[0],
-        y: i[1],
-        width: i[2],
-        height: i[3],
-      }),
-      (this.theaterType = t.getEnum(
-        "Theater",
-        TheaterType,
-        TheaterType.None,
-        true,
-      )),
-      this.theaterType === TheaterType.None)
-    )
-      throw new Error(
-        `Unsupported theater type "${t.getString("Theater")}"`,
-      );
-    let r = this.getSection("Basic");
-    i = this.iniFormat = r?.getNumber("NewINIFormat") ?? 0;
-    return (
-      this.readTiles(),
-      this.readWaypoints(this.getOrCreateSection("Waypoints")),
-      this.readStructures(this.getOrCreateSection("Structures")),
-      this.readVehicles(),
-      this.readInfantries(),
-      this.readAircrafts(),
-      this.readTerrains(this.getOrCreateSection("Terrain")),
-      this.readOverlays(),
-      this.readSmudges(),
-      this.readLighting(),
-      this.readTagsAndTriggers(),
-      this.readCellTags(i),
-      this.readVariableNames(),
-      (this.startingLocations = this.readStartingLocations(
-        this.waypoints,
-      )),
-      (this.specialFlags = new SpecialFlags().read(
-        this.getOrCreateSection("SpecialFlags"),
-      )),
-      this
+  fromString(iniString: string) {
+    super.fromString(iniString);
+    const mapSection = this.getSection("Map");
+    if (!mapSection) {
+      throw new Error("[Map] section not found");
+    }
+
+    const size = mapSection.getNumberArray("Size");
+    this.fullSize = {
+      x: size[0],
+      y: size[1],
+      width: size[2],
+      height: size[3],
+    };
+
+    const localSize = mapSection.getNumberArray("LocalSize");
+    this.localSize = {
+      x: localSize[0],
+      y: localSize[1],
+      width: localSize[2],
+      height: localSize[3],
+    };
+
+    this.theaterType = mapSection.getEnum(
+      "Theater",
+      TheaterType,
+      TheaterType.None,
+      true,
     );
+    if (this.theaterType === TheaterType.None) {
+      throw new Error(
+        `Unsupported theater type "${mapSection.getString("Theater")}"`,
+      );
+    }
+
+    const basicSection = this.getSection("Basic");
+    this.iniFormat = basicSection?.getNumber("NewINIFormat") ?? 0;
+
+    this.readTiles();
+    this.readWaypoints(this.getOrCreateSection("Waypoints"));
+    this.readStructures(this.getOrCreateSection("Structures"));
+    this.readVehicles();
+    this.readInfantries();
+    this.readAircrafts();
+    this.readTerrains(this.getOrCreateSection("Terrain"));
+    this.readOverlays();
+    this.readSmudges();
+    this.readLighting();
+    this.readTagsAndTriggers();
+    this.readCellTags(this.iniFormat);
+    this.readVariableNames();
+    this.startingLocations = this.readStartingLocations(this.waypoints);
+    this.specialFlags = new SpecialFlags().read(
+      this.getOrCreateSection("SpecialFlags"),
+    );
+    return this;
   }
 
   fromJson(i: any) {
@@ -106,14 +124,14 @@ export class MapFile extends IniFile {
     return super.fromJson(i);
   }
 
-  readStartingLocations(e: any[]) {
-    let t = [];
-    var i;
-    for (i of e
-      .filter((e) => e.number < 8)
-      .sort((e, t) => (e.number < t.number ? -1 : 1)))
-      t.push({ x: i.rx, y: i.ry });
-    return t;
+  readStartingLocations(waypoints: Waypoint[]) {
+    const startingLocations: { x: number; y: number }[] = [];
+    for (const waypoint of waypoints
+      .filter((entry) => entry.number < 8)
+      .sort((left, right) => left.number - right.number)) {
+      startingLocations.push({ x: waypoint.rx, y: waypoint.ry });
+    }
+    return startingLocations;
   }
 
   readLighting() {
@@ -147,23 +165,22 @@ export class MapFile extends IniFile {
   }
 
   readVariableNames() {
-    var e,
-      t,
-      i = this.getOrCreateSection("VariableNames");
-    let r = new Map<number, Variable>();
-    for ([e, t] of i.entries) {
-      var s,
-        a,
-        n = Number(e);
-      Number.isNaN(n)
-        ? console.warn(
-            `Map [VariableNames] contains non-numeric index "${e}". Skipping.`,
-          )
-        : (([s, a] = t.split(",")),
-          (a = new Variable(s, Boolean(Number(a)))),
-          r.set(n, a));
+    const section = this.getOrCreateSection("VariableNames");
+    const variables = new Map<number, Variable>();
+    for (const [key, rawValue] of section.entries) {
+      const index = Number(key);
+      if (Number.isNaN(index)) {
+        console.warn(
+          `Map [VariableNames] contains non-numeric index "${key}". Skipping.`,
+        );
+        continue;
+      }
+
+      const value = this.normalizeIniEntryValue(rawValue);
+      const [name = "", isGlobal = "0"] = value.split(",");
+      variables.set(index, new Variable(name, Boolean(Number(isGlobal))));
     }
-    this.variables = r;
+    this.variables = variables;
   }
 
   readTiles() {
@@ -183,29 +200,33 @@ export class MapFile extends IniFile {
       h = (e: number, t: number) => t * a + e;
     this.tiles = new Array(a * height);
     for (let T = (this.maxTileNum = 0); T < i; T++) {
-      var u = s.readUint16(),
-        d = s.readUint16(),
-        g = Math.max(0, s.readInt16());
-      (this.maxTileNum = Math.max(this.maxTileNum, g)), s.readInt16();
-      var p = s.readUint8(),
-        m = s.readUint8();
+      const rx = s.readUint16();
+      const ry = s.readUint16();
+      const tileNum = Math.max(0, s.readInt16());
+      this.maxTileNum = Math.max(this.maxTileNum, tileNum);
+      s.readInt16();
+      const subTile = s.readUint8();
+      const z = s.readUint8();
       s.readUint8();
-      var f = u - d + this.fullSize.width - 1,
-        y = u + d - this.fullSize.width - 1;
-      0 <= f &&
-        f < 2 * this.fullSize.width &&
-        0 <= y &&
-        y < 2 * this.fullSize.height &&
-        ((p = {
-          dx: f,
-          dy: y,
-          rx: u,
-          ry: d,
-          z: m,
-          tileNum: g,
-          subTile: p,
-        }),
-        (this.tiles[h(f, Math.floor(y / 2))] = p));
+      const dx = rx - ry + this.fullSize.width - 1;
+      const dy = rx + ry - this.fullSize.width - 1;
+      if (
+        0 <= dx &&
+        dx < 2 * this.fullSize.width &&
+        0 <= dy &&
+        dy < 2 * this.fullSize.height
+      ) {
+        const tile: MapTile = {
+          dx,
+          dy,
+          rx,
+          ry,
+          z,
+          tileNum,
+          subTile,
+        };
+        this.tiles[h(dx, Math.floor(dy / 2))] = tile;
+      }
     }
     for (let v = 0; v < this.fullSize.height; v++)
       for (let e = 0; e <= 2 * this.fullSize.width - 2; e++)
@@ -229,31 +250,32 @@ export class MapFile extends IniFile {
 
   readWaypoints(e: any) {
     this.waypoints = [];
-    for (var [t, i] of e.entries) {
-      var r;
-      let e;
-      isNaN((r = parseInt(t, 10))) ||
-        isNaN((e = parseInt(i, 10))) ||
-        ((t = Math.floor(e / 1000)),
-        (i = e - 1000 * t),
-        this.waypoints.push({ number: r, rx: i, ry: t }));
+    for (const [key, rawValue] of e.entries) {
+      const number = parseInt(key, 10);
+      const value = parseInt(this.normalizeIniEntryValue(rawValue), 10);
+      if (Number.isNaN(number) || Number.isNaN(value)) {
+        continue;
+      }
+      const ry = Math.floor(value / 1000);
+      const rx = value - 1000 * ry;
+      this.waypoints.push({ number, rx, ry });
     }
   }
 
   readStructures(e: any) {
     this.structures = [];
-    for (var [, t] of e.entries) {
-      t = t.split(",");
-      if (!(t.length <= 15)) {
-        let e = new mapObjects.Structure();
-        (e.owner = t[0]),
-          (e.name = t[1]),
-          (e.health = Number(t[2])),
-          (e.rx = Number(t[3])),
-          (e.ry = Number(t[4])),
-          (e.tag = this.readTagId(t[6])),
-          (e.poweredOn = Boolean(Number(t[9]))),
-          this.structures.push(e);
+    for (const [, rawValue] of e.entries) {
+      const values = this.normalizeIniEntryValue(rawValue).split(",");
+      if (values.length > 15) {
+        const structure = new mapObjects.Structure();
+        structure.owner = values[0];
+        structure.name = values[1];
+        structure.health = Number(values[2]);
+        structure.rx = Number(values[3]);
+        structure.ry = Number(values[4]);
+        structure.tag = this.readTagId(values[6]);
+        structure.poweredOn = Boolean(Number(values[9]));
+        this.structures.push(structure);
       }
     }
   }
@@ -264,81 +286,94 @@ export class MapFile extends IniFile {
 
   readVehicles() {
     this.vehicles = [];
-    let e = this.getSection("Units");
-    if (e)
-      for (var t of e.entries.values()) {
-        var i = t.split(",");
-        if (i.length <= 11)
-          console.warn(`Invalid Vehicle entry: "${t}"`);
-        else {
-          let e = new mapObjects.Vehicle();
-          (e.owner = i[0]),
-            (e.name = i[1]),
-            (e.health = Number(i[2])),
-            (e.rx = Number(i[3])),
-            (e.ry = Number(i[4])),
-            (e.direction = Number(i[5])),
-            (e.tag = this.readTagId(i[7])),
-            (e.veterancy = Number(i[8])),
-            (e.onBridge = "1" === i[10]),
-            this.vehicles.push(e);
-        }
+    const section = this.getSection("Units");
+    if (!section) {
+      return;
+    }
+
+    for (const rawValue of section.entries.values()) {
+      const values = this.normalizeIniEntryValue(rawValue).split(",");
+      if (values.length <= 11) {
+        console.warn(`Invalid Vehicle entry: "${this.normalizeIniEntryValue(rawValue)}"`);
+        continue;
       }
+
+      const vehicle = new mapObjects.Vehicle();
+      vehicle.owner = values[0];
+      vehicle.name = values[1];
+      vehicle.health = Number(values[2]);
+      vehicle.rx = Number(values[3]);
+      vehicle.ry = Number(values[4]);
+      vehicle.direction = Number(values[5]);
+      vehicle.tag = this.readTagId(values[7]);
+      vehicle.veterancy = Number(values[8]);
+      vehicle.onBridge = values[10] === "1";
+      this.vehicles.push(vehicle);
+    }
   }
 
   readInfantries() {
     this.infantries = [];
-    let e = this.getSection("Infantry");
-    if (e)
-      for (var t of e.entries.values()) {
-        var i = t.split(",");
-        let e = new mapObjects.Infantry();
-        i.length <= 8
-          ? console.warn(`Invalid Infantry entry: "${t}"`)
-          : ((e.owner = i[0]),
-            (e.name = i[1]),
-            (e.health = Number(i[2])),
-            (e.rx = Number(i[3])),
-            (e.ry = Number(i[4])),
-            (e.subCell = Number(i[5])),
-            (e.direction = Number(i[7])),
-            (e.tag = this.readTagId(i[8])),
-            (e.veterancy = Number(i[9])),
-            (e.onBridge = "1" === i[11]),
-            this.infantries.push(e));
+    const section = this.getSection("Infantry");
+    if (!section) {
+      return;
+    }
+
+    for (const rawValue of section.entries.values()) {
+      const values = this.normalizeIniEntryValue(rawValue).split(",");
+      if (values.length <= 8) {
+        console.warn(`Invalid Infantry entry: "${this.normalizeIniEntryValue(rawValue)}"`);
+        continue;
       }
+
+      const infantry = new mapObjects.Infantry();
+      infantry.owner = values[0];
+      infantry.name = values[1];
+      infantry.health = Number(values[2]);
+      infantry.rx = Number(values[3]);
+      infantry.ry = Number(values[4]);
+      infantry.subCell = Number(values[5]);
+      infantry.direction = Number(values[7]);
+      infantry.tag = this.readTagId(values[8]);
+      infantry.veterancy = Number(values[9]);
+      infantry.onBridge = values[11] === "1";
+      this.infantries.push(infantry);
+    }
   }
 
   readAircrafts() {
     this.aircrafts = [];
-    let e = this.getSection("Aircraft");
-    if (e)
-      for (var t of e.entries.values()) {
-        t = t.split(",");
-        let e = new mapObjects.Aircraft();
-        (e.owner = t[0]),
-          (e.name = t[1]),
-          (e.health = Number(t[2])),
-          (e.rx = Number(t[3])),
-          (e.ry = Number(t[4])),
-          (e.direction = Number(t[5])),
-          (e.tag = this.readTagId(t[7])),
-          (e.veterancy = Number(t[8])),
-          (e.onBridge = "1" === t[t.length - 4]),
-          this.aircrafts.push(e);
-      }
+    const section = this.getSection("Aircraft");
+    if (!section) {
+      return;
+    }
+
+    for (const rawValue of section.entries.values()) {
+      const values = this.normalizeIniEntryValue(rawValue).split(",");
+      const aircraft = new mapObjects.Aircraft();
+      aircraft.owner = values[0];
+      aircraft.name = values[1];
+      aircraft.health = Number(values[2]);
+      aircraft.rx = Number(values[3]);
+      aircraft.ry = Number(values[4]);
+      aircraft.direction = Number(values[5]);
+      aircraft.tag = this.readTagId(values[7]);
+      aircraft.veterancy = Number(values[8]);
+      aircraft.onBridge = values[values.length - 4] === "1";
+      this.aircrafts.push(aircraft);
+    }
   }
 
   readTerrains(e: any) {
     this.terrains = [];
-    for (var [t, i] of e.entries) {
-      t = Number(t);
-      if (!isNaN(t)) {
-        let e = new mapObjects.Terrain();
-        (e.name = i),
-          (e.rx = t % 1000),
-          (e.ry = Math.floor(t / 1000)),
-          this.terrains.push(e);
+    for (const [key, rawValue] of e.entries) {
+      const tileIndex = Number(key);
+      if (!Number.isNaN(tileIndex)) {
+        const terrain = new mapObjects.Terrain();
+        terrain.name = this.normalizeIniEntryValue(rawValue);
+        terrain.rx = tileIndex % 1000;
+        terrain.ry = Math.floor(tileIndex / 1000);
+        this.terrains.push(terrain);
       }
     }
   }
@@ -383,20 +418,24 @@ export class MapFile extends IniFile {
 
   readSmudges() {
     this.smudges = [];
-    let e = this.getSection("Smudge");
-    if (e)
-      for (var t of e.entries.values()) {
-        var i = t.split(",");
-        if (i.length <= 2)
-          console.warn(`Invalid Smudge entry: "${t}"`);
-        else {
-          let e = new mapObjects.Smudge();
-          (e.name = i[0]),
-            (e.rx = Number(i[1])),
-            (e.ry = Number(i[2])),
-            this.smudges.push(e);
-        }
+    const section = this.getSection("Smudge");
+    if (!section) {
+      return;
+    }
+
+    for (const rawValue of section.entries.values()) {
+      const values = this.normalizeIniEntryValue(rawValue).split(",");
+      if (values.length <= 2) {
+        console.warn(`Invalid Smudge entry: "${this.normalizeIniEntryValue(rawValue)}"`);
+        continue;
       }
+
+      const smudge = new mapObjects.Smudge();
+      smudge.name = values[0];
+      smudge.rx = Number(values[1]);
+      smudge.ry = Number(values[2]);
+      this.smudges.push(smudge);
+    }
   }
 
   decodePreviewImage() {
@@ -408,6 +447,10 @@ export class MapFile extends IniFile {
         bitmap = new RgbBitmap(i, r);
       return Format5.decodeInto(s, bitmap.data), bitmap;
     }
+  }
+
+  private normalizeIniEntryValue(value: string | string[]): string {
+    return Array.isArray(value) ? value.join(",") : value;
   }
 }
   

@@ -220,7 +220,7 @@ export class MapTileLayerDebug {
 
   private createConnectivityLines(speedType: any, includeT: boolean, color: number): any {
     const graph = this.map.terrain.computePassabilityGraph(speedType, includeT);
-    const geometry = new (THREE as any).Geometry();
+    const points: THREE.Vector3[] = [];
     const processedConnections = new Set<string>();
     
     graph.forEachNode((node: any) => {
@@ -231,7 +231,7 @@ export class MapTileLayerDebug {
         
         if (!processedConnections.has(connectionId)) {
           processedConnections.add(connectionId);
-          geometry.vertices.push(
+          points.push(
             Coords.tile3dToWorld(
               sourceNode.data.tile.rx + 0.5,
               sourceNode.data.tile.ry + 0.5,
@@ -246,6 +246,8 @@ export class MapTileLayerDebug {
         }
       });
     });
+
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
 
     const material = new (THREE as any).LineBasicMaterial({
       color: color,

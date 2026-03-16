@@ -45,7 +45,7 @@ export class MapManifest {
     if (!basicSectionContent) {
         throw new Error(`Map "${mapFileName}" is missing the [Basic] section content`);
     }
-    const basicIniFile = new IniFile(basicSectionContent, `${mapFileName}_basic`);
+    const basicIniFile = new IniFile(basicSectionContent);
     const basicSection = basicIniFile.getSection("Basic");
 
     if (!basicSection) {
@@ -58,7 +58,7 @@ export class MapManifest {
     const waypointsSectionContent = this.extractIniSection("Waypoints", mapContent);
     let maxPlayersFromWaypoints = 0;
     if (waypointsSectionContent) {
-      const waypointsIniFile = new IniFile(waypointsSectionContent, `${mapFileName}_waypoints`);
+      const waypointsIniFile = new IniFile(waypointsSectionContent);
       const waypointsSection = waypointsIniFile.getSection("Waypoints");
       if (waypointsSection) {
         maxPlayersFromWaypoints = Array.from(waypointsSection.entries.keys()).filter(
@@ -69,7 +69,7 @@ export class MapManifest {
     this.maxSlots = maxPlayersFromWaypoints;
     this.official = basicSection.getBool("Official");
 
-    const supportedModeFilters = basicSection.getArray("GameMode", undefined, ["standard"]);
+    const supportedModeFilters = basicSection.getArray("GameMode", /,\s*/, ["standard"]);
     this.gameModes = availableGameModes.filter((gm) =>
       supportedModeFilters.includes(gm.mapFilter),
     );

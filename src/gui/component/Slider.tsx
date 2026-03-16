@@ -6,6 +6,7 @@ interface SliderProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 export const Slider: React.FC<SliderProps> = ({ getLabel, ...props }) => {
   const [value, setValue] = useState(() => props.value);
+  const normalizedValue = Array.isArray(value) ? value[0] ?? '' : value ?? '';
 
   useEffect(() => {
     if (value !== props.value) {
@@ -18,7 +19,7 @@ export const Slider: React.FC<SliderProps> = ({ getLabel, ...props }) => {
       <input
         type="range"
         {...props}
-        value={value}
+        value={normalizedValue}
         onChange={(e) => {
           setValue(e.target.value);
           props.onChange?.(e);
@@ -28,7 +29,7 @@ export const Slider: React.FC<SliderProps> = ({ getLabel, ...props }) => {
         type="text"
         disabled={true}
         readOnly={true}
-        value={getLabel?.(value) ?? value}
+        value={getLabel?.(normalizedValue) ?? normalizedValue}
       />
     </div>
   );

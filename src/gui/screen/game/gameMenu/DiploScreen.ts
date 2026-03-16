@@ -146,7 +146,7 @@ export class DiploScreen extends GameMenuScreen {
   private params?: DiploScreenParams;
   private form?: FormRef;
   private lastUpdate?: number;
-  public controller?: GameMenuController;
+  declare controller?: GameMenuController;
 
   constructor(
     strings: Strings,

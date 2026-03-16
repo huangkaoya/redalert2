@@ -21,8 +21,8 @@ export class MoveOrder extends Order {
     private map: any;
     private unitSelection: any;
     private forceMove: boolean;
-    public targetOptional: boolean;
-    public feedbackType: OrderFeedbackType;
+    public targetOptional: boolean = false;
+    public feedbackType: OrderFeedbackType = OrderFeedbackType.Move;
 
     constructor(game: any, map: any, unitSelection: any, forceMove: boolean = false) {
         super(forceMove ? OrderType.ForceMove : OrderType.Move);
@@ -30,8 +30,6 @@ export class MoveOrder extends Order {
         this.map = map;
         this.unitSelection = unitSelection;
         this.forceMove = forceMove;
-        this.targetOptional = false;
-        this.feedbackType = OrderFeedbackType.Move;
     }
 
     getPointerType(isMini: boolean): PointerType {
