@@ -47,9 +47,10 @@ export class UnitRepairTrait {
                     if (this.tickRepair(unit, world, gameObject)) {
                         repairSuccessful = true;
                     }
-                    if (!repairSuccessful ||
-                        (this.status !== RepairStatus.Idle && this.lastRepairTickSuccessful) ||
-                        gameObject.helipadTrait) {
+                    if (repairSuccessful &&
+                        this.status === RepairStatus.Idle &&
+                        !this.lastRepairTickSuccessful &&
+                        !gameObject.helipadTrait) {
                         world.events.dispatch(new UnitRepairStartEvent(unit));
                     }
                 }
@@ -80,11 +81,11 @@ export class UnitRepairTrait {
         let repairAmount: number;
         if (repairPercent) {
             const costPerHP = (repairPercent * unit.purchaseValue) / unit.healthTrait.maxHitPoints;
-            const maxCost = Math.min(world.owner.credits, Math.max(1, Math.floor(costPerHP * repairStep)));
+            const maxCost = Math.min(unit.owner.credits, Math.max(1, Math.floor(costPerHP * repairStep)));
             repairAmount = costPerHP && maxCost ? Math.floor(maxCost / costPerHP) : repairStep;
             if (!maxCost)
                 return false;
-            world.owner.credits -= maxCost;
+            unit.owner.credits -= maxCost;
         }
         else {
             repairAmount = repairStep;
@@ -92,7 +93,7 @@ export class UnitRepairTrait {
         repairAmount = Math.min(repairAmount, unit.healthTrait.maxHitPoints - unit.healthTrait.getHitPoints());
         if (!repairAmount)
             return false;
-        unit.healthTrait.healBy(repairAmount, world, repairBuilding);
+        unit.healthTrait.healBy(repairAmount, repairBuilding, world);
         return true;
     }
     private computeDefaultRallyPoint(gameObject: GameObject, map: any): any {
