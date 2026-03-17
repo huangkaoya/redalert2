@@ -4,7 +4,6 @@ import { ScoreTable } from "@/gui/screen/mainMenu/score/ScoreTable";
 import { SideType } from "@/game/SideType";
 import { MusicType } from "@/engine/sound/Music";
 import { MainMenuScreen } from "@/gui/screen/mainMenu/MainMenuScreen";
-import { StorageKey } from "@/LocalPrefs";
 import { Task } from "@puzzl/core/lib/async/Task";
 import { OperationCanceledError } from "@puzzl/core/lib/async/cancellation/OperationCanceledError";
 import { sleep } from "@puzzl/core/lib/async/sleep";
@@ -29,16 +28,6 @@ interface ScoreScreenParams {
 interface GameReport {
     gameId: string;
 }
-interface Config {
-    donateUrl?: string;
-}
-interface LocalPrefs {
-    getItem(key: string): string | undefined;
-    setItem(key: string, value: string): void;
-}
-interface MessageBoxApi {
-    confirm(message: string, confirmText: string, cancelText: string): Promise<boolean>;
-}
 interface WolService {
     getLastGameReport(): GameReport | undefined;
 }
@@ -52,19 +41,13 @@ const sideAssets = new Map<SideType, {
 export class ScoreScreen extends MainMenuScreen {
     private strings: any;
     private jsxRenderer: any;
-    private messageBoxApi: MessageBoxApi;
-    private localPrefs: LocalPrefs;
-    private config: Config;
     private wolService: WolService;
     private scoreTable?: any;
     private reportUpdateTask?: Task<void>;
-    constructor(strings: any, jsxRenderer: any, messageBoxApi: MessageBoxApi, localPrefs: LocalPrefs, config: Config, wolService: WolService) {
+    constructor(strings: any, jsxRenderer: any, wolService: WolService) {
         super();
         this.strings = strings;
         this.jsxRenderer = jsxRenderer;
-        this.messageBoxApi = messageBoxApi;
-        this.localPrefs = localPrefs;
-        this.config = config;
         this.wolService = wolService;
         this.musicType = MusicType.Score;
     }
@@ -138,20 +121,6 @@ export class ScoreScreen extends MainMenuScreen {
             this.reportUpdateTask = undefined;
         }
         await this.controller.hideSidebarButtons();
-        const donateUrl = this.config.donateUrl;
-        if (donateUrl) {
-            const donateBoxState = Number(this.localPrefs.getItem(StorageKey.DonateBoxState) ?? "0");
-            if (donateBoxState >= 2) {
-                const shouldDonate = await this.messageBoxApi.confirm(this.strings.get("TS:DonatePrompt"), this.strings.get("GUI:Yes"), this.strings.get("GUI:No"));
-                if (shouldDonate) {
-                    window.open(donateUrl, "_blank");
-                }
-                this.localPrefs.setItem(StorageKey.DonateBoxState, "0");
-            }
-            else {
-                this.localPrefs.setItem(StorageKey.DonateBoxState, String(donateBoxState + 1));
-            }
-        }
     }
     async onStack(): Promise<void> {
         await this.onLeave();

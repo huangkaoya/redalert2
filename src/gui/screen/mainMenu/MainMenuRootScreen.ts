@@ -184,7 +184,7 @@ export class MainMenuRootScreen extends RootScreen {
             screen = new screenClass(this.strings, this.jsxRenderer, mapFileLoader, errorHandler, this.messageBoxApi, this.localPrefs, mapList, gameModes, mapDir, fsAccessLib, sentry);
         }
         else if (screenType === MainMenuScreenType.Score) {
-            screen = new screenClass(this.strings, this.jsxRenderer, this.messageBoxApi, this.localPrefs, this.config, (this as any).wolService);
+            screen = new screenClass(this.strings, this.jsxRenderer, (this as any).wolService);
         }
         else if (screenType === MainMenuScreenType.Home) {
             screen = new screenClass(this.strings, this.messageBoxApi, this.appVersion, false, false, this.fullScreen);

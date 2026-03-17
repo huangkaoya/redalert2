@@ -325,11 +325,6 @@
     "ts:modloaderror": "This game mod could not be loaded. Please contact the mod author.",
     "gui:notready": "Not ready",
     "stt:notready": "Notifies the host that you are not ready to start the game",
-    "ts:donateprompt": "Thank you for playing Chrono Divide! If you've enjoyed the game, please consider making a donation.\n\nDonating is not required, but it would be greatly appreciated. Any contribution, no matter how small, will help significantly towards covering the infrastructure costs, as well as supporting the continuous development of the game.",
-    "ts:donatenow": "Donate Now",
-    "ts:donatelater": "Maybe Later",
-    "ts:donate": "Donate",
-
     "ts:importmap": "Custom Map...",
     "stt:importmap": "Adds a custom map file from the local file system",
     "ts:importmaperror": "The map could not be imported.",

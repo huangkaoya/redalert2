@@ -102,10 +102,6 @@ export class Config {
         const url = this.generalData.getString("modSdkUrl");
         return url.length > 0 ? url : undefined;
     }
-    get donateUrl(): string | undefined {
-        const url = this.generalData.getString("donateUrl");
-        return url.length > 0 ? url : undefined;
-    }
     get breakingNewsUrl(): string | undefined {
         const url = this.generalData.getString("breakingNewsUrl");
         return url.length > 0 ? url : undefined;

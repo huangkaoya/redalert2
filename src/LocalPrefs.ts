@@ -18,8 +18,7 @@ export enum StorageKey {
     PreferredGameOpts = "_r_hostOpts",
     LastConnection = "_r_lastCon",
     PreferredServerRegion = "_r_region",
-    TauntsEnabled = "_r_taunts",
-    DonateBoxState = "_r_donateBoxState"
+    TauntsEnabled = "_r_taunts"
 }
 export class LocalPrefs {
     protected storage: Storage;
