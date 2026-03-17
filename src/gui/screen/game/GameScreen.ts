@@ -762,6 +762,10 @@ export class GameScreen extends RootScreen {
                 itemIndex,
                 slotIndex,
                 slotContainer,
+                slotSize: sidebarCard.getSlotSize?.() ?? {
+                    width: sidebarCard.props?.slotSize?.width ?? sidebarCard.props?.cameoImages?.width ?? 0,
+                    height: sidebarCard.props?.slotSize?.height ?? sidebarCard.props?.cameoImages?.height ?? 0,
+                },
                 cameoSize: {
                     width: sidebarCard.props?.cameoImages?.width ?? 0,
                     height: sidebarCard.props?.cameoImages?.height ?? 0,
@@ -769,8 +773,8 @@ export class GameScreen extends RootScreen {
             };
         };
         const getSidebarTechnoClickPointByName = (technoName: string) => {
-            const { uiScene, targetTabId, itemIndex, slotIndex, slotContainer, cameoSize, } = resolveSidebarTechnoSlot(technoName);
-            const clickWorldPoint = new THREE.Vector3(cameoSize.width / 2, cameoSize.height / 2, 0);
+            const { uiScene, targetTabId, itemIndex, slotIndex, slotContainer, slotSize, } = resolveSidebarTechnoSlot(technoName);
+            const clickWorldPoint = new THREE.Vector3(slotSize.width / 2, slotSize.height / 2, 0);
             slotContainer.get3DObject().localToWorld(clickWorldPoint);
             const camera = uiScene.getCamera?.() ?? (uiScene as any).camera;
             const projected = clickWorldPoint.project(camera);
@@ -797,7 +801,7 @@ export class GameScreen extends RootScreen {
             };
         };
         const getSidebarTechnoDebugStateByName = (technoName: string) => {
-            const { sidebarModel, sidebarCard, targetTabId, itemIndex, slotIndex, slotContainer, cameoSize, } = resolveSidebarTechnoSlot(technoName);
+            const { sidebarModel, sidebarCard, targetTabId, itemIndex, slotIndex, slotContainer, slotSize, cameoSize, } = resolveSidebarTechnoSlot(technoName);
             const slotObject = sidebarCard.slotObjects?.[slotIndex];
             const labelObject = sidebarCard.labelObjects?.[slotIndex];
             const quantityObject = sidebarCard.quantityObjects?.[slotIndex];
@@ -818,6 +822,7 @@ export class GameScreen extends RootScreen {
                 slotTooltip: container3D.userData?.tooltip,
                 width: sidebarCard.props?.cameoImages?.width ?? 0,
                 height: sidebarCard.props?.cameoImages?.height ?? 0,
+                slotSize,
                 cameoSize,
                 containerPosition: slotContainer.getPosition?.() ?? undefined,
                 containerWorldPosition: {

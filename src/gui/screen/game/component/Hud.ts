@@ -189,6 +189,7 @@ export class Hud extends UiObject {
         const sellImg = this.getImage("sell.shp");
         const rUpImg = this.getImage("r-up.shp");
         const rDnImg = this.getImage("r-dn.shp");
+        const slotClockImg = this.getImage("gclock2.shp");
         const commandButtonImages = [
             ...new Set(this.commandBarButtonTypes.map((type) => commandButtonConfigs.find((config) => config.type === type)?.icon)),
         ]
@@ -240,6 +241,7 @@ export class Hud extends UiObject {
             throw new Error('Missing palette "cameo.pal"');
         const cameoImages = this.buildCameoFile();
         const cameoNameToIdMap = this.createCameoNameToIdMap();
+        const sidebarSlotSize = { width: slotClockImg.width, height: slotClockImg.height };
         const sidebarCardOffset = { x: 22, y: 1 };
         const sidebarCardPosition = this.sideType === SideType.GDI
             ? { x: 5, y: 2 }
@@ -307,6 +309,7 @@ export class Hud extends UiObject {
             zIndex: 2,
             strings: this.strings,
         }), jsx.jsx(SidebarCard, {
+            slotSize: sidebarSlotSize,
             cameoImages: cameoImages,
             cameoPalette: cameoPalette,
             cameoNameToIdMap: cameoNameToIdMap,

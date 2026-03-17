@@ -18,6 +18,10 @@ interface SidebarCardProps extends UiComponentProps {
     y?: number;
     zIndex?: number;
     slots: number;
+    slotSize?: {
+        width: number;
+        height: number;
+    };
     cameoImages: any;
     cameoPalette: string;
     sidebarModel: any;
@@ -103,14 +107,14 @@ export class SidebarCard extends UiComponent<SidebarCardProps> {
     }
     defineChildren(): any[] {
         const { slots, cameoImages, cameoPalette, sidebarModel, onSlotClick, zIndex, } = this.props;
-        const cameoSize = this.getCameoSize();
+        const slotSize = this.getSlotSize();
         const horizontalSpacing = 3;
         const verticalSpacing = 2;
         const children = [];
         for (let slotIndex = 0; slotIndex < slots; slotIndex++) {
             const position = {
-                x: (horizontalSpacing + cameoSize.width) * (slotIndex % 2),
-                y: (verticalSpacing + cameoSize.height) * Math.floor(slotIndex / 2),
+                x: (horizontalSpacing + slotSize.width) * (slotIndex % 2),
+                y: (verticalSpacing + slotSize.height) * Math.floor(slotIndex / 2),
             };
             children.push(jsx.jsx("container", {
                 x: position.x,
@@ -151,20 +155,20 @@ export class SidebarCard extends UiComponent<SidebarCardProps> {
             }), jsx.jsx("sprite", {
                 images: this.tagImages,
                 zIndex: 0.5,
-                x: cameoSize.width / 2,
-                y: cameoSize.height / 2,
+                x: slotSize.width / 2,
+                y: slotSize.height / 2,
                 transparent: true,
                 ref: (element: any) => this.tagObjects.push(element),
             }), jsx.jsx("sprite", {
                 images: this.labelImages,
                 zIndex: 2,
-                x: cameoSize.width / 2,
+                x: slotSize.width / 2,
                 transparent: true,
                 ref: (element: any) => this.labelObjects.push(element),
             }), jsx.jsx("sprite", {
                 images: this.quantityImages,
                 zIndex: 2,
-                x: cameoSize.width,
+                x: slotSize.width,
                 alignX: 1,
                 alignY: -1,
                 transparent: true,
@@ -267,15 +271,16 @@ export class SidebarCard extends UiComponent<SidebarCardProps> {
         if (typeof labelObject.setFrame !== 'function' || typeof labelObject.setPosition !== 'function')
             return;
         const labelAlign = (labelObject as any).builder?.setAlign ? (labelObject as any).builder.setAlign.bind((labelObject as any).builder) : undefined;
+        const slotSize = this.getSlotSize();
         if (item.status === SidebarItemStatus.Ready) {
             labelObject.setFrame(LabelType.Ready);
-            labelObject.setPosition(this.getCameoSize().width / 2, labelObject.getPosition().y);
+            labelObject.setPosition(slotSize.width / 2, labelObject.getPosition().y);
             if (labelAlign)
                 labelAlign(0, -1);
         }
         else if (item.status === SidebarItemStatus.OnHold) {
             labelObject.setFrame(LabelType.OnHold);
-            const xPos = item.quantity > 1 ? 0 : this.getCameoSize().width / 2;
+            const xPos = item.quantity > 1 ? 0 : slotSize.width / 2;
             labelObject.setPosition(xPos, labelObject.getPosition().y);
             if (labelAlign)
                 labelAlign(item.quantity > 1 ? -1 : 0, -1);
@@ -378,10 +383,16 @@ export class SidebarCard extends UiComponent<SidebarCardProps> {
             height: this.props.cameoImages.height,
         };
     }
+    getSlotSize(): {
+        width: number;
+        height: number;
+    } {
+        return this.props.slotSize ?? this.getCameoSize();
+    }
     createSlotOutline(): any {
-        const cameoSize = this.getCameoSize();
-        const width = cameoSize.width;
-        const height = cameoSize.height;
+        const slotSize = this.getSlotSize();
+        const width = slotSize.width;
+        const height = slotSize.height;
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array([
             0, 0, 0,
