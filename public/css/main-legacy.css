@@ -4,11 +4,14 @@ html, body {
 
 body {
     margin: 0;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    box-sizing: border-box;
     overflow: hidden;
     display: flex;
     justify-content: center;
     align-items: center;
     background: rgba(0, 0, 0, .75);
+    overscroll-behavior: none;
 }
 
 html:-webkit-full-screen body {
@@ -26,6 +29,9 @@ html:-moz-full-screen body {
 
 #ra2web-root {
     position: relative;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 #ra2web-root, #ra2web-root input, #ra2web-root select, #ra2web-root .select, #ra2web-root button {
@@ -46,7 +52,6 @@ html:-moz-full-screen body {
 }
 
 #ra2web-root > * {
-    /* Removes whitespace from the bottom causing scrollbars to appear on fullscreen */
     vertical-align: top;
 }
 
@@ -1434,6 +1439,48 @@ input[type="range"]:focus {
 
 #ra2web-root .opts.general-opts .resolution-select .select {
     min-width: 150px;
+}
+
+#ra2web-root .opts.general-opts .fullscreen-toggle-button {
+    min-width: 100px;
+}
+
+#ra2web-root[data-mobile-layout="true"] .opts.general-opts {
+    width: 100%;
+    max-width: 440px;
+    padding: 24px 48px;
+}
+
+#ra2web-root[data-compact-layout="true"] .opts.general-opts {
+    padding: 16px 72px;
+}
+
+#ra2web-root[data-compact-layout="true"] .opts.general-opts fieldset + fieldset {
+    margin-top: 10px;
+}
+
+#ra2web-root[data-compact-layout="true"] .opts.general-opts .slider-item,
+#ra2web-root[data-compact-layout="true"] .opts.general-opts .item {
+    margin: 8px 0;
+}
+
+#ra2web-root[data-compact-layout="true"] .opts.general-opts .slider-item span.label,
+#ra2web-root[data-compact-layout="true"] .opts.general-opts .item span.label {
+    width: 140px;
+}
+
+#ra2web-root[data-compact-layout="true"] .opts.general-opts .select {
+    min-width: 96px;
+}
+
+#ra2web-root[data-compact-layout="true"] .opts.general-opts .resolution-select .select,
+#ra2web-root[data-compact-layout="true"] .opts.general-opts .fullscreen-toggle-button {
+    min-width: 128px;
+}
+
+#ra2web-root[data-mobile-layout="true"] .opts .item span.label,
+#ra2web-root[data-mobile-layout="true"] .opts .slider-item span.label {
+    width: 135px;
 }
 
 #ra2web-root .opts.sound-opts {

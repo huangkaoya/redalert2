@@ -1,6 +1,6 @@
 import { Select } from "@/gui/component/Select";
 import { Option } from "@/gui/component/Option";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { BoxedVar } from "@/util/BoxedVar";
 interface Resolution {
     width: number;
@@ -11,72 +11,95 @@ interface Strings {
 }
 interface FullScreen {
     isFullScreen(): boolean;
+    onChange?: {
+        subscribe: (listener: (value: boolean) => void) => void;
+        unsubscribe: (listener: (value: boolean) => void) => void;
+    };
 }
 interface ResolutionSelectProps {
     resolution: BoxedVar<Resolution | undefined>;
     fullScreen: FullScreen;
     strings: Strings;
 }
-const availableResolutions: Resolution[] = [
+const desktopResolutions: Resolution[] = [
     { width: 1920, height: 1080 },
     { width: 1600, height: 900 },
-    { width: 1280, height: 1024 },
     { width: 1366, height: 768 },
+    { width: 1280, height: 1024 },
+    { width: 1280, height: 720 },
     { width: 1024, height: 768 },
     { width: 800, height: 600 },
 ];
+const mobileResolutions: Resolution[] = [
+    { width: 1280, height: 720 },
+    { width: 1024, height: 768 },
+    { width: 960, height: 720 },
+    { width: 800, height: 600 },
+];
+const isCoarsePointer = () => !!window.matchMedia?.("(pointer: coarse)")?.matches ||
+    (navigator.maxTouchPoints ?? 0) > 0 ||
+    "ontouchstart" in window;
+const getCurrentScreenSize = (): Resolution => ({
+    width: Math.max(320, Math.floor(window.visualViewport?.width ?? window.innerWidth)),
+    height: Math.max(240, Math.floor(window.visualViewport?.height ?? window.innerHeight)),
+});
+const formatResolution = (resolution: Resolution): string => `${resolution.width} x ${resolution.height}`;
+const isSameResolution = (left?: Resolution, right?: Resolution) => !!left &&
+    !!right &&
+    left.width === right.width &&
+    left.height === right.height;
 export const ResolutionSelect: React.FC<ResolutionSelectProps> = ({ resolution, fullScreen, strings, }) => {
-    const formatResolution = (res: Resolution): string => `${res.width} x ${res.height}`;
-    const getCurrentScreenSize = (): Resolution => ({
-        width: Math.max(availableResolutions[availableResolutions.length - 1].width, window.innerWidth),
-        height: Math.max(availableResolutions[availableResolutions.length - 1].height, window.innerHeight),
-    });
-    const getFilteredResolutions = (screenSize: Resolution): Resolution[] => availableResolutions.filter((res, index) => (res.height <= screenSize.height && res.width <= screenSize.width) ||
-        index === availableResolutions.length - 1);
     const [screenSize, setScreenSize] = useState<Resolution>(() => getCurrentScreenSize());
     const [currentResolution, setCurrentResolution] = useState<Resolution | undefined>(resolution.value);
-    const [filteredResolutions, setFilteredResolutions] = useState<Resolution[]>(() => getFilteredResolutions(screenSize));
-    const isFullScreenMode = fullScreen.isFullScreen();
-    const isCustomResolution = currentResolution &&
-        !filteredResolutions.find((res) => res.height === currentResolution.height && res.width === currentResolution.width);
+    const [fullScreenMode, setFullScreenMode] = useState(() => fullScreen.isFullScreen());
+    const [mobileLayout, setMobileLayout] = useState(() => isCoarsePointer());
     useEffect(() => {
         const handleResize = () => {
-            const newScreenSize = getCurrentScreenSize();
-            setScreenSize(newScreenSize);
-            setFilteredResolutions(getFilteredResolutions(newScreenSize));
+            setScreenSize(getCurrentScreenSize());
+            setMobileLayout(isCoarsePointer());
+            setFullScreenMode(fullScreen.isFullScreen());
         };
-        const unsubscribe = () => {
-            resolution.onChange.unsubscribe(setCurrentResolution);
+        const handleFullScreenChange = (value: boolean) => {
+            setFullScreenMode(value);
+            handleResize();
         };
         window.addEventListener("resize", handleResize);
+        window.visualViewport?.addEventListener("resize", handleResize);
         resolution.onChange.subscribe(setCurrentResolution);
+        fullScreen.onChange?.subscribe(handleFullScreenChange);
         return () => {
             window.removeEventListener("resize", handleResize);
-            unsubscribe();
+            window.visualViewport?.removeEventListener("resize", handleResize);
+            resolution.onChange.unsubscribe(setCurrentResolution);
+            fullScreen.onChange?.unsubscribe(handleFullScreenChange);
         };
-    }, [resolution]);
-    if (isFullScreenMode) {
+    }, [fullScreen, resolution]);
+    const availableResolutions = useMemo(() => {
+        const baseList = mobileLayout ? mobileResolutions : desktopResolutions;
+        const filtered = baseList.filter((entry, index) => (entry.width <= screenSize.width && entry.height <= screenSize.height) ||
+            index === baseList.length - 1);
+        if (currentResolution && !filtered.some((entry) => isSameResolution(entry, currentResolution))) {
+            return [currentResolution, ...filtered];
+        }
+        return filtered;
+    }, [currentResolution, mobileLayout, screenSize.height, screenSize.width]);
+    if (fullScreenMode) {
         return (<Select className="resolution-select" initialValue="" disabled={true} onSelect={() => { }}>
         <Option value="" label={strings.get("TS:ResolutionFullScreen", formatResolution(screenSize))}/>
       </Select>);
     }
     return (<Select className="resolution-select" initialValue={currentResolution ? formatResolution(currentResolution) : ""} onSelect={(value) => {
-            const parsedResolution = value !== ""
-                ? value.split(" x ").map((v) => Number(v))
+            const nextResolution = value.length
+                ? value.split(" x ").map((item) => Number(item))
                 : undefined;
-            const newResolution = parsedResolution
-                ? { width: parsedResolution[0], height: parsedResolution[1] }
+            resolution.value = nextResolution
+                ? { width: nextResolution[0], height: nextResolution[1] }
                 : undefined;
-            resolution.value = newResolution;
         }}>
-      {isCustomResolution && currentResolution && (<Option value={formatResolution(currentResolution)} label={`${formatResolution(currentResolution)} (${formatResolution({
-                width: Math.min(currentResolution.width, screenSize.width),
-                height: Math.min(currentResolution.height, screenSize.height),
-            })})`}/>)}
       <Option value="" label={strings.get("TS:ResolutionFit", formatResolution(screenSize))}/>
-      {filteredResolutions.map((res) => {
-            const resolutionString = formatResolution(res);
-            return (<Option key={resolutionString} value={resolutionString} label={resolutionString}/>);
+      {availableResolutions.map((entry) => {
+            const value = formatResolution(entry);
+            return <Option key={value} value={value} label={value}/>;
         })}
     </Select>);
 };

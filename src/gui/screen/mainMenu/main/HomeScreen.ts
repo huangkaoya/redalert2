@@ -4,6 +4,7 @@ import { MainMenuController } from '../MainMenuController';
 import { Strings } from '../../../../data/Strings';
 import { MusicType } from '../../../../engine/sound/Music';
 import { MessageBoxApi } from '../../../component/MessageBoxApi';
+import { FullScreen } from '../../../FullScreen';
 interface SidebarButton {
     label: string;
     tooltip?: string;
@@ -17,15 +18,17 @@ export class HomeScreen implements Screen {
     private appVersion: string;
     private storageEnabled: boolean;
     private quickMatchEnabled: boolean;
+    private fullScreen?: FullScreen;
     private controller?: MainMenuController;
     public title: string;
     public musicType: MusicType;
-    constructor(strings: Strings, messageBoxApi: MessageBoxApi, appVersion: string, storageEnabled: boolean = false, quickMatchEnabled: boolean = false) {
+    constructor(strings: Strings, messageBoxApi: MessageBoxApi, appVersion: string, storageEnabled: boolean = false, quickMatchEnabled: boolean = false, fullScreen?: FullScreen) {
         this.strings = strings;
         this.messageBoxApi = messageBoxApi;
         this.appVersion = appVersion;
         this.storageEnabled = storageEnabled;
         this.quickMatchEnabled = quickMatchEnabled;
+        this.fullScreen = fullScreen;
         this.title = this.strings.get("GUI:MainMenu") || "Main Menu";
         this.musicType = MusicType.Intro;
     }
@@ -93,7 +96,7 @@ export class HomeScreen implements Screen {
             label: this.strings.get('GUI:Fullscreen') || 'Fullscreen',
             tooltip: this.strings.get('STT:Fullscreen') || 'Toggle full screen mode',
             isBottom: true,
-            disabled: false,
+            disabled: this.fullScreen ? !this.fullScreen.isAvailable() : false,
             onClick: () => {
                 console.log('[HomeScreen] Fullscreen clicked');
                 this.toggleFullscreen();
@@ -125,7 +128,10 @@ export class HomeScreen implements Screen {
     }
     private async toggleFullscreen(): Promise<void> {
         try {
-            if (document.fullscreenElement) {
+            if (this.fullScreen?.isAvailable()) {
+                await this.fullScreen.toggleAsync();
+            }
+            else if (document.fullscreenElement) {
                 await document.exitFullscreen();
             }
             else {

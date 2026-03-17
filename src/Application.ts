@@ -16,12 +16,14 @@ import { GameRes } from './engine/gameRes/GameRes';
 import { GameResConfig } from './engine/gameRes/GameResConfig';
 import { GameResSource } from './engine/gameRes/GameResSource';
 import { LocalPrefs, StorageKey } from './LocalPrefs';
-import type { Viewport } from './gui/Viewport';
+import type { Viewport, ViewportRect } from './gui/Viewport';
 import { Gui } from './Gui';
 import { BasicErrorBoxApi } from './gui/component/BasicErrorBoxApi';
 import { Engine } from './engine/Engine';
 import { ImageContext } from './gui/component/ImageContext';
 import { ConsoleVars } from './ConsoleVars';
+import { GeneralOptions } from './gui/screen/options/GeneralOptions';
+import { FullScreen } from './gui/FullScreen';
 export type SplashScreenUpdateCallback = (props: ComponentProps<typeof SplashScreenComponent> | null) => void;
 class MockLocalPrefs extends LocalPrefs {
     constructor(storage: Storage) {
@@ -41,42 +43,23 @@ class MockDevToolsApi {
     static listCommands(): string[] { return []; }
     static listVars(): string[] { return []; }
 }
-class MockFullScreen {
-    onChange = new EventDispatcher<MockFullScreen, boolean>();
-    constructor(doc: Document) { console.log('MockFullScreen initialized'); }
-    init() { }
-    isFullScreen(): boolean { return false; }
-}
 const mockSentry = {
     captureException: (e: any) => console.error("Sentry Mock: captureException", e),
     configureScope: (cb: Function) => cb({ setTag: () => { }, setExtra: () => { } }),
 };
 class ViewportAdapter implements Viewport {
-    constructor(private boxedVar: BoxedVar<{
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    }>) { }
-    get value(): {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    } {
+    constructor(private boxedVar: BoxedVar<ViewportRect>) { }
+    get value(): ViewportRect {
         return this.boxedVar.value;
     }
-    getValue(): {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    } {
+    getValue(): ViewportRect {
         return this.boxedVar.value;
     }
     rootElement?: HTMLElement;
 }
 export class Application {
+    private static readonly MOBILE_BASE_VIEWPORT = { width: 800, height: 600 };
+    private static readonly MIN_DESKTOP_VIEWPORT = { width: 800, height: 600 };
     private async importOptionalDevModule<T = any>(path: string): Promise<T> {
         const dynamicImport = new Function('modulePath', 'return import(modulePath);') as (modulePath: string) => Promise<T>;
         return dynamicImport(path);
@@ -91,19 +74,15 @@ export class Application {
         }
         return result;
     }
-    public viewport: BoxedVar<{
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    }>;
+    public viewport: BoxedVar<ViewportRect>;
     private viewportAdapter: ViewportAdapter;
     public config!: Config;
     private strings!: Strings;
     private localPrefs: LocalPrefs;
     private rootEl: HTMLElement | null = null;
     private runtimeVars: MockConsoleVars;
-    private fullScreen: MockFullScreen;
+    private fullScreen: FullScreen;
+    private generalOptions: GeneralOptions;
     public routing: Routing;
     private sentry: typeof mockSentry | undefined = mockSentry;
     private currentLocale: string = 'en-US';
@@ -113,6 +92,23 @@ export class Application {
     private gpuTier: any;
     private splashScreenUpdateCallback?: SplashScreenUpdateCallback;
     private gui?: Gui;
+    private preferredViewportSize?: {
+        width: number;
+        height: number;
+    } | null;
+    private hasLoadedGeneralOptionsFromStorage: boolean = false;
+    private readonly handleViewportEnvironmentChange = () => this.updateViewportSize();
+    private readonly handlePreferredResolutionChange = (resolution?: {
+        width: number;
+        height: number;
+    }) => this.setPreferredViewportSize(resolution);
+    private readonly handleForceResolutionChange = (value?: string) => {
+        if (!value?.match(/^\d+x\d+$/)) {
+            return;
+        }
+        const [width, height] = value.split('x').map(Number);
+        this.setPreferredViewportSize({ width, height });
+    };
     constructor(splashScreenUpdateCallback?: SplashScreenUpdateCallback) {
         this.viewport = new BoxedVar({ x: 0, y: 0, width: window.innerWidth, height: window.innerHeight });
         this.viewportAdapter = new ViewportAdapter(this.viewport);
@@ -120,7 +116,10 @@ export class Application {
         this.splashScreenUpdateCallback = splashScreenUpdateCallback;
         this.localPrefs = new MockLocalPrefs(localStorage);
         this.runtimeVars = new MockConsoleVars();
-        this.fullScreen = new MockFullScreen(document);
+        this.generalOptions = new GeneralOptions();
+        this.loadGeneralOptions();
+        this.fullScreen = new FullScreen(document);
+        this.updateViewportSize();
         console.log('Application constructor finished.');
     }
     public getVersion(): string {
@@ -214,25 +213,157 @@ export class Application {
     private async initLogging(): Promise<void> {
         console.log('[MVP] Skipping Application.initLogging().');
     }
-    private updateViewportSize(isFullScreen: boolean): void {
-        let newWidth: number, newHeight: number;
-        if (isFullScreen) {
-            newWidth = window.screen.width;
-            newHeight = window.screen.height;
+    private loadGeneralOptions(): void {
+        const optionsData = this.localPrefs.getItem(StorageKey.Options);
+        if (optionsData) {
+            try {
+                this.generalOptions.unserialize(optionsData);
+                this.hasLoadedGeneralOptionsFromStorage = true;
+                console.log('[Application] Loaded general options from local storage');
+            }
+            catch (error) {
+                console.warn('[Application] Failed to read general options from local storage', error);
+            }
         }
-        else {
-            const configWidth = this.config?.viewport?.width ?? Number.POSITIVE_INFINITY;
-            const configHeight = this.config?.viewport?.height ?? Number.POSITIVE_INFINITY;
-            newWidth = Math.min(window.innerWidth, configWidth);
-            newHeight = Math.min(window.innerHeight, configHeight);
+    }
+    private initializePreferredViewportSize(): void {
+        if (!this.hasLoadedGeneralOptionsFromStorage && this.generalOptions.graphics.resolution.value === undefined) {
+            const defaultViewportSize = {
+                width: this.config?.viewport?.width ?? 1024,
+                height: this.config?.viewport?.height ?? 768,
+            };
+            this.generalOptions.graphics.resolution.value = defaultViewportSize;
+            this.preferredViewportSize = defaultViewportSize;
+            console.log('[Application] Initialized preferred viewport size from config defaults', defaultViewportSize);
+            return;
         }
-        newWidth = Math.max(800, newWidth - (newWidth % 2));
-        newHeight = Math.max(600, newHeight - (newHeight % 2));
-        this.viewport.value = { ...this.viewport.value, width: newWidth, height: newHeight };
-        console.log(`[MVP] updateViewportSize: ${newWidth}x${newHeight}, Fullscreen: ${isFullScreen}`);
+        this.preferredViewportSize = this.generalOptions.graphics.resolution.value
+            ? { ...this.generalOptions.graphics.resolution.value }
+            : null;
+        console.log('[Application] Initialized preferred viewport size from options', this.preferredViewportSize);
+    }
+    private setPreferredViewportSize(resolution?: {
+        width: number;
+        height: number;
+    }): void {
+        this.preferredViewportSize = resolution ? { ...resolution } : null;
+        console.log('[Application] setPreferredViewportSize', this.preferredViewportSize ?? 'fit-window');
+        this.updateViewportSize(this.fullScreen.isFullScreen());
+    }
+    private getRequestedResolution(): { width: number; height: number; } | undefined {
+        if (this.preferredViewportSize === undefined) {
+            return this.generalOptions.graphics.resolution.value;
+        }
+        return this.preferredViewportSize ?? undefined;
+    }
+    private isMobileLayout(): boolean {
+        return !!window.matchMedia?.('(pointer: coarse)')?.matches ||
+            (navigator.maxTouchPoints ?? 0) > 0 ||
+            'ontouchstart' in window;
+    }
+    private getAvailableDisplaySize(): { width: number; height: number; } {
+        const viewport = window.visualViewport;
+        const width = Math.floor(viewport?.width ?? window.innerWidth ?? document.documentElement.clientWidth ?? Application.MOBILE_BASE_VIEWPORT.width);
+        const height = Math.floor(viewport?.height ?? window.innerHeight ?? document.documentElement.clientHeight ?? Application.MOBILE_BASE_VIEWPORT.height);
+        return {
+            width: Math.max(1, width),
+            height: Math.max(1, height),
+        };
+    }
+    private normalizeViewportDimension(value: number, minimum: number): number {
+        const normalized = Math.max(minimum, Math.floor(value));
+        return normalized - (normalized % 2);
+    }
+    private computeDesktopViewportSize(availableSize: {
+        width: number;
+        height: number;
+    }): {
+        width: number;
+        height: number;
+    } {
+        if (this.preferredViewportSize === null) {
+            return {
+                width: this.normalizeViewportDimension(availableSize.width, Application.MIN_DESKTOP_VIEWPORT.width),
+                height: this.normalizeViewportDimension(availableSize.height, Application.MIN_DESKTOP_VIEWPORT.height),
+            };
+        }
+        const requestedResolution = this.getRequestedResolution();
+        const defaultWidth = this.config?.viewport?.width ?? 1024;
+        const defaultHeight = this.config?.viewport?.height ?? 768;
+        const targetWidth = requestedResolution?.width ?? defaultWidth;
+        const targetHeight = requestedResolution?.height ?? defaultHeight;
+        return {
+            width: this.normalizeViewportDimension(Math.min(availableSize.width, targetWidth), Application.MIN_DESKTOP_VIEWPORT.width),
+            height: this.normalizeViewportDimension(Math.min(availableSize.height, targetHeight), Application.MIN_DESKTOP_VIEWPORT.height),
+        };
+    }
+    private computeViewportSize(isFullScreen: boolean, availableSize: { width: number; height: number; }, mobileLayout: boolean): {
+        width: number;
+        height: number;
+    } {
+        if (isFullScreen && !mobileLayout) {
+            return {
+                width: this.normalizeViewportDimension(availableSize.width, 2),
+                height: this.normalizeViewportDimension(availableSize.height, 2),
+            };
+        }
+        if (mobileLayout) {
+            const requestedResolution = this.getRequestedResolution();
+            const mobileWidth = requestedResolution?.width ?? Application.MOBILE_BASE_VIEWPORT.width;
+            const mobileHeight = requestedResolution?.height ?? Application.MOBILE_BASE_VIEWPORT.height;
+            return {
+                width: this.normalizeViewportDimension(mobileWidth, Application.MOBILE_BASE_VIEWPORT.width),
+                height: this.normalizeViewportDimension(mobileHeight, Application.MOBILE_BASE_VIEWPORT.height),
+            };
+        }
+        return this.computeDesktopViewportSize(availableSize);
+    }
+    private computeViewportLayout(isFullScreen: boolean): ViewportRect {
+        const availableSize = this.getAvailableDisplaySize();
+        const mobileLayout = this.isMobileLayout();
+        const logicalSize = this.computeViewportSize(isFullScreen, availableSize, mobileLayout);
+        const scale = Math.min(1, availableSize.width / logicalSize.width, availableSize.height / logicalSize.height);
+        return {
+            x: 0,
+            y: 0,
+            width: logicalSize.width,
+            height: logicalSize.height,
+            displayWidth: Math.max(1, Math.round(logicalSize.width * scale)),
+            displayHeight: Math.max(1, Math.round(logicalSize.height * scale)),
+            scale,
+            isMobileLayout: mobileLayout,
+            isPortrait: availableSize.height > availableSize.width,
+        };
+    }
+    private applyRootLayout(viewport: ViewportRect): void {
+        if (!this.rootEl) {
+            return;
+        }
+        this.rootEl.style.width = `${viewport.width}px`;
+        this.rootEl.style.height = `${viewport.height}px`;
+        this.rootEl.style.transform = viewport.scale && viewport.scale < 1 ? `scale(${viewport.scale})` : '';
+        this.rootEl.style.transformOrigin = 'center center';
+        this.rootEl.style.willChange = 'transform';
+        this.rootEl.dataset.mobileLayout = String(Boolean(viewport.isMobileLayout));
+        this.rootEl.dataset.orientation = viewport.isPortrait ? 'portrait' : 'landscape';
+        this.rootEl.dataset.compactLayout = String(viewport.height <= 640 || viewport.width <= 800);
+    }
+    private updateViewportSize(isFullScreen: boolean = this.fullScreen.isFullScreen()): void {
+        const nextViewport = this.computeViewportLayout(isFullScreen);
+        this.viewport.value = nextViewport;
+        this.applyRootLayout(nextViewport);
+        console.log('[Application] updateViewportSize', {
+            viewport: `${nextViewport.width}x${nextViewport.height}`,
+            display: `${nextViewport.displayWidth}x${nextViewport.displayHeight}`,
+            scale: nextViewport.scale,
+            fullScreen: isFullScreen,
+            mobileLayout: nextViewport.isMobileLayout,
+            portrait: nextViewport.isPortrait,
+        });
     }
     private onFullScreenChange(isFullScreen: boolean): void {
-        console.log(`[MVP] onFullScreenChange: ${isFullScreen}`);
+        console.log(`[Application] onFullScreenChange: ${isFullScreen}`);
+        this.updateViewportSize(isFullScreen);
     }
     private async loadGpuBenchmarkData(): Promise<any> {
         console.log('[MVP] Skipping Application.loadGpuBenchmarkData()');
@@ -252,6 +383,8 @@ export class Application {
             }
             return;
         }
+        this.viewportAdapter.rootElement = this.rootEl;
+        this.applyRootLayout(this.viewport.value);
         if (this.splashScreenUpdateCallback) {
             this.splashScreenUpdateCallback({
                 width: this.viewport.value.width,
@@ -262,6 +395,8 @@ export class Application {
         }
         try {
             await this.loadConfig();
+            this.initializePreferredViewportSize();
+            this.updateViewportSize();
         }
         catch (e) {
             console.error("CRITICAL: Application.loadConfig() failed. See previous errors.", e);
@@ -308,15 +443,17 @@ export class Application {
         this.runtimeVars = new MockConsoleVars();
         MockDevToolsApi.registerVar("freecamera", this.runtimeVars.freeCamera);
         await this.initLogging();
-        this.fullScreen = new MockFullScreen(document);
         this.fullScreen.init();
         this.fullScreen.onChange.subscribe((isFS: boolean) => {
             this.onFullScreenChange(isFS);
-            this.updateViewportSize(isFS);
         });
+        this.runtimeVars.forceResolution.onChange.subscribe(this.handleForceResolutionChange);
         if (typeof window !== 'undefined') {
-            window.addEventListener('resize', () => this.updateViewportSize(this.fullScreen.isFullScreen()));
-            this.updateViewportSize(this.fullScreen.isFullScreen());
+            window.addEventListener('resize', this.handleViewportEnvironmentChange);
+            window.addEventListener('orientationchange', this.handleViewportEnvironmentChange);
+            window.visualViewport?.addEventListener('resize', this.handleViewportEnvironmentChange);
+            this.generalOptions.graphics.resolution.onChange.subscribe(this.handlePreferredResolutionChange);
+            this.updateViewportSize();
         }
         this.loadGpuBenchmarkData()
             .then(gpuData => this.gpuTier = gpuData)
@@ -591,7 +728,7 @@ export class Application {
         });
         this.routing.addRoute("/", async () => {
             console.log('[Application] Initializing main page');
-            this.gui = new Gui(this.getVersion(), this.strings, this.config, this.viewport, this.rootEl!, this.cdnResourceLoader, this.gameResConfig, this.runtimeVars);
+            this.gui = new Gui(this.getVersion(), this.strings, this.config, this.viewport, this.rootEl!, this.cdnResourceLoader, this.gameResConfig, this.runtimeVars, this.generalOptions, this.fullScreen);
             await this.gui.init();
             currentHandler = this;
         });
@@ -695,6 +832,14 @@ export class Application {
     }
     async destroy(): Promise<void> {
         console.log('[Application] Destroying Application');
+        if (typeof window !== 'undefined') {
+            window.removeEventListener('resize', this.handleViewportEnvironmentChange);
+            window.removeEventListener('orientationchange', this.handleViewportEnvironmentChange);
+            window.visualViewport?.removeEventListener('resize', this.handleViewportEnvironmentChange);
+        }
+        this.generalOptions.graphics.resolution.onChange.unsubscribe(this.handlePreferredResolutionChange);
+        this.runtimeVars.forceResolution.onChange.unsubscribe(this.handleForceResolutionChange);
+        this.fullScreen.dispose();
         if (this.gui) {
             if (this.gui.destroy) {
                 await this.gui.destroy();

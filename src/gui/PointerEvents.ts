@@ -11,6 +11,8 @@ interface CanvasMetrics {
     y: number;
     width: number;
     height: number;
+    toCanvasPosition(pageX: number, pageY: number): PointerPosition;
+    toCanvasOffset(offsetX: number, offsetY: number): PointerPosition;
 }
 interface LockModePointer {
     x: number;
@@ -305,10 +307,7 @@ export class PointerEvents {
         };
     }
     private computeTouchPosition(touch: Touch): PointerPosition {
-        let position = {
-            x: touch.pageX - this.canvasMetrics.x,
-            y: touch.pageY - this.canvasMetrics.y,
-        };
+        let position = this.canvasMetrics.toCanvasPosition(touch.pageX, touch.pageY);
         position.x = clamp(position.x, 0, this.canvasMetrics.width - 1);
         position.y = clamp(position.y, 0, this.canvasMetrics.height - 1);
         return position;
@@ -360,7 +359,7 @@ export class PointerEvents {
     private getPointerPosition(event: MouseEvent | WheelEvent): PointerPosition {
         return this.document.pointerLockElement
             ? this.lockModePointer
-            : { x: (event as MouseEvent).offsetX, y: (event as MouseEvent).offsetY };
+            : this.canvasMetrics.toCanvasOffset((event as MouseEvent).offsetX, (event as MouseEvent).offsetY);
     }
     private findObjectUnderPointer(pointerPos: PointerPosition): THREE.Intersection | undefined {
         const scenes = this.renderer.getScenes();

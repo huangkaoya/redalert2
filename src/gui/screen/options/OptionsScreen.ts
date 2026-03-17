@@ -25,9 +25,17 @@ interface Strings {
     get(key: string): string;
 }
 interface LocalPrefs {
-    setItem(key: StorageKey, value: string): void;
+    setItem(key: StorageKey | string, value: string): void;
+    getItem?(key: StorageKey | string): string | undefined;
 }
 interface FullScreen {
+    isAvailable?(): boolean;
+    isFullScreen?(): boolean;
+    toggle?(): void;
+    onChange?: {
+        subscribe: (listener: (value: boolean) => void) => void;
+        unsubscribe: (listener: (value: boolean) => void) => void;
+    };
 }
 interface JsxRenderer {
     render(element: any): [
@@ -99,6 +107,7 @@ export class OptionsScreen {
                 fullScreen: this.fullScreen,
                 strings: this.strings,
                 inGame: this.inGame,
+                localPrefs: this.localPrefs,
             },
         }));
         this.controller.setMainComponent(component);

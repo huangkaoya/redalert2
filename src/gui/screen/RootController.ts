@@ -56,6 +56,14 @@ export class RootController extends Controller {
         });
     }
     rerenderCurrentScreen(): void {
-        console.log('[RootController] Rerender current screen requested');
+        const currentScreen = this.getCurrentScreen() as {
+            onViewportChange?: () => void;
+        } | undefined;
+        console.log('[RootController] Rerender current screen requested', {
+            hasCurrentScreen: Boolean(currentScreen),
+            screenType: this.getCurrentScreenType(),
+            hasViewportHandler: Boolean(currentScreen?.onViewportChange),
+        });
+        currentScreen?.onViewportChange?.();
     }
 }

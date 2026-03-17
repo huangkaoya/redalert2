@@ -64,10 +64,21 @@ export class FullScreen {
     }
     public async toggleAsync(): Promise<void> {
         if (this.document.fullscreenElement) {
+            try {
+                screen?.orientation?.unlock?.();
+            }
+            catch (_error) {
+            }
             await this.document.exitFullscreen();
         }
         else {
             await this.document.documentElement.requestFullscreen();
+            try {
+                await screen?.orientation?.lock?.("landscape");
+            }
+            catch (error) {
+                console.warn("Orientation lock failed", error);
+            }
         }
     }
     public dispose(): void {

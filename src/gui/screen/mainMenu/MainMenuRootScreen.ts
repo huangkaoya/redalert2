@@ -75,6 +75,9 @@ export class MainMenuRootScreen extends RootScreen {
         console.log('[MainMenuRootScreen] Creating view and controller');
         this.createView();
         this.mainMenuCtrl = new MainMenuController(this.mainMenu, this.sound, this.music);
+        const debugRoot = ((window as any).__ra2debug ??= {});
+        debugRoot.mainMenu = this.mainMenu;
+        debugRoot.mainMenuController = this.mainMenuCtrl;
         this.mainMenuCtrl.onScreenChange.subscribe((screenType, _controller) => {
             if (screenType !== undefined) {
                 console.log(`[MainMenuRootScreen] Navigated to screen: ${screenType}`);
@@ -92,7 +95,7 @@ export class MainMenuRootScreen extends RootScreen {
             this.mainMenu.setViewport(this.uiScene.menuViewport);
         }
         if (this.mainMenuCtrl) {
-            this.mainMenuCtrl.rerenderCurrentScreen();
+            this.mainMenuCtrl.rerenderCurrentScreen(true);
         }
     }
     async onEnter(params?: any): Promise<void> {
@@ -183,6 +186,9 @@ export class MainMenuRootScreen extends RootScreen {
         else if (screenType === MainMenuScreenType.Score) {
             screen = new screenClass(this.strings, this.jsxRenderer, this.messageBoxApi, this.localPrefs, this.config, (this as any).wolService);
         }
+        else if (screenType === MainMenuScreenType.Home) {
+            screen = new screenClass(this.strings, this.messageBoxApi, this.appVersion, false, false, this.fullScreen);
+        }
         else {
             screen = new screenClass(this.strings, this.messageBoxApi, this.appVersion, false, false);
         }
@@ -195,6 +201,11 @@ export class MainMenuRootScreen extends RootScreen {
             await this.mainMenuCtrl.leaveCurrentScreen();
             this.mainMenuCtrl.destroy();
             this.mainMenuCtrl = undefined;
+        }
+        const debugRoot = (window as any).__ra2debug;
+        if (debugRoot) {
+            delete debugRoot.mainMenu;
+            delete debugRoot.mainMenuController;
         }
         if (this.mainMenu) {
             this.uiScene.remove(this.mainMenu);

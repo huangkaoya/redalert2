@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Slider } from "@/gui/component/Slider";
 import { SCROLL_BASE_FACTOR, GeneralOptions } from "@/gui/screen/options/GeneralOptions";
 import { Select } from "@/gui/component/Select";
@@ -12,12 +12,24 @@ interface Strings {
     get(key: string): string;
 }
 interface FullScreen {
+    isAvailable?(): boolean;
+    isFullScreen?(): boolean;
+    toggle?(): void;
+    onChange?: {
+        subscribe: (listener: (value: boolean) => void) => void;
+        unsubscribe: (listener: (value: boolean) => void) => void;
+    };
+}
+interface LocalPrefs {
+    getItem?(key: string): string | undefined;
+    setItem?(key: string, value: string): void;
 }
 interface GeneralOptsProps {
     strings: Strings;
     options: GeneralOptions;
     fullScreen: FullScreen;
     inGame: boolean;
+    localPrefs?: LocalPrefs;
 }
 const speedLabels = new Map([
     [1, "TXT_SLOWEST"],
@@ -28,13 +40,40 @@ const speedLabels = new Map([
     [6, "TXT_FASTER"],
     [7, "TXT_FASTEST"],
 ]);
-export const GeneralOpts: React.FC<GeneralOptsProps> = ({ strings, options, fullScreen, inGame, }) => (<div className="opts general-opts">
+const isCoarsePointer = () => !!window.matchMedia?.("(pointer: coarse)")?.matches ||
+    (navigator.maxTouchPoints ?? 0) > 0 ||
+    "ontouchstart" in window;
+const getJoystickPreference = (localPrefs?: LocalPrefs) => {
+    const storedValue = localPrefs?.getItem?.("ra2web.mobileJoystickLite.enabled");
+    if (storedValue === "0") {
+        return false;
+    }
+    if (storedValue === "1") {
+        return true;
+    }
+    return isCoarsePointer();
+};
+export const GeneralOpts: React.FC<GeneralOptsProps> = ({ strings, options, fullScreen, inGame, localPrefs, }) => {
+    const [mobileLayout, setMobileLayout] = useState(() => isCoarsePointer());
+    const [mobileJoystickEnabled, setMobileJoystickEnabled] = useState(() => getJoystickPreference(localPrefs));
+    useEffect(() => {
+        const handleEnvironmentChange = () => {
+            setMobileLayout(isCoarsePointer());
+        };
+        window.addEventListener("resize", handleEnvironmentChange);
+        window.visualViewport?.addEventListener("resize", handleEnvironmentChange);
+        return () => {
+            window.removeEventListener("resize", handleEnvironmentChange);
+            window.visualViewport?.removeEventListener("resize", handleEnvironmentChange);
+        };
+    }, []);
+    return (<div className="opts general-opts">
     <fieldset>
       <legend>{strings.get("TS:GameplayOpts")}</legend>
       <div className="slider-item">
         <span className="label">{strings.get("GUI:ScrollRate")}</span>
         <Slider min={1} max={7} value={String(Math.floor(options.scrollRate.value / SCROLL_BASE_FACTOR))} getLabel={(value) => strings.get(speedLabels.get(Number(value))!)} onChange={(e) => (options.scrollRate.value =
-        Number(e.target.value) * SCROLL_BASE_FACTOR)}/>
+            Number(e.target.value) * SCROLL_BASE_FACTOR)}/>
       </div>
       <div className="item" data-r-tooltip={strings.get("STT:MouseAccel")}>
         <label>
@@ -86,6 +125,19 @@ export const GeneralOpts: React.FC<GeneralOptsProps> = ({ strings, options, full
           <input type="checkbox" defaultChecked={options.targetLines.value} onChange={(e) => (options.targetLines.value = e.target.checked)}/>
         </label>
       </div>
+      {mobileLayout && (<div className="item">
+          <label>
+            <span className="label">摇杆</span>
+            <input type="checkbox" checked={mobileJoystickEnabled} onChange={(event) => {
+                const enabled = event.target.checked;
+                const globalWindow = window as any;
+                setMobileJoystickEnabled(enabled);
+                localPrefs?.setItem?.("ra2web.mobileJoystickLite.enabled", enabled ? "1" : "0");
+                document.documentElement.dataset.ra2JoystickLite = enabled ? "1" : "0";
+                globalWindow.__ra2webVirtualJoystickLite?.setEnabled?.(enabled, false);
+            }}/>
+          </label>
+        </div>)}
     </fieldset>
     <fieldset>
       <legend>{strings.get("TS:GfxOpts")}</legend>
@@ -114,3 +166,4 @@ export const GeneralOpts: React.FC<GeneralOptsProps> = ({ strings, options, full
       </div>
     </fieldset>
   </div>);
+};

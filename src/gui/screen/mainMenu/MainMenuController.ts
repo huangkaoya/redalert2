@@ -7,12 +7,26 @@ export class MainMenuController extends Controller {
     private mainMenu: any;
     private sound?: any;
     private music?: any;
+    private uiSoundSuppressionDepth: number = 0;
+    private rerenderQueue: Promise<void> = Promise.resolve();
     constructor(mainMenu: any, sound?: any, music?: any) {
         super();
         this.mainMenu = mainMenu;
         this.sound = sound;
         this.music = music;
         console.log('[MainMenuController] Initialized');
+    }
+    private async withUiSoundSuppressed(task: () => Promise<void> | void): Promise<void> {
+        this.uiSoundSuppressionDepth += 1;
+        try {
+            await task();
+        }
+        finally {
+            this.uiSoundSuppressionDepth = Math.max(0, this.uiSoundSuppressionDepth - 1);
+        }
+    }
+    private shouldPlayUiSound(): boolean {
+        return this.uiSoundSuppressionDepth === 0;
     }
     async goToScreenBlocking(screenType: MainMenuScreenType, params?: any): Promise<void> {
         return super.goToScreenBlocking(screenType, params);
@@ -56,7 +70,7 @@ export class MainMenuController extends Controller {
     showSidebarButtons(): void {
         console.log('[MainMenuController] Showing sidebar buttons');
         if (this.mainMenu && this.mainMenu.isSidebarCollapsed && this.mainMenu.isSidebarCollapsed()) {
-            if (this.sound) {
+            if (this.sound && this.shouldPlayUiSound()) {
                 this.sound.play(SoundKey.GUIMoveInSound, ChannelType.Ui);
             }
             if (this.mainMenu.showButtons) {
@@ -67,7 +81,7 @@ export class MainMenuController extends Controller {
     async hideSidebarButtons(): Promise<void> {
         console.log('[MainMenuController] Hiding sidebar buttons');
         if (this.mainMenu && this.mainMenu.isSidebarCollapsed && !this.mainMenu.isSidebarCollapsed()) {
-            if (this.sound) {
+            if (this.sound && this.shouldPlayUiSound()) {
                 this.sound.play(SoundKey.GUIMoveOutSound, ChannelType.Ui);
             }
             return new Promise((resolve) => {
@@ -136,13 +150,30 @@ export class MainMenuController extends Controller {
     getSidebarPreviewSize(): any {
         return this.mainMenu.getSidebarPreviewSize();
     }
-    rerenderCurrentScreen(): void {
-        console.log('[MainMenuController] Rerendering current screen');
+    rerenderCurrentScreen(silent: boolean = false): void {
+        console.log('[MainMenuController] Rerendering current screen', { silent });
         const currentScreen = this.getCurrentScreen();
         const currentScreenType = this.getCurrentScreenType();
         if (currentScreen && currentScreenType !== undefined) {
-            currentScreen.onLeave();
-            currentScreen.onEnter();
+            this.rerenderQueue = this.rerenderQueue
+                .catch(() => undefined)
+                .then(async () => {
+                if (this.getCurrentScreen() !== currentScreen || this.getCurrentScreenType() !== currentScreenType) {
+                    return;
+                }
+                const rerender = async () => {
+                    await currentScreen.onLeave();
+                    await currentScreen.onEnter();
+                };
+                if (silent) {
+                    await this.withUiSoundSuppressed(rerender);
+                    return;
+                }
+                await rerender();
+            })
+                .catch((error) => {
+                console.error('[MainMenuController] Failed to rerender current screen', error);
+            });
         }
     }
     destroy(): void {

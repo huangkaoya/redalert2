@@ -39,16 +39,12 @@ import { VxlGeometryCache } from './engine/gfx/geometry/VxlGeometryCache.js';
 import { GameResConfig } from './engine/gameRes/GameResConfig.js';
 import { KeyBinds } from './gui/screen/game/worldInteraction/keyboard/KeyBinds.js';
 import { ClientApi } from './ClientApi.js';
+import type { ViewportRect } from './gui/Viewport.js';
 export class Gui {
     private appVersion: string;
     private strings: Strings;
     private config: Config;
-    private viewport: BoxedVar<{
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    }>;
+    private viewport: BoxedVar<ViewportRect>;
     private rootEl: HTMLElement;
     private renderer?: Renderer;
     private uiScene?: UiScene;
@@ -74,12 +70,7 @@ export class Gui {
     private palettes: Map<string, Palette> = new Map();
     private animationId?: number;
     private lastTime: number = 0;
-    constructor(appVersion: string, strings: Strings, config: Config, viewport: BoxedVar<{
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    }>, rootEl: HTMLElement, cdnResourceLoader?: any, gameResConfig?: GameResConfig, runtimeVars?: any) {
+    constructor(appVersion: string, strings: Strings, config: Config, viewport: BoxedVar<ViewportRect>, rootEl: HTMLElement, cdnResourceLoader?: any, gameResConfig?: GameResConfig, runtimeVars?: any, generalOptions?: GeneralOptions, fullScreen?: FullScreen) {
         this.appVersion = appVersion;
         this.strings = strings;
         this.config = config;
@@ -89,6 +80,8 @@ export class Gui {
         this.cdnResourceLoader = cdnResourceLoader;
         this.gameResConfig = gameResConfig;
         this.runtimeVars = runtimeVars;
+        this.generalOptions = generalOptions;
+        this.fullScreen = fullScreen;
     }
     async init(): Promise<void> {
         console.log('[Gui] Initializing GUI system');
@@ -573,19 +566,23 @@ export class Gui {
     }
     private async initOptionsSystem(): Promise<void> {
         console.log('[Gui] Initializing options system');
-        this.generalOptions = new GeneralOptions();
-        const optionsData = this.localPrefs.getItem(StorageKey.Options);
-        if (optionsData) {
-            try {
-                this.generalOptions.unserialize(optionsData);
-                console.log('[Gui] Loaded general options from local storage');
-            }
-            catch (error) {
-                console.warn('Failed to read general options from local storage', error);
+        if (!this.generalOptions) {
+            this.generalOptions = new GeneralOptions();
+            const optionsData = this.localPrefs.getItem(StorageKey.Options);
+            if (optionsData) {
+                try {
+                    this.generalOptions.unserialize(optionsData);
+                    console.log('[Gui] Loaded general options from local storage');
+                }
+                catch (error) {
+                    console.warn('Failed to read general options from local storage', error);
+                }
             }
         }
-        this.fullScreen = new FullScreen(document);
-        this.fullScreen.init();
+        if (!this.fullScreen) {
+            this.fullScreen = new FullScreen(document);
+            this.fullScreen.init();
+        }
         const keyboardIniFileName = Engine.getFileNameVariant('keyboard.ini');
         this.keyBinds = new KeyBinds(Engine.rfs?.getRootDirectory?.(), keyboardIniFileName, Engine.getIni(keyboardIniFileName));
         await this.keyBinds.load();
