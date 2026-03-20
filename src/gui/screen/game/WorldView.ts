@@ -111,6 +111,13 @@ export class WorldView {
         const beaconFxHandler = new BeaconFxHandler(this.game, localPlayer, renderableManager as any, this.renderer, worldSound);
         beaconFxHandler.init();
         this.disposables.add(beaconFxHandler);
+        const handleLightingChange = (lightingData: any) => {
+            worldScene.applyLighting(lighting);
+            renderableManager.updateLighting();
+            mapRenderable.updateLighting(lightingData);
+        };
+        lighting.onChange.subscribe(handleLightingChange);
+        this.disposables.add(() => lighting.onChange.unsubscribe(handleLightingChange));
         this.minimap.initWorld(worldScene);
         const onBoundsResize = () => {
             this.handleMapBoundsOrViewportChange(viewport);
