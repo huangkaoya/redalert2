@@ -23,6 +23,7 @@ import { SideType } from '@/game/SideType';
 import { HudFactory } from '@/gui/screen/game/HudFactory';
 import { Minimap } from '@/gui/screen/game/component/Minimap';
 import { Replay } from '@/network/gamestate/Replay';
+import { SoloPlayTurnManager } from '@/network/gamestate/SoloPlayTurnManager';
 import { CombatantSidebarModel } from '@/gui/screen/game/component/hud/viewmodel/CombatantSidebarModel';
 import { ActionFactoryReg } from '@/game/action/ActionFactoryReg';
 import { MessageList } from '@/gui/screen/game/component/hud/viewmodel/MessageList';
@@ -207,13 +208,14 @@ export class GameScreen extends RootScreen {
         const replay = this.replay = new Replay();
         this.disposables.add(() => this.replay = undefined);
         const replayRecorder = {
-            record: (action: any) => {
+            recordActions: (_tick: number, _actions: any[]) => {
             }
         };
-        this.gameTurnMgr = new GameTurnManager(game, actionQueue);
         if (this.isSinglePlayer) {
+            this.gameTurnMgr = new SoloPlayTurnManager(game, localPlayer, actionQueue, this.actionLogger, replayRecorder);
         }
         else {
+            this.gameTurnMgr = new GameTurnManager(game, actionQueue);
             this.lagState = false;
             if (localPlayer.isObserver) {
                 try {

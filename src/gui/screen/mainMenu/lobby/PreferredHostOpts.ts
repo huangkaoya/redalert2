@@ -50,7 +50,7 @@ export class PreferredHostOpts {
         return this;
     }
     applyMpDialogSettings(mpDialogSettings: any): this {
-        this.gameSpeed = mpDialogSettings.gameSpeed ?? this.gameSpeed;
+        this.gameSpeed = mpDialogSettings.gameSpeed !== undefined ? 6 - mpDialogSettings.gameSpeed : this.gameSpeed;
         this.credits = mpDialogSettings.money ?? this.credits;
         this.unitCount = mpDialogSettings.unitCount ?? this.unitCount;
         this.shortGame = mpDialogSettings.shortGame ?? this.shortGame;
