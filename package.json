@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "debug:skirmish": "node scripts/skirmish-flow.mjs",
     "debug:refinery-free-unit": "node scripts/refinery-free-unit-flow.mjs",
-    "debug:viewport": "node scripts/viewport-flow.mjs"
+    "debug:viewport": "node scripts/viewport-flow.mjs",
+    "debug:terror-drone": "node scripts/terror-drone-flow.mjs"
   },
   "dependencies": {
     "@brakebein/threeoctree": "^2.0.1",

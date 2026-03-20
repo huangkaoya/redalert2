@@ -52,7 +52,7 @@ export class ParasiteableTrait implements NotifyTick, NotifyHeal, NotifyDamage, 
     getParasite(): any {
         return this.parasite;
     }
-    onTick(target: any, gameState: any): void {
+    [NotifyTick.onTick](target: any, gameState: any): void {
         if (!this.parasite)
             return;
         if (this.parasite.isDestroyed) {
@@ -100,7 +100,7 @@ export class ParasiteableTrait implements NotifyTick, NotifyHeal, NotifyDamage, 
             : audioVisual.conditionRed;
         return target.healthTrait.health <= 100 * threshold;
     }
-    onHeal(target: any, gameState: any, amount: number, healer: any): void {
+    [NotifyHeal.onHeal](target: any, gameState: any, amount: number, healer: any): void {
         if (!this.parasite ||
             this.parasite.isDestroyed ||
             healer === target ||
@@ -118,13 +118,13 @@ export class ParasiteableTrait implements NotifyTick, NotifyHeal, NotifyDamage, 
             this.uninfest();
         }
     }
-    onDamage(target: any, gameState: any, damage: number, attacker: any): void {
+    [NotifyDamage.onDamage](target: any, gameState: any, damage: number, attacker: any): void {
         if (attacker?.obj !== this.parasite) {
             this.lastExternalDamageInflicted = damage;
             this.lastExternalDamageTick = gameState.currentTick;
         }
     }
-    onAttack(target: any, attacker: any, gameState: any): void {
+    [NotifyAttack.onAttack](target: any, attacker: any, gameState: any): void {
         if (!this.parasite ||
             this.parasite.isDestroyed ||
             !attacker?.weapon?.warhead.rules.sonic) {
@@ -144,7 +144,7 @@ export class ParasiteableTrait implements NotifyTick, NotifyHeal, NotifyDamage, 
             currentTask.cancel();
         }
     }
-    onDestroy(target: any, gameState: any, destroyer: any, forced: boolean): void {
+    [NotifyDestroy.onDestroy](target: any, gameState: any, destroyer: any, forced: boolean): void {
         if (!this.parasite || this.parasite.isDestroyed)
             return;
         if (forced ||
@@ -166,7 +166,7 @@ export class ParasiteableTrait implements NotifyTick, NotifyHeal, NotifyDamage, 
                 gameState.currentTick - this.lastExternalDamageTick! <
                     2 * this.lastExternalDamageInflicted);
     }
-    onBeforeTeleport(target: any, gameState: any, fromTile: any, toTile: any): void {
+    [NotifyTeleport.onBeforeTeleport](target: any, gameState: any, fromTile: any, toTile: any): void {
         if (!fromTile || !toTile || !this.parasite || this.parasite.isDestroyed)
             return;
         this.parasiteWeapon.expireCooldown();
