@@ -113,7 +113,8 @@ export class Renderer {
         this.renderer.clear();
         this.scenes.forEach((scene) => {
             this.renderer.clearDepth();
-            this.renderer.setViewport(scene.viewport.x, scene.viewport.y, scene.viewport.width, scene.viewport.height);
+            const viewportY = this.height - scene.viewport.y - scene.viewport.height;
+            this.renderer.setViewport(scene.viewport.x, viewportY, scene.viewport.width, scene.viewport.height);
             this.renderer.render(scene.scene, scene.camera);
         });
     }
