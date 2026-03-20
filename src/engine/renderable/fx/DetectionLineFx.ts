@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { MeshLine, MeshLineMaterial } from 'three.meshline';
 import { Coords } from '@/game/Coords';
+import { getMeshLineResolution } from '@/engine/renderable/fx/MeshLineResolution';
 interface Camera {
     top: number;
     right: number;
@@ -127,10 +128,7 @@ export class DetectionLineFx {
         return Math.min(1, 5 / distance) * Coords.ISO_WORLD_SCALE;
     }
     private computeResolution(camera: Camera): THREE.Vector2 {
-        const top = camera.top;
-        const aspectRatio = camera.right / camera.top;
-        const height = (2 * top) / Math.cos(camera.rotation.y);
-        return new THREE.Vector2(height * aspectRatio, height).multiplyScalar((top * Math.cos(this.camera.rotation.x)) / Coords.ISO_WORLD_SCALE);
+        return getMeshLineResolution(camera as unknown as THREE.Camera);
     }
     remove(): void {
         this.container?.remove(this);

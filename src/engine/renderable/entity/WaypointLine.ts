@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { MeshLine, MeshLineMaterial } from 'three.meshline';
 import { Coords } from '@/game/Coords';
+import { getMeshLineResolution } from '@/engine/renderable/fx/MeshLineResolution';
 interface WaypointVertex {
     enabled: boolean;
     position: THREE.Vector3;
@@ -29,7 +30,6 @@ export class WaypointLine {
     private fgLineMesh?: THREE.Mesh;
     private bgLineMesh?: THREE.Mesh;
     private lineHeadMeshes?: THREE.Points[];
-    private lastLineVertexCount?: number;
     private lastUpdateMillis?: number;
     private cameraHash?: string;
     constructor(linePath: LinePath, camera: Camera) {
@@ -61,21 +61,17 @@ export class WaypointLine {
         if (!this.wrapper) {
             this.wrapper = new THREE.Object3D();
             this.wrapper.name = "waypoint_line";
-            const meshLine = this.meshLine = new MeshLine();
-            const vertices = this.linePath.vertices
-                .filter((vertex) => vertex.enabled)
-                .map((vertex) => vertex.position);
-            this.lastLineVertexCount = vertices.length;
-            meshLine.setPoints(vertices.map((pos) => [pos.x, pos.y, pos.z]).flat());
-            this.fgLineMesh = new THREE.Mesh(meshLine.geometry, this.createFgLineMaterial(new THREE.Color(this.linePath.color), this.computeLineLength(vertices)));
+            const vertices = this.getEnabledVertices();
+            const { geometry, lineLength, visible } = this.createLineGeometry(vertices);
+            this.fgLineMesh = new THREE.Mesh(geometry, this.createFgLineMaterial(new THREE.Color(this.linePath.color), lineLength));
             this.fgLineMesh.renderOrder = 1000002;
+            this.fgLineMesh.visible = visible;
             this.wrapper.add(this.fgLineMesh);
-            this.bgLineMesh = new THREE.Mesh(meshLine.geometry, this.createBgLineMaterial(new THREE.Color(this.linePath.bgColor)));
+            this.bgLineMesh = new THREE.Mesh(geometry, this.createBgLineMaterial(new THREE.Color(this.linePath.bgColor)));
             this.bgLineMesh.renderOrder = 1000001;
+            this.bgLineMesh.visible = visible;
             this.wrapper.add(this.bgLineMesh);
-            this.lineHeadMeshes = this.createLineHeads(this.linePath.vertices
-                .filter((vertex) => vertex.enabled && vertex.lineHead)
-                .map((vertex) => vertex.position));
+            this.lineHeadMeshes = this.createLineHeads(this.getEnabledLineHeadVertices());
             this.lineHeadMeshes.forEach((mesh) => this.wrapper!.add(mesh));
         }
     }
@@ -92,22 +88,13 @@ export class WaypointLine {
         }
         if (this.linePath.verticesNeedUpdate) {
             this.linePath.verticesNeedUpdate = false;
-            const vertices = this.linePath.vertices
-                .filter((vertex) => vertex.enabled)
-                .map((vertex) => vertex.position);
-            if (this.lastLineVertexCount !== vertices.length) {
-                this.lastLineVertexCount = vertices.length;
-                (this.meshLine as any).attributes = undefined;
-            }
-            this.meshLine!.setPoints(vertices.map((pos) => [pos.x, pos.y, pos.z]).flat());
-            const lineLength = this.computeLineLength(vertices);
+            const vertices = this.getEnabledVertices();
+            const lineLength = this.updateLineGeometry(vertices);
             [this.fgLineMesh!].forEach((mesh) => {
                 const material = mesh.material as any;
                 material.uniforms.dashArray.value = this.computeDashArray(lineLength);
             });
-            this.updateLineHeads(this.linePath.vertices
-                .filter((vertex) => vertex.enabled && vertex.lineHead)
-                .map((vertex) => vertex.position));
+            this.updateLineHeads(this.getEnabledLineHeadVertices());
         }
         if (this.linePath.color !== this.lastColor) {
             this.lastColor = this.linePath.color;
@@ -130,6 +117,51 @@ export class WaypointLine {
             length += vertices[i].distanceTo(vertices[i - 1]);
         }
         return length;
+    }
+    private getEnabledVertices(): THREE.Vector3[] {
+        return this.linePath.vertices
+            .filter((vertex) => vertex.enabled)
+            .map((vertex) => vertex.position);
+    }
+    private getEnabledLineHeadVertices(): THREE.Vector3[] {
+        return this.linePath.vertices
+            .filter((vertex) => vertex.enabled && vertex.lineHead)
+            .map((vertex) => vertex.position);
+    }
+    private createLineGeometry(vertices: THREE.Vector3[]): {
+        geometry: THREE.BufferGeometry;
+        lineLength: number;
+        visible: boolean;
+    } {
+        const meshLine = this.meshLine = new MeshLine();
+        const visible = vertices.length >= 2;
+        const lineVertices = visible
+            ? vertices
+            : vertices.length === 1
+                ? [vertices[0], vertices[0]]
+                : [new THREE.Vector3(), new THREE.Vector3()];
+        meshLine.setPoints(lineVertices.map((pos) => [pos.x, pos.y, pos.z]).flat());
+        return {
+            geometry: meshLine.geometry,
+            lineLength: this.computeLineLength(vertices),
+            visible,
+        };
+    }
+    private updateLineGeometry(vertices: THREE.Vector3[]): number {
+        const previousGeometry = this.fgLineMesh?.geometry;
+        const { geometry, lineLength, visible } = this.createLineGeometry(vertices);
+        if (this.fgLineMesh) {
+            this.fgLineMesh.geometry = geometry;
+            this.fgLineMesh.visible = visible;
+        }
+        if (this.bgLineMesh) {
+            this.bgLineMesh.geometry = geometry;
+            this.bgLineMesh.visible = visible;
+        }
+        if (previousGeometry && previousGeometry !== geometry) {
+            previousGeometry.dispose();
+        }
+        return lineLength;
     }
     private createFgLineMaterial(color: THREE.Color, lineLength: number): MeshLineMaterial {
         return new MeshLineMaterial({
@@ -156,10 +188,7 @@ export class WaypointLine {
         return Math.min(1, 5 / lineLength) * Coords.ISO_WORLD_SCALE;
     }
     private computeResolution(camera: Camera): THREE.Vector2 {
-        const top = camera.top;
-        const aspectRatio = camera.right / camera.top;
-        const height = (2 * top) / Math.cos(camera.rotation.y);
-        return new THREE.Vector2(height * aspectRatio, height).multiplyScalar((top * Math.cos(this.camera.rotation.x)) / Coords.ISO_WORLD_SCALE);
+        return getMeshLineResolution(camera);
     }
     private createLineHeads(positions: THREE.Vector3[]): THREE.Points[] {
         const geometry = new THREE.BufferGeometry();
@@ -186,19 +215,29 @@ export class WaypointLine {
         }
     }
     dispose(): void {
+        const disposedGeometries = new Set<THREE.BufferGeometry>();
         [this.fgLineMesh, this.bgLineMesh].forEach((mesh) => {
-            if (mesh) {
+            if (!mesh) {
+                return;
+            }
+            if (!disposedGeometries.has(mesh.geometry)) {
                 mesh.geometry.dispose();
-                const material = mesh.material;
-                if (Array.isArray(material)) {
-                    material.forEach((entry) => entry.dispose());
-                }
-                else {
-                    material.dispose();
-                }
+                disposedGeometries.add(mesh.geometry);
+            }
+            const material = mesh.material;
+            if (Array.isArray(material)) {
+                material.forEach((entry) => entry.dispose());
+            }
+            else {
+                material.dispose();
             }
         });
-        this.lineHeadMeshes?.forEach((mesh) => mesh.geometry.dispose());
+        this.lineHeadMeshes?.forEach((mesh) => {
+            if (!disposedGeometries.has(mesh.geometry)) {
+                mesh.geometry.dispose();
+                disposedGeometries.add(mesh.geometry);
+            }
+        });
         this.lineHeadMaterial.dispose();
         this.lineHeadBgMaterial.dispose();
     }

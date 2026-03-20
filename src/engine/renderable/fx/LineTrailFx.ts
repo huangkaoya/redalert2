@@ -2,6 +2,7 @@ import { ObjectArt } from '@/game/art/ObjectArt';
 import { Coords } from '@/game/Coords';
 import * as THREE from 'three';
 import { MeshLine, MeshLineMaterial } from 'three.meshline';
+import { getMeshLineResolution } from '@/engine/renderable/fx/MeshLineResolution';
 interface GameSpeed {
     value?: number;
 }
@@ -180,11 +181,7 @@ export class LineTrailFx {
         return `${camera.top}_${camera.right}_${camera.rotation.x}_${camera.rotation.y}`;
     }
     private computeResolution(): THREE.Vector2 {
-        const camera = this.camera as THREE.OrthographicCamera;
-        const top = camera.top;
-        const aspectRatio = camera.right / camera.top;
-        const height = (2 * top) / Math.cos(camera.rotation.y);
-        return new THREE.Vector2(height * aspectRatio, height).multiplyScalar((top * Math.cos(camera.rotation.x)) / Coords.ISO_WORLD_SCALE);
+        return getMeshLineResolution(this.camera);
     }
     private getGameSpeedValue(): number {
         if (typeof this.gameSpeed?.value !== 'number') {

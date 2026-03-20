@@ -8,6 +8,7 @@ import { EventDispatcher } from '../../util/event';
 import { ShadowQuality } from './entity/unit/ShadowQuality';
 import { MeshBatchManager } from '../gfx/batch/MeshBatchManager';
 import { BoxedVar } from '../../util/BoxedVar';
+import { setMeshLineViewportResolution } from './fx/MeshLineResolution';
 import * as THREE from 'three';
 const AMBIENT_LIGHT_INTENSITY = 0.8;
 const CAMERA_FAR = 16000;
@@ -87,6 +88,7 @@ export class WorldScene extends RenderableContainer {
         camera.rotation.order = 'YXZ';
         camera.rotation.y = +beta;
         camera.rotation.x = -alpha;
+        setMeshLineViewportResolution(camera, viewport.width, viewport.height);
         return camera;
     }
     constructor(scene: THREE.Scene, camera: THREE.OrthographicCamera, viewport: {
@@ -120,6 +122,7 @@ export class WorldScene extends RenderableContainer {
         camera.right = d * aspect;
         camera.top = d;
         camera.bottom = -d;
+        setMeshLineViewportResolution(camera, viewport.width, viewport.height);
         camera.updateProjectionMatrix();
     }
     updateCamera(pan: {
