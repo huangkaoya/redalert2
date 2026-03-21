@@ -81,7 +81,7 @@ export class Renderer {
         renderer.shadowMap.enabled = true;
         renderer.localClippingEnabled = true;
         renderer.toneMapping = THREE.NoToneMapping;
-        renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+        renderer.outputColorSpace = (THREE as any).SRGBColorSpace ?? THREE.LinearSRGBColorSpace;
         return renderer;
     }
     setSize(width: number, height: number): void {

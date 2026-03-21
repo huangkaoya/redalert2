@@ -170,7 +170,7 @@ export class Aircraft {
         this.extraLight = new THREE.Vector3().copy(this.baseExtraLight);
     }
     private updateBaseLight(): void {
-        this.baseExtraLight = new THREE.Vector3().setScalar(this.lighting.computeNoAmbient(this.objectArt.lightingType, this.gameObject.tile) + this.rules.audioVisual.extraAircraftLight);
+        this.baseExtraLight = new THREE.Vector3().setScalar(1 + this.lighting.computeNoAmbient(this.objectArt.lightingType, this.gameObject.tile) + this.rules.audioVisual.extraAircraftLight);
     }
     updateLighting(): void {
         this.plugins.forEach((plugin) => plugin.updateLighting?.());

@@ -312,6 +312,7 @@ export class AircraftTester {
         const renderable = this.currentRenderable;
         const selectionLevel = renderable?.selectionModel?.getSelectionLevel?.();
         const veteranLevel = aircraft?.veteranTrait?.veteranLevel ?? aircraft?.veteranLevel ?? VeteranLevel.None;
+        const vxlExtraLightScalar = renderable?.extraLight?.x ?? null;
         TestToolSupport.setState('aircraft', {
             availableAircraft: this.listEl?.querySelectorAll('a').length ?? 0,
             selectedAircraft: this.currentAircraftType ?? null,
@@ -332,6 +333,7 @@ export class AircraftTester {
             zone: TestToolSupport.enumLabel(ZoneType, aircraft?.zone),
             warpedOut: Boolean(aircraft?.warpedOutTrait?.isActive?.()),
             ownerColor: aircraft?.owner?.color?.asHexString?.() ?? null,
+            vxlExtraLightScalar,
         });
     }
     static buildBrowser(aircraftRules: Map<string, any>): void {

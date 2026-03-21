@@ -403,6 +403,10 @@ export class VehicleTester {
         const controlGroupTextureUuid = renderable?.pipOverlay?.controlGroupSprite?.material?.map?.uuid
             ?? renderable?.pipOverlay?.controlGroupSprite?.material?.uniforms?.map?.value?.uuid
             ?? null;
+        const controlGroupColorHex = renderable?.pipOverlay?.lastOwnerColorHex !== undefined
+            ? `#${Number(renderable.pipOverlay.lastOwnerColorHex).toString(16).padStart(6, "0")}`
+            : null;
+        const vxlExtraLightScalar = renderable?.vxlExtraLight?.x ?? null;
         TestToolSupport.setState('vehicle', {
             availableVehicles: this.listEl?.querySelectorAll('a').length ?? 0,
             selectedVehicle: this.currentVehicleType ?? null,
@@ -432,6 +436,8 @@ export class VehicleTester {
             autoRotate: this.fixedDirection === undefined,
             ownerColor: vehicle?.owner?.color?.asHexString?.() ?? null,
             controlGroupTextureUuid,
+            controlGroupColorHex,
+            vxlExtraLightScalar,
         });
     }
     static buildBrowser(vehicleRules: Map<string, any>): void {

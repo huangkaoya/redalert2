@@ -272,7 +272,7 @@ export class Building {
         (this.baseShpExtraLight = this.lighting
             .compute(this.objectArt.lightingType, this.gameObject.tile)
             .addScalar(-1)),
-            (this.baseVxlExtraLight = new THREE.Vector3().setScalar(this.lighting.computeNoAmbient(this.objectArt.lightingType, this.gameObject.tile)));
+            (this.baseVxlExtraLight = new THREE.Vector3().setScalar(1 + this.lighting.computeNoAmbient(this.objectArt.lightingType, this.gameObject.tile)));
     }
     updateLighting() {
         this.updateBaseLight(),
