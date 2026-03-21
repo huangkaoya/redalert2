@@ -16,7 +16,7 @@ export class Prng {
     generateRandomInt(min: number, max: number): number {
         const random = this.prng.random();
         this.lastRandom = random;
-        return Math.round(random * (max - min)) + min;
+        return Math.floor(random * (max - min + 1)) + min;
     }
     generateRandom(): number {
         const random = this.prng.random();

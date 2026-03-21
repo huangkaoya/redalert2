@@ -2,7 +2,10 @@ export function isHumanPlayerInfo(info: any): boolean {
     return "name" in info;
 }
 export enum AiDifficulty {
-    Easy = 0
+    Brutal = 0,
+    Medium = 1,
+    Easy = 2,
+    MediumSea = 3
 }
 export interface HumanPlayerInfo {
     name: string;

@@ -17,7 +17,8 @@
     "debug:storage-explorer": "node scripts/storage-explorer-flow.mjs",
     "debug:options": "node scripts/options-flow.mjs",
     "debug:test-entries": "node scripts/test-entry-flow.mjs",
-    "debug:tester-panels": "node scripts/tester-panel-flow.mjs"
+    "debug:tester-panels": "node scripts/tester-panel-flow.mjs",
+    "debug:skirmish-lobby-data": "node scripts/skirmish-lobby-data-flow.mjs"
   },
   "dependencies": {
     "@brakebein/threeoctree": "^2.0.1",

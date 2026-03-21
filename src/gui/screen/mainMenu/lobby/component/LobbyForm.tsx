@@ -68,6 +68,11 @@ interface LobbyFormProps {
     onTeamSelect: (team: any, slotIndex: number) => void;
 }
 export class LobbyForm extends React.Component<LobbyFormProps> {
+    private getFirstAvailableAiDifficulty(): AiDifficulty {
+        const iterator = this.props.availableAiNames.keys();
+        const first = iterator.next();
+        return first.done ? AiDifficulty.Easy : first.value;
+    }
     onPlayerSelect = (value: string, slotIndex: number) => {
         let occupation: number;
         let aiDifficulty: any;
@@ -76,7 +81,11 @@ export class LobbyForm extends React.Component<LobbyFormProps> {
         }
         else {
             occupation = SlotOccupation.Occupied;
-            aiDifficulty = AiDifficulty[value];
+            aiDifficulty = AiDifficulty[value as keyof typeof AiDifficulty];
+            if (aiDifficulty === undefined ||
+                !this.props.availableAiNames.has(aiDifficulty)) {
+                aiDifficulty = this.getFirstAvailableAiDifficulty();
+            }
         }
         this.props.onSlotChange(occupation, slotIndex, aiDifficulty);
     };
@@ -252,17 +261,23 @@ export class LobbyForm extends React.Component<LobbyFormProps> {
             return (<input type="text" className="player-name" value={slot.name} readOnly={true}/>);
         }
         const strings = this.props.strings;
+        const displayOccupation = isSingleplayer && slot.occupation === SlotOccupation.Open
+            ? SlotOccupation.Closed
+            : slot.occupation;
         const optionsMap = new Map()
             .set(SlotOccupation.Occupied, slot.name || "")
             .set(SlotOccupation.Open, strings.get(slot.type === SlotType.Observer
             ? "GUI:OpenObserver"
             : "GUI:Open"))
             .set(SlotOccupation.Closed, isSingleplayer ? strings.get("GUI:None") : strings.get("GUI:Closed"));
-        let selectedValue = slot.occupation;
-        if (slot.occupation === SlotOccupation.Occupied &&
+        let selectedValue = displayOccupation;
+        if (displayOccupation === SlotOccupation.Occupied &&
             slot.type === SlotType.Ai) {
             optionsMap.delete(SlotOccupation.Occupied);
-            selectedValue = AiDifficulty[slot.aiDifficulty];
+            const selectedDifficulty = this.props.availableAiNames.has(slot.aiDifficulty)
+                ? slot.aiDifficulty
+                : this.getFirstAvailableAiDifficulty();
+            selectedValue = AiDifficulty[selectedDifficulty];
         }
         if (slot.type !== SlotType.Observer) {
             this.props.availableAiNames.forEach((name: string, difficulty: number) => {

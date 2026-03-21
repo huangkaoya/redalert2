@@ -17,6 +17,8 @@ import { MapFile } from "@/data/MapFile";
 import { MapDigest } from "@/engine/MapDigest";
 import { MainMenuRoute } from "@/gui/screen/mainMenu/MainMenuRoute";
 import { MusicType } from "@/engine/sound/Music";
+import { Parser } from "@/network/gameopt/Parser";
+import { Serializer } from "@/network/gameopt/Serializer";
 interface GameMode {
     id: number;
     label: string;
@@ -51,6 +53,7 @@ interface MessageBoxApi {
 interface LocalPrefs {
     getItem(key: string): string | undefined;
     setItem(key: string, value: string): void;
+    removeItem(key: string): void;
 }
 interface Rules {
     getMultiplayerCountries(): any[];
@@ -159,16 +162,68 @@ export class SkirmishScreen extends MainMenuScreen {
             });
             this.localPrefs.setItem(StorageKey.LastMap, mapEntry.fileName);
             this.localPrefs.setItem(StorageKey.LastMode, String(params.gameMode.id));
+            this.saveBotSettings();
         }
         this.updateMapPreview();
         this.initView();
+    }
+    private sanitizeLastBotSettings(aiPlayers: (any | undefined)[], savedColor: string | undefined, savedStartPos: string | undefined, maxSlots: number, mpDialogSettings: any): void {
+        let aiCount = 0;
+        for (let index = 0; index < aiPlayers.length; ++index) {
+            if (aiPlayers[index]) {
+                aiCount += 1;
+                if (aiCount > maxSlots - 1) {
+                    aiPlayers[index] = undefined;
+                }
+            }
+        }
+        const usedColors = savedColor !== undefined ? [Number(savedColor)] : [];
+        const usedStartPositions = savedStartPos !== undefined ? [Number(savedStartPos)] : [];
+        for (const ai of aiPlayers) {
+            if (!ai) {
+                continue;
+            }
+            if (ai.difficulty !== AiDifficulty.Easy) {
+                ai.difficulty = AiDifficulty.Easy;
+            }
+            if (ai.countryId !== undefined && ai.countryId >= this.getAvailablePlayerCountries().length) {
+                ai.countryId = RANDOM_COUNTRY_ID;
+            }
+            if (ai.colorId !== undefined && ai.colorId !== RANDOM_COLOR_ID) {
+                if (ai.colorId >= this.getAvailablePlayerColors().length || usedColors.includes(ai.colorId)) {
+                    ai.colorId = RANDOM_COLOR_ID;
+                }
+                else {
+                    usedColors.push(ai.colorId);
+                }
+            }
+            if (ai.startPos !== undefined && ai.startPos !== RANDOM_START_POS) {
+                if (ai.startPos >= this.getAvailableStartPositionsForMax(maxSlots).length || usedStartPositions.includes(ai.startPos)) {
+                    ai.startPos = RANDOM_START_POS;
+                }
+                else {
+                    usedStartPositions.push(ai.startPos);
+                }
+            }
+            if (ai.teamId !== NO_TEAM_ID) {
+                if (ai.teamId >= 4 || !mpDialogSettings.alliesAllowed) {
+                    ai.teamId = mpDialogSettings.mustAlly ? 3 : NO_TEAM_ID;
+                }
+            }
+            else if (mpDialogSettings.mustAlly) {
+                ai.teamId = 3;
+            }
+        }
     }
     private async initOptions(): Promise<void> {
         const savedOpts = this.localPrefs.getItem(StorageKey.PreferredGameOpts);
         const savedCountry = this.localPrefs.getItem(StorageKey.LastPlayerCountry);
         const savedColor = this.localPrefs.getItem(StorageKey.LastPlayerColor);
+        const savedStartPos = this.localPrefs.getItem(StorageKey.LastPlayerStartPos);
+        const savedTeam = this.localPrefs.getItem(StorageKey.LastPlayerTeam);
         const savedMap = this.localPrefs.getItem(StorageKey.LastMap);
         const savedMode = this.localPrefs.getItem(StorageKey.LastMode);
+        const savedBots = this.localPrefs.getItem(StorageKey.LastBots);
         let selectedMap = savedMap ? this.mapList.getByName(savedMap) : undefined;
         let selectedModeId = selectedMap && savedMode && this.gameModes.getAll().find(m => m.id === Number(savedMode)) ? Number(savedMode) : 1;
         let selectedMode = this.gameModes.getById(selectedModeId);
@@ -188,6 +243,11 @@ export class SkirmishScreen extends MainMenuScreen {
             preferredOpts.applyMpDialogSettings(this.rules.mpDialogSettings);
         }
         const mpDialogSettings = this.gameModes.getById(selectedModeId).mpDialogSettings;
+        const lastBots = savedBots ? new Parser().parseAiOpts(savedBots) : undefined;
+        const defaultAiDifficulty = AiDifficulty.Easy;
+        if (lastBots) {
+            this.sanitizeLastBotSettings(lastBots, savedColor, savedStartPos, selectedMap!.maxSlots, mpDialogSettings);
+        }
         this.gameOpts = {
             gameMode: selectedModeId,
             shortGame: preferredOpts.shortGame,
@@ -213,11 +273,30 @@ export class SkirmishScreen extends MainMenuScreen {
                         Number(savedColor) < this.getAvailablePlayerColors().length
                         ? Number(savedColor)
                         : RANDOM_COLOR_ID,
-                    startPos: RANDOM_START_POS,
-                    teamId: mpDialogSettings.mustAlly ? 0 : NO_TEAM_ID,
+                    startPos: savedStartPos !== undefined &&
+                        Number(savedStartPos) < this.getAvailableStartPositionsForMax(selectedMap!.maxSlots).length
+                        ? Number(savedStartPos)
+                        : RANDOM_START_POS,
+                    teamId: savedTeam !== undefined && mpDialogSettings.alliesAllowed && Number(savedTeam) < 4
+                        ? Number(savedTeam)
+                        : mpDialogSettings.mustAlly ? 0 : NO_TEAM_ID,
                 },
             ],
-            aiPlayers: new Array(8).fill(undefined),
+            aiPlayers: new Array(8).fill(undefined).map((_, index) => {
+                if (index && !(index > selectedMap!.maxSlots - 1)) {
+                    const difficulty = index > 1 || lastBots ? lastBots?.[index]?.difficulty : defaultAiDifficulty;
+                    if (difficulty !== undefined) {
+                        return {
+                            difficulty,
+                            countryId: lastBots?.[index]?.countryId ?? RANDOM_COUNTRY_ID,
+                            colorId: lastBots?.[index]?.colorId ?? RANDOM_COLOR_ID,
+                            startPos: lastBots?.[index]?.startPos ?? RANDOM_START_POS,
+                            teamId: lastBots?.[index]?.teamId ?? (mpDialogSettings.mustAlly ? 3 : NO_TEAM_ID),
+                        } as any;
+                    }
+                }
+                return undefined;
+            }),
             mapName: selectedMap!.fileName,
             mapDigest: MapDigest.compute(this.currentMapFile),
             mapSizeBytes: this.currentMapFile.getSize(),
@@ -225,15 +304,6 @@ export class SkirmishScreen extends MainMenuScreen {
             maxSlots: selectedMap!.maxSlots,
             mapOfficial: (selectedMap! as any).official ?? false,
         };
-        if (selectedMap!.maxSlots > 1) {
-            this.gameOpts.aiPlayers[1] = {
-                difficulty: AiDifficulty.Easy,
-                countryId: RANDOM_COUNTRY_ID,
-                colorId: RANDOM_COLOR_ID,
-                startPos: RANDOM_START_POS,
-                teamId: this.gameModes.getById(selectedModeId).mpDialogSettings.mustAlly ? 3 : NO_TEAM_ID,
-            } as any;
-        }
         this.slotsInfo = [{ type: NetSlotType.Player, name: this.playerName }];
         for (let i = 1; i < 8; ++i) {
             if (i < selectedMap!.maxSlots && this.gameOpts.aiPlayers[i]) {
@@ -246,6 +316,7 @@ export class SkirmishScreen extends MainMenuScreen {
                 this.slotsInfo.push({ type });
             }
         }
+        this.syncDebugState();
     }
     private initFormModel(): void {
         const mpDialogSettings = this.rules.mpDialogSettings;
@@ -320,6 +391,7 @@ export class SkirmishScreen extends MainMenuScreen {
             credits: mpDialogSettings.money,
             unitCount: mpDialogSettings.unitCount,
         };
+        this.syncDebugState();
     }
     private getAvailablePlayerCountries(): string[] {
         return this.rules.getMultiplayerCountries().map((country: any) => country.name);
@@ -353,6 +425,10 @@ export class SkirmishScreen extends MainMenuScreen {
         this.updatePlayerInfo(this.getCountryIdByName(this.formModel.playerSlots[slotIndex].country), this.getColorIdByName(this.formModel.playerSlots[slotIndex].color), this.formModel.playerSlots[slotIndex].startPos, teamId, slotIndex);
     }
     private handleSlotChange(occupation: SlotOccupation, slotIndex: number, aiDifficulty?: any): void {
+        this.changeSlotType(occupation, slotIndex, aiDifficulty);
+        this.saveBotSettings();
+    }
+    private changeSlotType(occupation: SlotOccupation, slotIndex: number, aiDifficulty?: any): void {
         if (slotIndex === 0) {
             throw new Error("Change slot type of host");
         }
@@ -432,6 +508,7 @@ export class SkirmishScreen extends MainMenuScreen {
             ai.colorId = colorId;
             ai.startPos = startPos;
             ai.teamId = teamId;
+            this.saveBotSettings();
         }
         else if (slot.type === NetSlotType.Player) {
             const human = this.gameOpts.humanPlayers.find((p) => p.name === slot.name);
@@ -444,14 +521,26 @@ export class SkirmishScreen extends MainMenuScreen {
             if (countryId !== RANDOM_COUNTRY_ID) {
                 this.localPrefs.setItem(StorageKey.LastPlayerCountry, String(countryId));
             }
+            else {
+                this.localPrefs.removeItem(StorageKey.LastPlayerCountry);
+            }
             if (colorId !== RANDOM_COLOR_ID) {
                 this.localPrefs.setItem(StorageKey.LastPlayerColor, String(colorId));
+            }
+            else {
+                this.localPrefs.removeItem(StorageKey.LastPlayerColor);
             }
             if (startPos !== RANDOM_START_POS) {
                 this.localPrefs.setItem(StorageKey.LastPlayerStartPos, String(startPos));
             }
+            else {
+                this.localPrefs.removeItem(StorageKey.LastPlayerStartPos);
+            }
             if (teamId !== NO_TEAM_ID) {
                 this.localPrefs.setItem(StorageKey.LastPlayerTeam, String(teamId));
+            }
+            else {
+                this.localPrefs.removeItem(StorageKey.LastPlayerTeam);
             }
         }
         else {
@@ -539,10 +628,32 @@ export class SkirmishScreen extends MainMenuScreen {
         this.formModel.availableStartPositions = this.getSelectableStartPositions(this.formModel.playerSlots, e.maxSlots);
         this.formModel.teamsAllowed = this.gameModes.getById(e.gameMode).mpDialogSettings.alliesAllowed;
         this.formModel.teamsRequired = this.gameModes.getById(e.gameMode).mpDialogSettings.mustAlly;
+        this.syncDebugState();
         this.lobbyForm && this.lobbyForm.refresh();
+    }
+    private saveBotSettings(): void {
+        this.localPrefs.setItem(StorageKey.LastBots, new Serializer().serializeAiOpts(this.gameOpts.aiPlayers));
     }
     private savePreferences(): void {
         this.localPrefs.setItem(StorageKey.PreferredGameOpts, this.preferredHostOpts!.applyGameOpts(this.gameOpts).serialize());
+    }
+    private syncDebugState(): void {
+        const debugRoot = ((window as any).__ra2debug ??= {});
+        debugRoot.skirmishLobby = {
+            gameOpts: this.gameOpts ? JSON.parse(JSON.stringify(this.gameOpts)) : undefined,
+            slotsInfo: this.slotsInfo ? JSON.parse(JSON.stringify(this.slotsInfo)) : undefined,
+            formModel: this.formModel ? {
+                playerSlots: JSON.parse(JSON.stringify(this.formModel.playerSlots ?? [])),
+                availablePlayerCountries: [...(this.formModel.availablePlayerCountries ?? [])],
+                availablePlayerColors: [...(this.formModel.availablePlayerColors ?? [])],
+                availableStartPositions: [...(this.formModel.availableStartPositions ?? [])],
+                teamsAllowed: this.formModel.teamsAllowed,
+                teamsRequired: this.formModel.teamsRequired,
+                gameSpeed: this.formModel.gameSpeed,
+                credits: this.formModel.credits,
+                unitCount: this.formModel.unitCount,
+            } : undefined,
+        };
     }
     private initView(): void {
         this.initLobbyForm();
@@ -624,7 +735,7 @@ export class SkirmishScreen extends MainMenuScreen {
             this.messageBoxApi.show(this.strings.get("TXT_CANNOT_ALLY"), this.strings.get("GUI:Ok"));
             return;
         }
-        const gameId = "skirmish-" + Date.now();
+        const gameId = "0";
         const timestamp = Date.now();
         const fallbackRoute = new MainMenuRoute(MainMenuScreenType.Skirmish, {});
         this.rootController.createGame(gameId, timestamp, "", this.playerName, this.gameOpts, true, false, false, false, fallbackRoute);
@@ -650,6 +761,10 @@ export class SkirmishScreen extends MainMenuScreen {
         this.gameOpts = undefined as any;
         this.preferredHostOpts = undefined;
         this.slotsInfo = undefined as any;
+        const debugRoot = (window as any).__ra2debug;
+        if (debugRoot) {
+            delete debugRoot.skirmishLobby;
+        }
         this.controller.toggleSidebarPreview(false);
         await this.unrender();
     }

@@ -17,7 +17,10 @@ export class BotFactory {
         if (!player.isAi) {
             throw new Error(`Player "${player.name}" is not an AI`);
         }
-        if (player.aiDifficulty === AiDifficulty.Easy) {
+        if (player.aiDifficulty === AiDifficulty.Easy ||
+            player.aiDifficulty === AiDifficulty.Medium ||
+            player.aiDifficulty === AiDifficulty.MediumSea ||
+            player.aiDifficulty === AiDifficulty.Brutal) {
             return new DummyBot(player.name, player.country.name);
         }
         throw new Error(`Unsupported AI difficulty "${player.aiDifficulty}"`);

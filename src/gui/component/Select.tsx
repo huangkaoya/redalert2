@@ -18,7 +18,7 @@ export const Select: React.FC<SelectProps> = ({ initialValue, disabled, tooltip,
     useEffect(() => {
         if (value !== initialValue) {
             setValue(initialValue);
-            setHoverValue(value);
+            setHoverValue(initialValue);
         }
     }, [initialValue]);
     useEffect(() => {
