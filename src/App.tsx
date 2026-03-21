@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Application, SplashScreenUpdateCallback } from './Application';
 import SplashScreenComponent from './gui/component/SplashScreen';
 import type { ComponentProps } from 'react';
-import { GlslGenerationTest } from './test/GlslGenerationTest';
 function App() {
     const appRef = useRef<Application | null>(null);
     const appInitialized = useRef<boolean>(false);
@@ -81,7 +80,6 @@ function App() {
             返回正常模式
           </button>
         </div>
-        <GlslGenerationTest />
       </div>);
     }
     return (<div className="App">

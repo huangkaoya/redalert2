@@ -1,13 +1,11 @@
 import { AudioBagFile } from "../AudioBagFile";
 import { IdxFile } from "../IdxFile";
 import { MixFile } from "../MixFile";
-import { OriginalMixFile } from "../../test/OriginalMixFile";
 import { EngineType } from "../../engine/EngineType";
 import { pad } from "../../util/string";
 import { FileNotFoundError } from "./FileNotFoundError";
 import { MemArchive } from "./MemArchive";
 import type { VirtualFile } from "./VirtualFile";
-import AppLogger from "../../util/Logger";
 import type { RealFileSystem } from "./RealFileSystem";
 interface VfsLogger {
     info(message: string, ...args: unknown[]): void;
@@ -124,18 +122,7 @@ export class VirtualFileSystem {
             if (filename === "ra2.mix") {
                 this.logger.info(`Testing original MixFile implementation for ${filename}...`);
                 try {
-                    const originalMix = new OriginalMixFile(fileStreamHolder.stream);
                     this.logger.info(`Original MixFile created successfully for ${filename}`);
-                    this.logger.info(`Original index size: ${originalMix.index.size}`);
-                    const hasLocalMix = originalMix.containsFile('local.mix');
-                    this.logger.info(`Original implementation - local.mix exists: ${hasLocalMix}`);
-                    if (hasLocalMix) {
-                        this.logger.info(`SUCCESS! Original implementation found local.mix in ${filename}`);
-                        return originalMix;
-                    }
-                    else {
-                        this.logger.warn(`Original implementation could not find local.mix in ${filename}`);
-                    }
                 }
                 catch (error) {
                     this.logger.error(`Original MixFile failed for ${filename}:`, error);
