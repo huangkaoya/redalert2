@@ -13,6 +13,7 @@
     "debug:refinery-free-unit": "node scripts/refinery-free-unit-flow.mjs",
     "debug:viewport": "node scripts/viewport-flow.mjs",
     "debug:terror-drone": "node scripts/terror-drone-flow.mjs",
+    "debug:chrono-legionnaire": "node scripts/chrono-legionnaire-flow.mjs",
     "debug:radiation": "node scripts/radiation-flow.mjs",
     "debug:storage-explorer": "node scripts/storage-explorer-flow.mjs",
     "debug:options": "node scripts/options-flow.mjs",

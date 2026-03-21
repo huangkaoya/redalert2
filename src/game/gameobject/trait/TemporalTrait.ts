@@ -16,24 +16,23 @@ export class TemporalTrait {
         this.gameObject = gameObject;
     }
     [NotifyTick.onTick](gameObject: GameObject, world: World): void {
-        if (gameObject.attackTrait &&
+        gameObject.attackTrait &&
             ((gameObject.attackTrait.currentTarget &&
                 !gameObject.warpedOutTrait.isActive()) ||
-                this.releaseCurrentTarget(world))) {
-            if (this.eraseTicks !== undefined) {
-                for (const attacker of this.attackers) {
-                    const weapon = attacker.temporalTrait.currentWeapon;
-                    if (!weapon) {
-                        throw new Error(`Attacker "${attacker.name}" is no longer targeting "${gameObject.name}"`);
-                    }
-                    const damage = weapon.rules.damage;
-                    this.eraseTicks -= damage;
-                    if (this.eraseTicks <= 0) {
-                        gameObject.deathType = DeathType.Temporal;
-                        world.destroyObject(gameObject, { player: attacker.owner, obj: attacker, weapon }, true);
-                        this.eraseTicks = undefined;
-                        break;
-                    }
+                this.releaseCurrentTarget(world));
+        if (this.eraseTicks !== undefined) {
+            for (const attacker of this.attackers) {
+                const weapon = attacker.temporalTrait.currentWeapon;
+                if (!weapon) {
+                    throw new Error(`Attacker "${attacker.name}" is no longer targeting "${gameObject.name}"`);
+                }
+                const damage = weapon.rules.damage;
+                this.eraseTicks -= damage;
+                if (this.eraseTicks <= 0) {
+                    gameObject.deathType = DeathType.Temporal;
+                    world.destroyObject(gameObject, { player: attacker.owner, obj: attacker, weapon }, true);
+                    this.eraseTicks = undefined;
+                    break;
                 }
             }
         }
