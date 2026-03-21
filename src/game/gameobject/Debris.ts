@@ -111,7 +111,7 @@ export class Debris extends GameObject {
         gameContext.destroyObject(this);
         if (warhead) {
             const warheadInstance = new Warhead(warhead);
-            warheadInstance.detonate(gameContext, this.rules.damage, this.tile, this.tileElevation, this.position.worldPosition, this.zone, collisionType, gameContext.createTarget(undefined, this.tile), undefined, false, false, undefined, this.rules.damageRadius || undefined, true);
+            warheadInstance.detonate(gameContext, this.rules.damage, this.tile, this.tileElevation, this.position.worldPosition, this.zone, collisionType, gameContext.createTarget(undefined, this.tile), undefined, false, undefined, this.rules.damageRadius || undefined, true);
         }
     }
 }

@@ -61,7 +61,6 @@ export class Projectile extends GameObject {
     private lastTargetLockPosition?: Vector3;
     private speed?: number;
     private impactAnim?: string;
-    private tileElevation: number;
     get fromObject() {
         return this._fromObject;
     }
@@ -102,7 +101,6 @@ export class Projectile extends GameObject {
         this.velocity = new Vector3();
         this.sonicVisitedObjects = new Map();
         this.collisionHelper = new CollisionHelper(tileOccupation);
-        this.tileElevation = 0;
     }
     onSpawn(game: any): void {
         super.onSpawn(game);
