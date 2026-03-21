@@ -2,6 +2,58 @@ import { CompositeDisposable } from '@/util/disposable/CompositeDisposable';
 import { EventType } from '@/game/event/EventType';
 import { SoundKey } from '@/engine/sound/SoundKey';
 import { ChannelType } from '@/engine/sound/ChannelType';
+import { Coords } from '@/game/Coords';
+import { PowerupType } from '@/game/type/PowerupType';
+import { SuperWeaponType } from '@/game/type/SuperWeaponType';
+import { RadarEventType } from '@/game/rules/general/RadarRules';
+
+const detectedSuperWeaponEvaByType = new Map([
+    [SuperWeaponType.MultiMissile, 'EVA_NuclearSiloDetected'],
+    [SuperWeaponType.IronCurtain, 'EVA_IronCurtainDetected'],
+    [SuperWeaponType.ChronoSphere, 'EVA_ChronosphereDetected'],
+    [SuperWeaponType.LightningStorm, 'EVA_WeatherDeviceReady'],
+]);
+
+const superWeaponReadyEvaByType = new Map([
+    [SuperWeaponType.MultiMissile, 'EVA_NuclearMissileReady'],
+    [SuperWeaponType.IronCurtain, 'EVA_IronCurtainReady'],
+    [SuperWeaponType.ChronoSphere, 'EVA_ChronosphereReady'],
+    [SuperWeaponType.LightningStorm, 'EVA_LightningStormReady'],
+    [SuperWeaponType.ParaDrop, 'EVA_ReinforcementsReady'],
+    [SuperWeaponType.AmerParaDrop, 'EVA_ReinforcementsReady'],
+]);
+
+const superWeaponActivateEvaByType = new Map([
+    [SuperWeaponType.MultiMissile, 'EVA_NuclearMissileLaunched'],
+    [SuperWeaponType.IronCurtain, 'EVA_IronCurtainActivated'],
+    [SuperWeaponType.ChronoSphere, 'EVA_ChronosphereActivated'],
+    [SuperWeaponType.LightningStorm, 'EVA_LightningStormCreated'],
+]);
+
+const superWeaponActivateSoundByType = new Map([
+    [SuperWeaponType.MultiMissile, SoundKey.DigSound],
+]);
+
+const superWeaponActivateMessageByType = new Map([
+    [SuperWeaponType.LightningStorm, 'TXT_LIGHTNING_STORM_APPROACHING'],
+]);
+
+const crateSoundByType = new Map([
+    [PowerupType.Veteran, SoundKey.CratePromoteSound],
+    [PowerupType.Money, SoundKey.CrateMoneySound],
+    [PowerupType.Reveal, SoundKey.CrateRevealSound],
+    [PowerupType.Firepower, SoundKey.CrateFireSound],
+    [PowerupType.Armor, SoundKey.CrateArmourSound],
+    [PowerupType.Speed, SoundKey.CrateSpeedSound],
+    [PowerupType.Unit, SoundKey.CrateUnitSound],
+]);
+
+const crateEvaByType = new Map([
+    [PowerupType.Armor, 'EVA_UnitArmorUpgraded'],
+    [PowerupType.Firepower, 'EVA_UnitFirePowerUpgraded'],
+    [PowerupType.Speed, 'EVA_UnitSpeedUpgraded'],
+]);
+
 export class SoundHandler {
     private lastAvailableObjectNames: string[] = [];
     private lastQueueStatuses = new Map();
@@ -42,6 +94,12 @@ export class SoundHandler {
                 break;
             case EventType.SuperWeaponActivate:
                 this.handleSuperWeaponActivateSound(event);
+                break;
+            case EventType.LightningStormManifest:
+                this.handleLightningStormManifestSound(event);
+                break;
+            case EventType.WarheadDetonate:
+                this.handleWarheadDetonateSound(event);
                 break;
             case EventType.ObjectDestroy:
                 this.handleObjectDestroySound(event);
@@ -88,7 +146,7 @@ export class SoundHandler {
         }
     }
     private handleRadarEventSound(event: any): void {
-        if (event.radarEventType === 'BaseUnderAttack') {
+        if (event.radarEventType === RadarEventType.BaseUnderAttack || event.radarEventType === 'BaseUnderAttack') {
             if (event.target === this.player) {
                 this.eva.play('EVA_OurBaseIsUnderAttack');
                 this.sound.play(SoundKey.BaseUnderAttackSound, ChannelType.Effect);
@@ -98,15 +156,53 @@ export class SoundHandler {
                 this.sound.play(SoundKey.BaseUnderAttackSound, ChannelType.Effect);
             }
         }
+        else if (event.radarEventType === RadarEventType.HarvesterUnderAttack || event.radarEventType === 'HarvesterUnderAttack') {
+            if (event.target === this.player) {
+                this.eva.play('EVA_OreMinerUnderAttack');
+            }
+        }
+        else if ((event.radarEventType === RadarEventType.EnemyObjectSensed || event.radarEventType === 'EnemyObjectSensed') && event.target === this.player) {
+            const building = this.game.map.getGroundObjectsOnTile(event.tile).find((object: any) => object.isBuilding() && object.superWeaponTrait);
+            const superWeaponType = building?.superWeaponTrait?.getSuperWeapon(building)?.rules.type;
+            const eva = detectedSuperWeaponEvaByType.get(superWeaponType);
+            if (eva) {
+                this.eva.play(eva);
+            }
+        }
     }
     private handleSuperWeaponReadySound(event: any): void {
         if (event.target.owner === this.player) {
-            this.eva.play('EVA_SuperWeaponReady');
+            const eva = event.target.rules?.type !== undefined
+                ? superWeaponReadyEvaByType.get(event.target.rules.type)
+                : undefined;
+            if (eva) {
+                this.eva.play(eva);
+            }
         }
     }
     private handleSuperWeaponActivateSound(event: any): void {
         if (!event.noSfxWarning) {
-            this.eva.play('EVA_SuperWeaponActivated', true);
+            const eva = superWeaponActivateEvaByType.get(event.target);
+            if (eva) {
+                this.eva.play(eva, true);
+            }
+            const sound = superWeaponActivateSoundByType.get(event.target);
+            if (sound) {
+                this.worldSound.playEffect(sound, Coords.tile3dToWorld(event.atTile.rx, event.atTile.ry, event.atTile.z), event.owner);
+            }
+        }
+        const message = superWeaponActivateMessageByType.get(event.target);
+        if (message) {
+            this.messageList.addSystemMessage(this.strings.get(message), this.player ?? 'grey');
+        }
+    }
+    private handleLightningStormManifestSound(event: any): void {
+        this.messageList.addSystemMessage(this.strings.get('TXT_LIGHTNING_STORM'), this.player ?? 'grey');
+        this.worldSound.playEffect(SoundKey.StormSound, Coords.tile3dToWorld(event.target.rx, event.target.ry, event.target.z));
+    }
+    private handleWarheadDetonateSound(event: any): void {
+        if (event.isLightningStrike) {
+            this.worldSound.playEffect(SoundKey.LightningSounds, event.position);
         }
     }
     private handleObjectDestroySound(event: any): void {
@@ -156,8 +252,26 @@ export class SoundHandler {
         }
     }
     private handleCratePickupSound(event: any): void {
-        const crateType = event.target.type;
-        this.sound.play(SoundKey.CrateMoneySound, ChannelType.Effect);
+        const crateType = event.target?.type;
+        let sound = crateSoundByType.get(crateType);
+        if (!sound && crateType === PowerupType.HealBase) {
+            sound = this.game.rules.crateRules.healCrateSound;
+        }
+        const eva = crateEvaByType.get(crateType);
+        const isHostilePickup = this.player &&
+            !this.player.isObserver &&
+            event.player !== this.player &&
+            !this.game.alliances.areAllied(event.player, this.player);
+        if (isHostilePickup) {
+            return;
+        }
+        if (sound) {
+            const position = Coords.tile3dToWorld(event.tile.rx, event.tile.ry, event.tile.z);
+            this.worldSound.playEffect(sound, position, event.player);
+        }
+        if (eva) {
+            this.eva.play(eva);
+        }
     }
     handleOrderPushed(unit: any, orderType: any, feedbackType: any): void {
         const now = Date.now();

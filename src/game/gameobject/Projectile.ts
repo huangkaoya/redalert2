@@ -704,7 +704,7 @@ export class Projectile extends GameObject {
                 player: this.fromPlayer,
                 weapon: weapon,
                 obj: this.fromObject,
-            }, this.isShrapnel, false, this.impactAnim);
+            }, this.isShrapnel, this.impactAnim, undefined);
         }
         if (warhead.rules.nukeMaker) {
             let nukeProjectile: Projectile;
