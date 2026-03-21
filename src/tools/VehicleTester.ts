@@ -88,12 +88,7 @@ export class VehicleTester {
         const canvasMetrics = new CanvasMetrics(renderer.getCanvas(), window);
         canvasMetrics.init();
         this.disposables.add(() => canvasMetrics.dispose());
-        const pointerEvents = new PointerEvents(renderer as any, { x: 0, y: 0 }, document, {
-            get x() { return canvasMetrics.x; },
-            get y() { return canvasMetrics.y; },
-            get width() { return canvasMetrics.width; },
-            get height() { return canvasMetrics.height; },
-        } as any);
+        const pointerEvents = new PointerEvents(renderer as any, { x: 0, y: 0 }, document, canvasMetrics as any);
         const cameraZoomControls = new CameraZoomControls(pointerEvents, worldScene.cameraZoom);
         cameraZoomControls.init();
         this.disposables.add(pointerEvents, cameraZoomControls);
@@ -405,6 +400,9 @@ export class VehicleTester {
         const renderable = this.currentRenderable;
         const selectionLevel = renderable?.selectionModel?.getSelectionLevel?.();
         const veteranLevel = vehicle?.veteranTrait?.veteranLevel ?? vehicle?.veteranLevel ?? VeteranLevel.None;
+        const controlGroupTextureUuid = renderable?.pipOverlay?.controlGroupSprite?.material?.map?.uuid
+            ?? renderable?.pipOverlay?.controlGroupSprite?.material?.uniforms?.map?.value?.uuid
+            ?? null;
         TestToolSupport.setState('vehicle', {
             availableVehicles: this.listEl?.querySelectorAll('a').length ?? 0,
             selectedVehicle: this.currentVehicleType ?? null,
@@ -433,6 +431,7 @@ export class VehicleTester {
             fixedDirection: this.fixedDirection ?? null,
             autoRotate: this.fixedDirection === undefined,
             ownerColor: vehicle?.owner?.color?.asHexString?.() ?? null,
+            controlGroupTextureUuid,
         });
     }
     static buildBrowser(vehicleRules: Map<string, any>): void {

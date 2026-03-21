@@ -180,6 +180,7 @@ export class PipOverlay {
     private lastPrimaryFactory = false;
     private lastHealth?: number;
     private lastOwner?: any;
+    private lastOwnerColorHex?: number;
     private lastPipsDataKey?: any;
     private lastControlGroup?: number;
     private lastRallyPoint?: any;
@@ -201,6 +202,7 @@ export class PipOverlay {
     private flyHelper?: any;
     private behindAnim?: any;
     private debugLabel?: DebugLabel;
+    private lastDebugLabelOwnerColorHex?: number;
     private disposables = new CompositeDisposable();
     static clearCaches(): void {
         PipOverlay.atlasCache?.dispose();
@@ -308,6 +310,7 @@ export class PipOverlay {
             }
             this.lastHealth = this.gameObject.healthTrait.health;
             this.lastOwner = this.gameObject.owner;
+            this.lastOwnerColorHex = this.gameObject.owner.color.asHex();
             this.rootObj = rootObj;
         }
     }
@@ -755,6 +758,14 @@ export class PipOverlay {
             this.rootObj!.visible = false;
             return;
         }
+        const ownerColorHex = gameObject.owner.color.asHex();
+        const ownerColorChanged = this.lastOwnerColorHex !== ownerColorHex;
+        if (ownerColorChanged) {
+            this.lastOwnerColorHex = ownerColorHex;
+            this.invalidatedElements[3] = true;
+            this.invalidatedElements[4] = true;
+            this.invalidatedElements[5] = true;
+        }
         if (gameObject.healthTrait.health !== this.lastHealth) {
             this.lastHealth = gameObject.healthTrait.health;
             this.invalidatedElements[0] = true;
@@ -889,10 +900,13 @@ export class PipOverlay {
         }
     }
     private updateDebugLabel(): void {
+        const ownerColorHex = this.gameObject.owner.color.asHex();
         if (this.gameObject.debugLabel !== this.lastDebugLabel ||
             this.gameObject.owner !== this.lastOwner ||
+            ownerColorHex !== this.lastDebugLabelOwnerColorHex ||
             this.debugTextEnabled.value !== this.lastDebugTextEnabled) {
             this.lastDebugLabel = this.gameObject.debugLabel;
+            this.lastDebugLabelOwnerColorHex = ownerColorHex;
             if (this.debugLabel) {
                 this.rootObj!.remove(this.debugLabel.get3DObject());
                 this.debugLabel.dispose();

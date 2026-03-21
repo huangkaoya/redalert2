@@ -44,6 +44,7 @@ import { CanvasMetrics } from "@/gui/CanvasMetrics";
 import { PipOverlay } from "@/engine/renderable/entity/PipOverlay";
 import { TextureUtils } from "@/engine/gfx/TextureUtils";
 import { ResourceType } from "@/engine/resourceConfigs";
+import { Color } from "@/util/Color";
 import { TestToolSupport, type TestToolRuntimeContext } from "@/tools/TestToolSupport";
 declare const THREE: any;
 export class InfantryTester {
@@ -64,6 +65,7 @@ export class InfantryTester {
     private static vxlBuilderFactory: VxlBuilderFactory;
     private static autoRotate: boolean = false;
     private static currentInfantryType?: string;
+    private static currentInfantryColor?: Color;
     static async main(_args: any, context: TestToolRuntimeContext = {}): Promise<void> {
         await TestToolSupport.ensureTheater(TheaterType.Snow, context.cdnResourceLoader, [ResourceType.Anims]);
         const hostElement = this.hostElement = TestToolSupport.prepareHost(context, 1224, 600);
@@ -85,12 +87,7 @@ export class InfantryTester {
         const canvasMetrics = new CanvasMetrics(renderer.getCanvas(), window);
         canvasMetrics.init();
         this.disposables.add(() => canvasMetrics.dispose());
-        const pointerEvents = new PointerEvents(renderer as any, { x: 0, y: 0 }, document, {
-            get x() { return canvasMetrics.x; },
-            get y() { return canvasMetrics.y; },
-            get width() { return canvasMetrics.width; },
-            get height() { return canvasMetrics.height; },
-        } as any);
+        const pointerEvents = new PointerEvents(renderer as any, { x: 0, y: 0 }, document, canvasMetrics as any);
         const cameraZoomControls = new CameraZoomControls(pointerEvents, worldScene.cameraZoom);
         this.disposables.add(cameraZoomControls, pointerEvents);
         cameraZoomControls.init();
@@ -116,8 +113,6 @@ export class InfantryTester {
         }
         const player = new Player("Player");
         this.disposables.add(player);
-        const desiredColor = this.rules.getMultiplayerColors().get("DarkRed")!;
-        (player as any).color = desiredColor;
         const playerList = new PlayerList();
         playerList.addPlayer(player);
         const alliances = new Alliances(playerList);
@@ -136,6 +131,11 @@ export class InfantryTester {
         const bridges = new Bridges(this.theater.tileSets, tileCollection, tileOccupation, mapBounds, this.rules);
         const infantry = (this.currentInfantry = new ObjectFactory(tileCollection, tileOccupation, bridges, new BoxedVar(1)).create(ObjectType.Infantry, infantryType, this.rules as any, this.art as any));
         this.currentInfantryType = infantryType;
+        const selectedColor = this.currentInfantryColor?.clone()
+            ?? this.rules.getMultiplayerColors().get("DarkRed")?.clone()
+            ?? new Color(255, 0, 0);
+        player.color = selectedColor;
+        this.currentInfantryColor = selectedColor.clone();
         infantry.owner = player;
         infantry.position.tile = { rx: 1, ry: 1, z: 0, rampType: 0 };
         const world = (this.world = new World());
@@ -168,8 +168,11 @@ export class InfantryTester {
         colorSelect.dataset.testid = "infantry-color";
         colorSelect.style.display = "block";
         colorSelect.addEventListener("change", () => {
-            this.currentInfantry.owner.color = colorMap.get(colorSelect.value);
-            this.syncState();
+            const nextColor = colorMap.get(colorSelect.value);
+            if (nextColor && this.currentInfantryType) {
+                this.currentInfantryColor = nextColor.clone();
+                this.selectInfantry(this.currentInfantryType);
+            }
         });
         controls.appendChild(colorSelect);
         colorMap.forEach((color, name) => {
@@ -555,6 +558,7 @@ export class InfantryTester {
             this.controlsEl = undefined;
         }
         this.currentInfantryType = undefined;
+        this.currentInfantryColor = undefined;
         this.disposables.dispose();
         TestToolSupport.clearState('infantry');
         try {

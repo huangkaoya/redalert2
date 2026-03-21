@@ -213,7 +213,12 @@ export class TestToolSupport {
             updatedAt: Date.now(),
         };
         (window as any).__ra2test = snapshot;
-        this.renderPanel(tool, snapshot);
+        if (this.panel) {
+            this.panel.remove();
+            this.panel = undefined;
+            this.panelBody = undefined;
+            this.activeTool = undefined;
+        }
     }
 
     static enumOptions(enumType: Record<string, string | number>, values: number[]): Array<{ value: number; label: string; }> {
@@ -241,51 +246,6 @@ export class TestToolSupport {
             this.panel = undefined;
             this.panelBody = undefined;
             this.activeTool = undefined;
-        }
-    }
-
-    private static renderPanel(tool: string, snapshot: Record<string, unknown>): void {
-        if (!this.panel) {
-            const panel = document.createElement('div');
-            panel.style.position = 'fixed';
-            panel.style.left = '10px';
-            panel.style.bottom = '10px';
-            panel.style.maxWidth = '420px';
-            panel.style.maxHeight = '40vh';
-            panel.style.overflow = 'auto';
-            panel.style.padding = '10px 12px';
-            panel.style.background = 'rgba(0, 0, 0, 0.78)';
-            panel.style.color = '#d7f7d7';
-            panel.style.border = '1px solid rgba(125, 255, 125, 0.4)';
-            panel.style.borderRadius = '6px';
-            panel.style.font = '12px/1.4 Menlo, Monaco, Consolas, monospace';
-            panel.style.zIndex = '1003';
-            panel.style.pointerEvents = 'none';
-            const title = document.createElement('div');
-            title.style.fontWeight = 'bold';
-            title.style.marginBottom = '6px';
-            title.textContent = `Test: ${tool}`;
-            const body = document.createElement('pre');
-            body.style.margin = '0';
-            body.style.whiteSpace = 'pre-wrap';
-            body.style.wordBreak = 'break-word';
-            panel.appendChild(title);
-            panel.appendChild(body);
-            document.body.appendChild(panel);
-            this.panel = panel;
-            this.panelBody = body;
-            this.activeTool = tool;
-        }
-        if (this.panel && this.activeTool !== tool) {
-            this.panel.remove();
-            this.panel = undefined;
-            this.panelBody = undefined;
-            this.activeTool = undefined;
-            this.renderPanel(tool, snapshot);
-            return;
-        }
-        if (this.panelBody) {
-            this.panelBody.textContent = JSON.stringify(snapshot, null, 2);
         }
     }
 

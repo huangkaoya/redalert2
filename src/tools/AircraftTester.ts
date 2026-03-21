@@ -86,12 +86,7 @@ export class AircraftTester {
         const canvasMetrics = new CanvasMetrics(renderer.getCanvas(), window);
         canvasMetrics.init();
         this.disposables.add(() => canvasMetrics.dispose());
-        const pointerEvents = new PointerEvents(renderer as any, { x: 0, y: 0 }, document, {
-            get x() { return canvasMetrics.x; },
-            get y() { return canvasMetrics.y; },
-            get width() { return canvasMetrics.width; },
-            get height() { return canvasMetrics.height; },
-        } as any);
+        const pointerEvents = new PointerEvents(renderer as any, { x: 0, y: 0 }, document, canvasMetrics as any);
         const cameraZoomControls = new CameraZoomControls(pointerEvents, worldScene.cameraZoom);
         cameraZoomControls.init();
         this.disposables.add(pointerEvents, cameraZoomControls);
