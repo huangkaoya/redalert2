@@ -357,5 +357,6 @@
     "gui:newfolderprompt": "Choose a folder name:",
     "gui:newfoldernotallowed": "Can't create a new folder here.",
     "gui:newfolderexists": "An entry with that name already exists.",
-    "gui:newfolderinvalidname": "Invalid folder name."
+    "gui:newfolderinvalidname": "Invalid folder name.",
+    "GUI:LoadingFileExplorer": "Loading file explorer..."
 }

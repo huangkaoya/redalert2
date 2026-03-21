@@ -346,5 +346,6 @@
     "ts:mapdownloadfailed": "下载地图 %s 失败",
     "ts:mapunsupportedterrain": "所选地图使用了不受支持的地形（%s）。",
     "GUI:OKAY": "确定",
+    "GUI:LoadingFileExplorer": "正在加载文件浏览器...",
     "GUI:AlmostReady": "几乎准备就绪..."
 }

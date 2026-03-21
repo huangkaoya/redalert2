@@ -1,11 +1,4 @@
-declare const lzo1x: {
-    decompress(state: {
-        inputBuffer: Uint8Array;
-        outputBuffer: Uint8Array | null;
-    }, cfg: {
-        outputSize: number;
-    }): number;
-};
+import { lzo1x } from './lzo1x';
 export class MiniLzo {
     static decompress(input: Uint8Array, outputSize: number): Uint8Array {
         const buffer = { inputBuffer: input, outputBuffer: null };

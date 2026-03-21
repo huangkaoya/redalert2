@@ -1,0 +1,882 @@
+@font-face {
+    font-family: 'fe_fileexplorer_actions';
+    src: url('./assets/fileexplorer_actions.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: block;
+}
+
+.fe_fileexplorer_disabled {
+    filter: grayscale(95%);
+    opacity: 0.6;
+}
+
+.fe_fileexplorer_open_icon {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    width: 24px;
+    height: 24px;
+    background-position: -48px -96px;
+    image-rendering: pixelated;
+}
+
+.fe_fileexplorer_wrap {
+    position: relative;
+    font-size: 1em;
+    user-select: none;
+    cursor: default;
+    height: 100%;
+    min-height: 9em;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_operation_in_progress {
+    cursor: progress;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_inner_wrap {
+    border: 1px solid #aaaaaa;
+    color: #000000;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_inner_wrap.fe_fileexplorer_inner_wrap_focused {
+    border-color: #0063b1;
+}
+
+.fe_fileexplorer_wrap button {
+    padding: 0;
+    border: 0 none;
+    box-sizing: border-box;
+    background-color: transparent;
+    outline: none;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_toolbar {
+    display: flex;
+    margin-top: 0.4em;
+    align-items: center;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_navtools {
+    display: flex;
+    margin-left: 5px;
+    margin-right: 0.1em;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_navtools button {
+    height: 24px;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_navtool_back {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    width: 32px;
+    background-position: 0 0;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_navtool_forward {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    width: 32px;
+    background-position: -64px 0;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_navtool_history {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    width: 18px;
+    background-position: -84px -24px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_navtool_up {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    width: 24px;
+    background-position: 0 -24px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_navtool_back:not(.fe_fileexplorer_disabled):hover,
+.fe_fileexplorer_wrap .fe_fileexplorer_navtool_back:not(.fe_fileexplorer_disabled):focus {
+    background-position: -32px 0;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_navtool_forward:not(.fe_fileexplorer_disabled):hover,
+.fe_fileexplorer_wrap .fe_fileexplorer_navtool_forward:not(.fe_fileexplorer_disabled):focus {
+    background-position: -96px 0;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_navtool_history:not(.fe_fileexplorer_disabled):hover,
+.fe_fileexplorer_wrap .fe_fileexplorer_navtool_history:not(.fe_fileexplorer_disabled):focus {
+    background-position: -102px -24px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_navtool_up:not(.fe_fileexplorer_disabled):hover,
+.fe_fileexplorer_wrap .fe_fileexplorer_navtool_up:not(.fe_fileexplorer_disabled):focus {
+    background-position: -24px -24px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_path_wrap {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    overflow: hidden;
+    border: 1px solid #d9d9d9;
+    margin-right: 12px;
+    min-height: 26px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_path_icon {
+    height: 24px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_path_icon_inner {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    width: 24px;
+    height: 24px;
+    margin-left: 2px;
+    margin-right: 4px;
+    background-position: -72px -96px;
+    image-rendering: pixelated;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_path_segments_scroll_wrap {
+    flex: 1;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_path_segments_scroll_wrap::-webkit-scrollbar {
+    height: 0;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_path_segments_wrap {
+    display: flex;
+    align-items: center;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_path_segments_wrap::after {
+    content: '';
+    padding-left: 10%;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_path_segment_wrap {
+    display: flex;
+    border: 1px solid transparent;
+    outline: none;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_path_segment_wrap:hover {
+    border-color: #cce8ff;
+    background-color: #e5f3ff;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_path_segment_wrap:hover .fe_fileexplorer_path_opts {
+    border-left: 1px solid #cce8ff;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_path_segment_wrap.fe_fileexplorer_drag_hover {
+    border-color: #99d1ff;
+    background-color: #cce8ff;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_path_segment_wrap.fe_fileexplorer_drag_hover .fe_fileexplorer_path_opts {
+    border-left: 1px solid #99d1ff;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_path_name {
+    padding: 0.5em;
+    border: 1px solid transparent;
+    line-height: 1;
+    font-size: 0.75em;
+    white-space: nowrap;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_path_opts {
+    width: 18px;
+    padding: 0;
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-repeat: no-repeat;
+    background-position: -48px -24px;
+    image-rendering: pixelated;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_path_opts:hover,
+.fe_fileexplorer_wrap .fe_fileexplorer_path_opts:focus {
+    background-position: -84px -24px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_path_name:hover,
+.fe_fileexplorer_wrap .fe_fileexplorer_path_name:focus {
+    background-color: transparent;
+    border-color: transparent;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_body_wrap_outer {
+    flex: 1;
+    display: flex;
+    margin-top: 0.3em;
+    overflow: hidden;
+    position: relative;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_body_wrap {
+    display: flex;
+    align-items: stretch;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_folder_tools_scroll_wrap {
+    padding: 0.4em 10px;
+    border-right: 1px solid #cce8ff;
+    overflow-y: auto;
+    box-sizing: border-box;
+    scrollbar-width: none;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_folder_tools_scroll_wrap::-webkit-scrollbar {
+    width: 0;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_folder_tools {
+    display: flex;
+    flex-direction: column;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_folder_tools button {
+    margin-bottom: 0.3em;
+    border: 1px solid transparent;
+    padding: 4px;
+    width: 34px;
+    height: 34px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_folder_tools button::before {
+    display: block;
+    width: 24px;
+    height: 24px;
+    content: '';
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_folder_tools button:not(.fe_fileexplorer_disabled):hover,
+.fe_fileexplorer_wrap .fe_fileexplorer_folder_tools button:not(.fe_fileexplorer_disabled):focus {
+    border-color: #99d1ff;
+    background-color: #e5f3ff;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_folder_tool_separator {
+    margin: 0 -0.1em 0.3em;
+    border-top: 1px solid #dfe7f0;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_folder_tool_new_folder::before {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: -24px -144px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_folder_tool_upload::before {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: -96px -144px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_folder_tool_download::before {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: -96px -120px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_folder_tool_copy::before {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: -24px -120px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_folder_tool_paste::before {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: -48px -144px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_folder_tool_cut::before {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: -48px -120px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_folder_tool_delete::before {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: -72px -120px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_folder_tool_item_checkboxes::before {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: -72px -144px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_show_item_checkboxes .fe_fileexplorer_folder_tool_item_checkboxes::before {
+    background-position: 0 -120px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_items_scroll_wrap {
+    flex: 1;
+    overflow-y: auto;
+    box-sizing: border-box;
+    outline: none;
+    position: relative;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_items_scroll_wrap.fe_fileexplorer_items_scroll_wrap_drag_active {
+    background-color: #f4fbff;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_items_scroll_wrap_inner {
+    position: relative;
+    min-height: 100%;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_drop_message {
+    position: sticky;
+    top: 10px;
+    margin: 10px 14px 0;
+    padding: 12px;
+    border: 2px dashed #99d1ff;
+    background-color: rgba(229, 243, 255, 0.92);
+    color: #0f4c81;
+    text-align: center;
+    font-size: 0.8em;
+    z-index: 2;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_select_box {
+    position: absolute;
+    box-sizing: border-box;
+    border: 1px solid #0078d7;
+    background-color: rgba(0, 120, 215, 0.22);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_items_clipboard_overlay_paste_wrap {
+    position: absolute;
+    left: 53px;
+    top: 0;
+    width: calc(100% - 53px);
+    height: 200px;
+    max-height: 75%;
+    z-index: 2;
+    outline: none;
+    pointer-events: none;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_items_clipboard_overlay_paste_inner_wrap {
+    position: relative;
+    height: 100%;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_items_clipboard_overlay_paste_text_wrap {
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 2px dashed #aaaaaa;
+    box-shadow: 2px 3px 5px 0 rgba(0, 0, 0, 0.15);
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_items_clipboard_overlay_paste_wrap:hover .fe_fileexplorer_items_clipboard_overlay_paste_text_wrap,
+.fe_fileexplorer_wrap .fe_fileexplorer_items_clipboard_overlay_paste_wrap:focus .fe_fileexplorer_items_clipboard_overlay_paste_text_wrap {
+    border-color: #3298fe;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_items_clipboard_overlay_paste_text {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #888888;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_items_clipboard_overlay_paste_text_big {
+    font-size: 1.55em;
+    margin-bottom: 0.35em;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_items_clipboard_overlay_paste_text_small {
+    font-size: 0.75em;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_items_message_wrap {
+    padding: 1.5em 1em 1em;
+    color: #6d6d6d;
+    font-size: 0.75em;
+    text-align: center;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_items_wrap {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0.3em 12px 0.2em 4px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_wrap {
+    margin-left: 0.56em;
+    margin-bottom: 1px;
+    width: 4.7em;
+    box-sizing: border-box;
+    text-align: center;
+    overflow: hidden;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_wrap_inner {
+    position: relative;
+    border: 1px solid transparent;
+    padding: 0.1em 0.3em;
+    outline: none;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_wrap_inner:hover {
+    background-color: #e5f3ff;
+    border-color: #e5f3ff;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_selected .fe_fileexplorer_item_wrap_inner {
+    background-color: #cde8ff;
+    border-color: #99d1ff;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_wrap.fe_fileexplorer_drag_hover .fe_fileexplorer_item_wrap_inner {
+    background-color: #cde8ff;
+    border-color: #99d1ff;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_checkbox {
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin: 2px;
+    z-index: 1;
+    display: none;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_show_item_checkboxes .fe_fileexplorer_item_checkbox,
+.fe_fileexplorer_wrap .fe_fileexplorer_item_selected .fe_fileexplorer_item_checkbox {
+    display: block;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon {
+    width: 48px;
+    height: 48px;
+    margin-left: auto;
+    margin-right: auto;
+    background-repeat: no-repeat;
+    position: relative;
+    image-rendering: pixelated;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_text {
+    margin-top: 0.1em;
+    font-size: 0.75em;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    word-wrap: break-word;
+    overflow: hidden;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_folder {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: -48px -48px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_file {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: 0 -48px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_file:not(.fe_fileexplorer_item_icon_file_no_ext)::after {
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    box-sizing: border-box;
+    content: attr(data-ext);
+    color: #ffffff;
+    font-size: 11px;
+    padding: 1px 3px;
+    width: 36px;
+    overflow: hidden;
+    white-space: nowrap;
+    background-color: #888888;
+    text-transform: uppercase;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_a::after {
+    background-color: #f03c3c;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_b::after {
+    background-color: #f05a3c;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_c::after {
+    background-color: #f0783c;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_d::after {
+    background-color: #f0963c;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_e::after {
+    background-color: #e0862b;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_f::after {
+    background-color: #dca12b;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_g::after {
+    background-color: #c7ab1e;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_h::after {
+    background-color: #c7c71e;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_i::after {
+    background-color: #abc71e;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_j::after {
+    background-color: #8fc71e;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_k::after {
+    background-color: #72c71e;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_l::after {
+    background-color: #56c71e;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_m::after {
+    background-color: #3ac71e;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_n::after {
+    background-color: #1ec71e;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_o::after {
+    background-color: #1ec73a;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_p::after {
+    background-color: #1ec756;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_q::after {
+    background-color: #1ec78f;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_r::after {
+    background-color: #1ec7ab;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_s::after {
+    background-color: #1ec7c7;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_t::after {
+    background-color: #1eabc7;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_u::after {
+    background-color: #1e8fc7;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_v::after {
+    background-color: #1e72c7;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_w::after {
+    background-color: #3c78f0;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_x::after {
+    background-color: #3c5af0;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_y::after {
+    background-color: #3c3cf0;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_z::after {
+    background-color: #5a3cf0;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_0::after {
+    background-color: #783cf0;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_1::after {
+    background-color: #963cf0;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_2::after {
+    background-color: #b43cf0;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_3::after {
+    background-color: #d23cf0;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_4::after {
+    background-color: #f03cf0;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_5::after {
+    background-color: #f03cd2;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_6::after {
+    background-color: #f03cb4;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_7::after {
+    background-color: #f03c96;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_8::after {
+    background-color: #f03c78;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_item_icon_ext_9::after {
+    background-color: #f03c5a;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_statusbar_wrap {
+    display: flex;
+    white-space: nowrap;
+    font-size: 0.75em;
+    color: #14273e;
+    border-top: 1px solid #e4e7ec;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_statusbar_wrap.fe_fileexplorer_statusbar_wrap_multiline {
+    display: block;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_statusbar_text_wrap {
+    display: flex;
+    margin-left: 15px;
+    margin-right: 12px;
+    padding-top: 0.3em;
+    padding-bottom: 0.3em;
+    overflow: hidden;
+    flex: 1;
+    line-height: 1.1;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_statusbar_text_segment_wrap {
+    padding-right: 1em;
+    border-right: 1px solid #f0f0f0;
+    margin-right: 1em;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_statusbar_text_segment_wrap_last {
+    padding-right: 0;
+    border-right: 0 none;
+    margin-right: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_action_wrap {
+    display: flex;
+    align-items: center;
+    padding-right: 10px;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_action_wrap button {
+    border: 1px solid transparent;
+}
+
+.fe_fileexplorer_wrap .fe_fileexplorer_action_wrap button:hover,
+.fe_fileexplorer_wrap .fe_fileexplorer_action_wrap button:focus {
+    border-color: #99d1ff;
+    background-color: #e5f3ff;
+}
+
+.fe_fileexplorer_popup_wrap {
+    position: fixed;
+    max-height: 33vh;
+    overflow-y: auto;
+    border: 1px solid #a0a0a0;
+    background-color: #f2f2f2;
+    min-width: 11em;
+    max-width: 18em;
+    z-index: 100;
+    box-shadow: 5px 5px 4px -3px rgba(0, 0, 0, 0.57);
+    font-size: 1em;
+    user-select: none;
+    cursor: default;
+    outline: none;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_inner_wrap {
+    position: relative;
+    padding: 2px;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_split {
+    margin-left: 34px;
+    margin-top: 0.1em;
+    border-top: 1px solid #d7d7d7;
+    padding-top: 0.1em;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_wrap {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_wrap:hover,
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_wrap_focus {
+    background-color: #c3def5;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_icon {
+    height: 24px;
+    image-rendering: pixelated;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_icon_inner {
+    width: 24px;
+    height: 24px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.75em;
+    line-height: 1;
+    white-space: nowrap;
+    padding: 0.5em 0.3em;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_text.fe_fileexplorer_popup_item_active {
+    font-weight: bold;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_disabled {
+    color: #6d6d6d;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_disabled:hover,
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_disabled.fe_fileexplorer_popup_item_wrap_focus {
+    background-color: #e5e5e5;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_icon_back {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: -96px -48px;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_icon_forward {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: -24px -96px;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_icon_check {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: 0 -96px;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_icon_folder {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: -96px -96px;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_icon_file {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: 0 -48px;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_icon_download {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: -96px -120px;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_icon_copy {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: -24px -120px;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_icon_paste {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: -48px -144px;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_icon_cut {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: -48px -120px;
+}
+
+.fe_fileexplorer_popup_wrap .fe_fileexplorer_popup_item_icon_delete {
+    background-image: url('./assets/fileexplorer_sprites.png');
+    background-position: -72px -120px;
+}
+
+.fe_fileexplorer_floating_drag_icon_wrap {
+    position: fixed;
+    left: -9999px;
+    top: -9999px;
+    padding: 1.5em;
+    pointer-events: none;
+    border: 1px solid rgba(151, 220, 252, 0.4);
+    background-image: linear-gradient(rgba(227, 245, 252, 0.4), rgba(189, 231, 252, 0.4));
+    z-index: 100;
+    box-shadow: 5px 5px 4px -3px rgba(0, 0, 0, 0.3);
+}
+
+.fe_fileexplorer_floating_drag_icon_wrap .fe_fileexplorer_floating_drag_icon_wrap_inner {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    overflow: hidden;
+}
+
+.fe_fileexplorer_floating_drag_icon_wrap .fe_fileexplorer_item_icon {
+    width: 48px;
+    height: 48px;
+    background-repeat: no-repeat;
+    opacity: 0.82;
+}
+
+.fe_fileexplorer_floating_drag_icon_wrap .fe_fileexplorer_floating_drag_icon_wrap_inner[data-numitems]::after {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -30%);
+    padding: 0.1em 0.3em;
+    font-size: 0.75em;
+    background-color: #0074cc;
+    border: 1px solid #ffffff;
+    color: #ffffff;
+    content: attr(data-numitems);
+}
+
+@media (pointer: coarse) {
+    .fe_fileexplorer_wrap .fe_fileexplorer_item_wrap {
+        margin-top: 0.1em;
+        margin-bottom: 0.1em;
+    }
+
+    .fe_fileexplorer_wrap .fe_fileexplorer_show_item_checkboxes .fe_fileexplorer_item_checkbox {
+        display: block;
+    }
+}

@@ -27,9 +27,10 @@ export class Dialog extends React.Component<DialogProps> {
         if (this.props.hidden) {
             return null;
         }
+        const contentChildren = React.Children.toArray(this.props.children);
         return React.createElement('div', { style: this.getWrapperStyle() }, React.createElement('div', {
             className: 'message-box ' + (this.props.className || '')
-        }, React.createElement('div', { className: 'message-box-content' }, this.props.children), React.createElement('div', { className: 'message-box-footer' }, this.props.buttons.map((button, index) => this.renderButton(button, index)))));
+        }, React.createElement('div', { className: 'message-box-content' }, contentChildren), React.createElement('div', { className: 'message-box-footer' }, this.props.buttons.map((button, index) => this.renderButton(button, index)))));
     }
     private renderButton(button: ButtonConfig, index: number): React.ReactElement {
         return React.createElement('button', {

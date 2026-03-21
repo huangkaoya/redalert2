@@ -9,10 +9,13 @@
     "typecheck:entry": "tsc -p tsconfig.build.json",
     "preview": "vite preview",
     "debug:skirmish": "node scripts/skirmish-flow.mjs",
+    "debug:game-res-init": "node scripts/game-res-init-flow.mjs",
     "debug:refinery-free-unit": "node scripts/refinery-free-unit-flow.mjs",
     "debug:viewport": "node scripts/viewport-flow.mjs",
     "debug:terror-drone": "node scripts/terror-drone-flow.mjs",
-    "debug:radiation": "node scripts/radiation-flow.mjs"
+    "debug:radiation": "node scripts/radiation-flow.mjs",
+    "debug:storage-explorer": "node scripts/storage-explorer-flow.mjs",
+    "debug:options": "node scripts/options-flow.mjs"
   },
   "dependencies": {
     "@brakebein/threeoctree": "^2.0.1",
@@ -23,6 +26,7 @@
     "@types/three": "^0.176.0",
     "7z-wasm": "^1.1.0",
     "classnames": "^2.5.1",
+    "file-system-access": "^1.0.4",
     "js-logger": "^1.6.1",
     "liang-barsky": "^1.0.12",
     "mersenne-twister": "^1.1.0",

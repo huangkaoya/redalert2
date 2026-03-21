@@ -1,17 +1,6 @@
 declare global {
-    interface FileSystemAccessIndexedDBAdapterOptions {
-        name: string;
-        rootName?: string;
-    }
-    interface FileSystemAccessAPI {
-        adapters?: {
-            indexeddb: (options: FileSystemAccessIndexedDBAdapterOptions) => Promise<FileSystemDirectoryHandle>;
-        };
-    }
     interface Window {
         showDirectoryPicker?: () => Promise<FileSystemDirectoryHandle>;
-        FileExplorer: any;
-        FileSystemAccess?: FileSystemAccessAPI;
     }
     interface FileSystemHandle {
         readonly kind: 'file' | 'directory';

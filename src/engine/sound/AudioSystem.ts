@@ -6,8 +6,8 @@ import { AudioSequence } from "./AudioSequence";
 const SILENT_MP3 = "data:audio/mpeg;base64,/+MYxAAAAANIAUAAAASEEB/jwOFM/0MM/90b/+RhST//w4NFwOjf///PZu////9lns5GFDv//l9GlUIEEIAAAgIg8Ir/JGq3/+MYxDsLIj5QMYcoAP0dv9HIjUcH//yYSg+CIbkGP//8w0bLVjUP///3Z0x5QCAv/yLjwtGKTEFNRTMuOTeqqqqqqqqqqqqq/+MYxEkNmdJkUYc4AKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
 interface Mixer {
     onVolumeChange: {
-        subscribe(handler: (mixer: Mixer, channel: ChannelType) => void): void;
-        unsubscribe(handler: (mixer: Mixer, channel: ChannelType) => void): void;
+        subscribe(handler: (channel: ChannelType, mixer: Mixer) => void): void;
+        unsubscribe(handler: (channel: ChannelType, mixer: Mixer) => void): void;
     };
     getVolume(channel: ChannelType): number;
     isMuted(channel: ChannelType): boolean;
@@ -33,7 +33,7 @@ export class AudioSystem {
     constructor(mixer: Mixer) {
         this.mixer = mixer;
     }
-    private handleVolumeChange = (mixer: Mixer, channel: ChannelType): void => {
+    private handleVolumeChange = (channel: ChannelType, mixer: Mixer): void => {
         this.getChannel(channel).gain.value = mixer.isMuted(channel)
             ? 0
             : mixer.getVolume(channel);

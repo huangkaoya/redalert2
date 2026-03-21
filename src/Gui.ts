@@ -399,6 +399,16 @@ export class Gui {
         if (this.music) {
             this.localPrefs.setItem(StorageKey.MusicOpts, this.music.serializeOptions());
         }
+        const debugRoot = (window as any).__ra2debug;
+        if (debugRoot) {
+            debugRoot.audioSystem = undefined;
+            debugRoot.mixer = undefined;
+            debugRoot.music = undefined;
+            debugRoot.generalOptions = undefined;
+            debugRoot.keyBinds = undefined;
+            debugRoot.fullScreen = undefined;
+            debugRoot.localPrefs = undefined;
+        }
         if (this.uiAnimationLoop) {
             this.uiAnimationLoop.destroy();
         }
@@ -436,22 +446,10 @@ export class Gui {
                 mixer = this.createDefaultMixer();
             }
             this.mixer = mixer;
-            const mixerAdapter = {
-                onVolumeChange: {
-                    subscribe: (handler: (mixerArg: any, channel: ChannelType) => void) => {
-                        mixer.onVolumeChange.subscribe((channel: number, mixerArg: any) => {
-                            handler(mixerArg, channel as ChannelType);
-                        });
-                    },
-                    unsubscribe: (handler: (mixerArg: any, channel: ChannelType) => void) => {
-                        console.warn('[Gui] Mixer adapter unsubscribe not fully implemented');
-                    }
-                },
-                getVolume: (channel: ChannelType) => mixer.getVolume(channel),
-                isMuted: (channel: ChannelType) => mixer.isMuted(channel),
-                setMuted: (channel: ChannelType, muted: boolean) => mixer.setMuted(channel, muted)
-            };
-            this.audioSystem = new AudioSystem(mixerAdapter);
+            this.audioSystem = new AudioSystem(mixer);
+            const debugRoot = ((window as any).__ra2debug ??= {});
+            debugRoot.audioSystem = this.audioSystem;
+            debugRoot.mixer = this.mixer;
             if (Engine.vfs) {
                 const soundIni = Engine.getIni('sound.ini');
                 const soundSpecs = new SoundSpecs(soundIni);
@@ -554,6 +552,8 @@ export class Gui {
                         console.warn('Failed to read music options from local storage', error);
                     }
                 }
+                const debugRoot = ((window as any).__ra2debug ??= {});
+                debugRoot.music = this.music;
                 console.log('[Gui] Music system initialized');
             }
             else {
@@ -586,6 +586,11 @@ export class Gui {
         const keyboardIniFileName = Engine.getFileNameVariant('keyboard.ini');
         this.keyBinds = new KeyBinds(Engine.rfs?.getRootDirectory?.(), keyboardIniFileName, Engine.getIni(keyboardIniFileName));
         await this.keyBinds.load();
+        const debugRoot = ((window as any).__ra2debug ??= {});
+        debugRoot.generalOptions = this.generalOptions;
+        debugRoot.keyBinds = this.keyBinds;
+        debugRoot.fullScreen = this.fullScreen;
+        debugRoot.localPrefs = this.localPrefs;
         const runtimeVars = this.runtimeVars ?? {};
         this.runtimeVars = Object.assign(runtimeVars, {
             debugWireframes: runtimeVars.debugWireframes ?? new BoxedVar<boolean>(false),

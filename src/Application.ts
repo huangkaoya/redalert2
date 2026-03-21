@@ -24,6 +24,7 @@ import { ImageContext } from './gui/component/ImageContext';
 import { ConsoleVars } from './ConsoleVars';
 import { GeneralOptions } from './gui/screen/options/GeneralOptions';
 import { FullScreen } from './gui/FullScreen';
+import { browserFileSystemAccess } from './engine/gameRes/browserFileSystemAccess';
 export type SplashScreenUpdateCallback = (props: ComponentProps<typeof SplashScreenComponent> | null) => void;
 class MockLocalPrefs extends LocalPrefs {
     constructor(storage: Storage) {
@@ -458,12 +459,7 @@ export class Application {
         this.loadGpuBenchmarkData()
             .then(gpuData => this.gpuTier = gpuData)
             .catch(e => this.sentry?.captureException(e));
-        if (!window.FileSystemAccess) {
-            console.error("FileSystemAccess not available. Make sure fsalib.min.js is loaded.");
-            await this.handleGameResLoadError(new Error("Failed to load File System Access library"), this.strings, true);
-            return;
-        }
-        this.fsAccessLib = window.FileSystemAccess;
+        this.fsAccessLib = browserFileSystemAccess;
         const urlParams = new URLSearchParams(window.location.search);
         const modName = urlParams.get('mod');
         let gameResConfig = this.loadGameResConfig(this.localPrefs);

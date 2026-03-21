@@ -9,6 +9,7 @@ import { JsxRenderer } from '../../jsx/JsxRenderer';
 import { LazyResourceCollection } from '../../../engine/LazyResourceCollection';
 import { MessageBoxApi } from '../../component/MessageBoxApi';
 import { Config } from '../../../Config';
+import { browserFileSystemAccess } from '../../../engine/gameRes/browserFileSystemAccess';
 export interface UiScene {
     menuViewport: {
         x: number;
@@ -179,7 +180,7 @@ export class MainMenuRootScreen extends RootScreen {
             catch (e) {
                 console.error("[MainMenuRootScreen] Couldn't get map dir", e);
             }
-            const fsAccessLib = (window as any).FileSystemAccess;
+            const fsAccessLib = browserFileSystemAccess;
             const sentry = undefined as any;
             screen = new screenClass(this.strings, this.jsxRenderer, mapFileLoader, errorHandler, this.messageBoxApi, this.localPrefs, mapList, gameModes, mapDir, fsAccessLib, sentry);
         }
