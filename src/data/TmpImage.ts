@@ -1,11 +1,5 @@
 import type { DataStream } from "./DataStream";
-class LocalColorImpl {
-    constructor(public r: number = 0, public g: number = 0, public b: number = 0) { }
-}
-declare let THREE: {
-    Color: typeof LocalColorImpl;
-} | undefined;
-const ColorImplToShow = typeof THREE !== 'undefined' ? THREE.Color : LocalColorImpl;
+import { Color } from "three";
 export enum TmpImageFlags {
     ExtraData = 1,
     ZData = 2,
@@ -26,8 +20,8 @@ export class TmpImage {
     public height: number = 0;
     public terrainType: number = 0;
     public rampType: number = 0;
-    public radarLeft: InstanceType<typeof ColorImplToShow> = new ColorImplToShow();
-    public radarRight: InstanceType<typeof ColorImplToShow> = new ColorImplToShow();
+    public radarLeft: Color = new Color();
+    public radarRight: Color = new Color();
     public tileData: Uint8Array = new Uint8Array(0);
     public zData?: Uint8Array;
     public extraData?: Uint8Array;
@@ -71,7 +65,7 @@ export class TmpImage {
             }
         }
     }
-    private readRadarRgbInternal(r: number, g: number, b: number): InstanceType<typeof ColorImplToShow> {
-        return new ColorImplToShow(signedByteToUnsigned(r) / 255, signedByteToUnsigned(g) / 255, signedByteToUnsigned(b) / 255);
+    private readRadarRgbInternal(r: number, g: number, b: number): Color {
+        return new Color(signedByteToUnsigned(r) / 255, signedByteToUnsigned(g) / 255, signedByteToUnsigned(b) / 255);
     }
 }

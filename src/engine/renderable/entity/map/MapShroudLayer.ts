@@ -126,6 +126,7 @@ export class MapShroudLayer {
             alphaTest: 0.01,
             flatShading: true,
             transparent: true,
+            premultipliedAlpha: true,
             depthTest: false,
             blending: (THREE as any).MultiplyBlending,
         });

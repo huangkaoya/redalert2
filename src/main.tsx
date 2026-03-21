@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
 import './setupThreeGlobal';
 import App from './App.tsx';
 import { MixEntry } from './data/MixEntry';
@@ -27,6 +27,6 @@ else {
     console.error("Crc32.calculateCrc MISMATCH against known standard!");
 }
 console.log("--- Hashing Test End ---");
-ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode>
+createRoot(document.getElementById('root')!).render(<React.StrictMode>
     <App />
   </React.StrictMode>);
