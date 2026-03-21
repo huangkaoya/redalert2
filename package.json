@@ -24,7 +24,8 @@
     "debug:victory-exit": "bun scripts/victory-exit-flow.mjs",
     "debug:crate-sound": "bun scripts/crate-sound-flow.mjs",
     "debug:superweapon": "bun scripts/superweapon-flow.mjs",
-    "debug:nuke": "bun scripts/nuke-flow.mjs"
+    "debug:nuke": "bun scripts/nuke-flow.mjs",
+    "debug:minimap-shroud": "bun scripts/minimap-shroud-flow.mjs"
   },
   "dependencies": {
     "@brakebein/threeoctree": "^2.0.1",

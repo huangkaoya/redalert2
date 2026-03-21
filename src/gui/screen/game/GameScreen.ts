@@ -332,6 +332,7 @@ export class GameScreen extends RootScreen {
             'renderableManager',
             'worldInteraction',
             'localPlayer',
+            'minimap',
             'game',
             'actionQueue',
             'actionFactory',
@@ -533,7 +534,7 @@ export class GameScreen extends RootScreen {
         this.disposables.add(() => this.hudFactory = undefined);
         const hud = this.hudFactory.create();
         this.hud = hud;
-        const minimap = this.minimap = new Minimap(game, undefined, hud.getTextColor(), game.rules.general.radar);
+        const minimap = this.minimap = new Minimap(game, localPlayer, hud.getTextColor(), game.rules.general.radar);
         hud.setMinimap(minimap);
         this.disposables.add(minimap, () => this.minimap = undefined);
         minimap.setPointerEvents(this.pointer.pointerEvents);
@@ -606,6 +607,7 @@ export class GameScreen extends RootScreen {
         debugRoot.worldInteraction = worldInteraction;
         debugRoot.localPlayer = localPlayer;
         debugRoot.game = game;
+        debugRoot.minimap = this.minimap;
         debugRoot.actionQueue = actionQueue;
         debugRoot.actionFactory = actionFactory;
         debugRoot.actionsApi = actionsApi;
