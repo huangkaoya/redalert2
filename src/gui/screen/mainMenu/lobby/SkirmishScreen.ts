@@ -653,6 +653,7 @@ export class SkirmishScreen extends MainMenuScreen {
                 credits: this.formModel.credits,
                 unitCount: this.formModel.unitCount,
             } : undefined,
+            startGame: () => this.handleStartGame(),
         };
     }
     private initView(): void {

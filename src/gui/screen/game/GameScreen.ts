@@ -617,6 +617,48 @@ export class GameScreen extends RootScreen {
             isSpawned: unit.isSpawned,
             tile: unit.tile ? { rx: unit.tile.rx, ry: unit.tile.ry, z: unit.tile.z } : undefined,
         });
+        const serializeOwnedObject = (object: any) => ({
+            id: object.id,
+            name: object.name,
+            className: object.constructor?.name,
+            objectType: object.type,
+            isSpawned: Boolean(object.isSpawned),
+            isDestroyed: Boolean(object.isDestroyed),
+            isBuilding: Boolean(object.isBuilding?.()),
+            isUnit: Boolean(object.isUnit?.()),
+            insignificant: Boolean(object.rules?.insignificant),
+            inTransport: Boolean(object.limboData?.inTransport),
+            limboData: object.limboData
+                ? {
+                    selected: Boolean(object.limboData.selected),
+                    controlGroup: object.limboData.controlGroup,
+                    inTransport: Boolean(object.limboData.inTransport),
+                }
+                : undefined,
+            tile: object.tile ? { rx: object.tile.rx, ry: object.tile.ry, z: object.tile.z } : undefined,
+            traits: object.traits?.getAll?.().map((trait: any) => trait.constructor?.name) ?? [],
+        });
+        const getVictoryBlockers = () => {
+            const shortGame = game.gameOpts.shortGame;
+            const combatants = game.playerList.getCombatants();
+            return combatants.map((player: any) => {
+                const ownedObjects = player.getOwnedObjects(true);
+                const qualifyingAssets = shortGame
+                    ? ownedObjects.filter((object: any) => (object.isBuilding?.() && !object.rules.insignificant) ||
+                        game.rules.general.baseUnit.includes(object.name))
+                    : ownedObjects.filter((object: any) => !object.rules.insignificant && !object.limboData?.inTransport);
+                return {
+                    name: player.name,
+                    defeated: Boolean(player.defeated),
+                    isObserver: Boolean(player.isObserver),
+                    isAi: Boolean(player.isAi),
+                    ownedCount: ownedObjects.length,
+                    qualifyingCount: qualifyingAssets.length,
+                    ownedObjects: ownedObjects.map((object: any) => serializeOwnedObject(object)),
+                    qualifyingAssets: qualifyingAssets.map((object: any) => serializeOwnedObject(object)),
+                };
+            });
+        };
         const resolveOwnedUnitById = (unitId: number) => {
             const unit = localPlayer.getOwnedObjectById(unitId);
             if (!unit) {
@@ -926,8 +968,12 @@ export class GameScreen extends RootScreen {
                 const sellMode = (this.playerUi as any)?.sellMode;
                 return Boolean(sellMode && worldInteraction?.getMode?.() === sellMode);
             },
+            getVictoryBlockers: () => getVictoryBlockers(),
         };
         this.pointer.setVisible(true);
+        const gameEndHandler = () => this.onGameEnd(game, localPlayer, eva, replay);
+        game.onEnd.subscribe(gameEndHandler);
+        this.disposables.add(() => game.onEnd.unsubscribe(gameEndHandler));
         game.start?.();
         if (!this.isSinglePlayer) {
             this.initNetStats(localPlayer);
@@ -1080,6 +1126,13 @@ export class GameScreen extends RootScreen {
     private async onGameEnd(game: any, localPlayer: any, eva: any, replay: any): Promise<void> {
         const isVictory = !localPlayer.defeated ||
             game.alliances.getAllies(localPlayer).some((ally: any) => !ally.defeated);
+        console.log('[GameScreen] onGameEnd', {
+            singlePlayer: this.isSinglePlayer,
+            isVictory,
+            localPlayer: localPlayer?.name,
+            status: game?.status,
+            gservConAvailable: Boolean(this.gservCon)
+        });
         const [gameResultPopup] = this.jsxRenderer.render(jsx(GameResultPopup, {
             type: isVictory && !localPlayer.isObserver
                 ? GameResultType.MpVictory
@@ -1088,8 +1141,10 @@ export class GameScreen extends RootScreen {
         }));
         this.pointer.setVisible(false);
         this.playerUi.dispose();
-        this.gservCon.onClose.unsubscribe(this.onGservClose);
-        this.gservCon.close();
+        if (!this.isSinglePlayer && this.gservCon) {
+            this.gservCon.onClose.unsubscribe(this.onGservClose);
+            this.gservCon.close();
+        }
         this.uiScene.add(gameResultPopup);
         if (!localPlayer.isObserver) {
             eva.play(isVictory ? 'EVA_YouAreVictorious' : 'EVA_YouHaveLost', true);
