@@ -20,11 +20,13 @@ import type { Viewport, ViewportRect } from './gui/Viewport';
 import { Gui } from './Gui';
 import { BasicErrorBoxApi } from './gui/component/BasicErrorBoxApi';
 import { Engine } from './engine/Engine';
+import { ResourceLoader } from './engine/ResourceLoader';
 import { ImageContext } from './gui/component/ImageContext';
 import { ConsoleVars } from './ConsoleVars';
 import { GeneralOptions } from './gui/screen/options/GeneralOptions';
 import { FullScreen } from './gui/FullScreen';
 import { browserFileSystemAccess } from './engine/gameRes/browserFileSystemAccess';
+import type { TestToolRuntimeContext } from './tools/TestToolSupport';
 export type SplashScreenUpdateCallback = (props: ComponentProps<typeof SplashScreenComponent> | null) => void;
 class MockLocalPrefs extends LocalPrefs {
     constructor(storage: Storage) {
@@ -713,6 +715,13 @@ export class Application {
         }
         return undefined;
     }
+    private createTestToolContext(): TestToolRuntimeContext {
+        return {
+            cdnResourceLoader: this.cdnResourceLoader,
+            mapResourceLoader: new ResourceLoader(this.config.mapsBaseUrl ?? ''),
+            rootElement: this.rootEl ?? undefined,
+        };
+    }
     private initRouting(): void {
         let currentHandler: any = null;
         this.routing.addRoute("*", async () => {
@@ -724,6 +733,7 @@ export class Application {
         });
         this.routing.addRoute("/", async () => {
             console.log('[Application] Initializing main page');
+            this.applyRootLayout(this.viewport.value);
             this.gui = new Gui(this.getVersion(), this.strings, this.config, this.viewport, this.rootEl!, this.cdnResourceLoader, this.gameResConfig, this.runtimeVars, this.generalOptions, this.fullScreen);
             await this.gui.init();
             currentHandler = this;
@@ -734,7 +744,7 @@ export class Application {
             }
             console.log('[Application] Initializing VxlTester');
             const { VxlTester } = await this.importOptionalDevModule('./tools/VxlTester');
-            await VxlTester.main(Engine.vfs, this.runtimeVars);
+            await VxlTester.main(Engine.vfs, this.runtimeVars, this.createTestToolContext());
             currentHandler = VxlTester;
         });
         this.routing.addRoute("/lobbytest", async () => {
@@ -743,7 +753,7 @@ export class Application {
             }
             console.log('[Application] Initializing LobbyFormTester');
             const { LobbyFormTester } = await this.importOptionalDevModule('./tools/LobbyFormTester');
-            await LobbyFormTester.main(this.rootEl!, this.strings);
+            await LobbyFormTester.main(this.rootEl!, this.strings, this.createTestToolContext());
             currentHandler = LobbyFormTester;
         });
         this.routing.addRoute("/soundtest", async () => {
@@ -752,7 +762,7 @@ export class Application {
             }
             console.log('[Application] Initializing SoundTester');
             const { SoundTester } = await this.importOptionalDevModule('./tools/SoundTester');
-            await SoundTester.main(Engine.vfs, this.rootEl!);
+            await SoundTester.main(Engine.vfs, this.rootEl!, this.createTestToolContext());
             currentHandler = SoundTester;
         });
         this.routing.addRoute("/buildtest", async () => {
@@ -761,7 +771,7 @@ export class Application {
             }
             console.log('[Application] Initializing BuildingTester');
             const { BuildingTester } = await this.importOptionalDevModule('./tools/BuildingTester');
-            await BuildingTester.main([]);
+            await BuildingTester.main([], this.createTestToolContext());
             currentHandler = BuildingTester;
         });
         this.routing.addRoute("/inftest", async () => {
@@ -770,7 +780,7 @@ export class Application {
             }
             console.log('[Application] Initializing InfantryTester');
             const { InfantryTester } = await this.importOptionalDevModule('./tools/InfantryTester');
-            await InfantryTester.main(this.runtimeVars);
+            await InfantryTester.main(this.runtimeVars, this.createTestToolContext());
             currentHandler = InfantryTester;
         });
         this.routing.addRoute("/airtest", async () => {
@@ -779,7 +789,7 @@ export class Application {
             }
             console.log('[Application] Initializing AircraftTester');
             const { AircraftTester } = await this.importOptionalDevModule('./tools/AircraftTester');
-            await AircraftTester.main(this.runtimeVars);
+            await AircraftTester.main(this.runtimeVars, this.createTestToolContext());
             currentHandler = AircraftTester;
         });
         this.routing.addRoute("/vehicletest", async () => {
@@ -788,7 +798,7 @@ export class Application {
             }
             console.log('[Application] Initializing VehicleTester');
             const { VehicleTester } = await this.importOptionalDevModule('./tools/VehicleTester');
-            await VehicleTester.main(this.runtimeVars);
+            await VehicleTester.main(this.runtimeVars, this.createTestToolContext());
             currentHandler = VehicleTester;
         });
         this.routing.addRoute("/shptest", async () => {
@@ -796,10 +806,10 @@ export class Application {
                 throw new Error("Original game files must be provided.");
             }
             console.log('[Application] Initializing ShpTester');
-            const { MapFile } = await import('./data/MapFile');
-            const gameMap = new MapFile(Engine.vfs.openFile("mp03t4.map"));
+            const { TestToolSupport } = await this.importOptionalDevModule('./tools/TestToolSupport');
+            const gameMap = await TestToolSupport.loadMap(this.createTestToolContext().mapResourceLoader!, "mp03t4.map");
             const { ShpTester } = await this.importOptionalDevModule('./tools/ShpTester');
-            await ShpTester.main(Engine.vfs, gameMap, this.rootEl!, this.strings);
+            await ShpTester.main(Engine.vfs, gameMap, this.rootEl!, this.strings, this.createTestToolContext());
             currentHandler = ShpTester;
         });
         this.routing.addRoute("/worldscenetest", async () => {
@@ -807,10 +817,10 @@ export class Application {
                 throw new Error("Original game files must be provided.");
             }
             console.log('[Application] Initializing WorldSceneTester');
-            const { MapFile } = await import('./data/MapFile');
-            const gameMap = new MapFile(Engine.vfs.openFile("mp03t4.map"));
+            const { TestToolSupport } = await this.importOptionalDevModule('./tools/TestToolSupport');
+            const gameMap = await TestToolSupport.loadMap(this.createTestToolContext().mapResourceLoader!, "mp03t4.map");
             const { WorldSceneTester } = await this.importOptionalDevModule('./tools/WorldSceneTester');
-            await WorldSceneTester.main(Engine.vfs, gameMap, this.rootEl!, this.strings);
+            await WorldSceneTester.main(Engine.vfs, gameMap, this.rootEl!, this.strings, this.createTestToolContext());
             currentHandler = WorldSceneTester;
         });
         this.routing.addRoute("/unitmovementtest", async () => {
@@ -818,10 +828,10 @@ export class Application {
                 throw new Error("Original game files must be provided.");
             }
             console.log('[Application] Initializing UnitMovementTester');
-            const { MapFile } = await import('./data/MapFile');
-            const gameMap = new MapFile(Engine.vfs.openFile("mp03t4.map"));
+            const { TestToolSupport } = await this.importOptionalDevModule('./tools/TestToolSupport');
+            const gameMap = await TestToolSupport.loadMap(this.createTestToolContext().mapResourceLoader!, "mp03t4.map");
             const { UnitMovementTester } = await this.importOptionalDevModule('./tools/UnitMovementTester');
-            await UnitMovementTester.main(Engine.vfs, gameMap, this.rootEl!, this.strings);
+            await UnitMovementTester.main(Engine.vfs, gameMap, this.rootEl!, this.strings, this.createTestToolContext());
             currentHandler = UnitMovementTester;
         });
         this.routing.init();

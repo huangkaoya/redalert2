@@ -18,23 +18,26 @@ import { Lighting } from "@/engine/Lighting";
 import { LightingDirector } from "@/engine/gfx/lighting/LightingDirector";
 import { IsoCoords } from "@/engine/IsoCoords";
 import { CompositeDisposable } from "@/util/disposable/CompositeDisposable";
+import { TestToolSupport, type TestToolRuntimeContext } from "@/tools/TestToolSupport";
 declare const THREE: any;
 export class WorldSceneTester {
     private static disposables = new CompositeDisposable();
     private static renderer?: Renderer;
     private static worldScene?: WorldScene;
     private static uiAnimationLoop?: UiAnimationLoop;
-    static async main(mixFileLoader: any, gameMapFile: any, parentElement: HTMLElement, _strings: any): Promise<void> {
+    static async main(mixFileLoader: any, gameMapFile: any, parentElement: HTMLElement, _strings: any, context: TestToolRuntimeContext = {}): Promise<void> {
+        await TestToolSupport.ensureTheater(TheaterType.Temperate, context.cdnResourceLoader);
         this.buildHomeButton();
+        const hostElement = TestToolSupport.prepareHost(context, 800, 600);
         const renderer = (this.renderer = new Renderer(800, 600));
-        renderer.init(parentElement);
+        renderer.init(hostElement);
+        TestToolSupport.placeRendererCanvas(renderer, 0, 0);
         renderer.initStats(document.body);
         this.disposables.add(renderer);
         const worldScene = (this.worldScene = WorldScene.factory({ x: 0, y: 0, width: 800, height: 600 }, new BoxedVar(true), new BoxedVar(ShadowQuality.High)));
         this.disposables.add(worldScene);
         IsoCoords.init({ x: 0, y: 0 });
         worldScene.create3DObject();
-        await mixFileLoader.addMixFile("sidec01.mix");
         const rules = new Rules(Engine.getRules());
         const art = new Art(rules, Engine.getArt(), undefined, undefined);
         const theater = await Engine.loadTheater(TheaterType.Temperate);
@@ -85,6 +88,12 @@ export class WorldSceneTester {
         renderer.addScene(worldScene);
         const loop = (this.uiAnimationLoop = new UiAnimationLoop(renderer));
         loop.start();
+        TestToolSupport.setState('worldscene', {
+            mapWidth: gameMapFile.fullSize.width,
+            mapHeight: gameMapFile.fullSize.height,
+            startingLocations: gameMap.startingLocations?.length ?? 0,
+            viewport: worldScene.viewport,
+        });
     }
     private static buildHomeButton(): void {
         const homeButton = document.createElement('button');
@@ -125,6 +134,7 @@ export class WorldSceneTester {
         this.disposables.add(() => homeButton.remove());
     }
     static destroy(): void {
+        TestToolSupport.clearState('worldscene');
         if (this.uiAnimationLoop) {
             this.uiAnimationLoop.destroy();
             this.uiAnimationLoop = undefined;

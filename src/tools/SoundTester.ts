@@ -4,21 +4,29 @@ import { IdxFile } from "@/data/IdxFile";
 import { Engine } from "@/engine/Engine";
 import { LazyResourceCollection } from "@/engine/LazyResourceCollection";
 import { WavFile } from "@/data/WavFile";
+import { TestToolSupport, type TestToolRuntimeContext } from "@/tools/TestToolSupport";
 export class SoundTester {
     private static disposables = new CompositeDisposable();
     private static sounds: LazyResourceCollection<WavFile>;
     private static audioBag: AudioBagFile;
     private static listEl: HTMLDivElement;
     private static homeButton?: HTMLButtonElement;
-    static async main(fileSystem: any, containerElement: HTMLElement): Promise<void> {
+    private static hostElement?: HTMLElement;
+    static async main(fileSystem: any, containerElement: HTMLElement, context: TestToolRuntimeContext = {}): Promise<void> {
+        await TestToolSupport.ensureAudio(context.cdnResourceLoader);
+        const hostElement = this.hostElement = TestToolSupport.prepareHost(context, 212, 600);
         this.sounds = Engine.getSounds();
         this.audioBag = new AudioBagFile();
         const audioBagFile = fileSystem.openFile("audio.bag");
         const audioIdxFile = fileSystem.openFile("audio.idx");
         this.audioBag.fromVirtualFile(audioBagFile, new IdxFile(audioIdxFile.stream));
         fileSystem.addArchive(this.audioBag, "audio.bag");
-        this.buildBrowser();
+        this.buildBrowser(hostElement);
         this.buildHomeButton();
+        TestToolSupport.setState('sound', {
+            soundCount: this.audioBag.getFileList().length,
+            selectedSound: null,
+        });
     }
     private static selectSound(soundName: string): void {
         const audioContext = new AudioContext();
@@ -31,8 +39,12 @@ export class SoundTester {
             source.connect(gainNode).connect(audioContext.destination);
             source.start(0);
         }, (error: DOMException) => console.log(error));
+        TestToolSupport.setState('sound', {
+            soundCount: this.audioBag.getFileList().length,
+            selectedSound: soundName,
+        });
     }
-    private static buildBrowser(): void {
+    private static buildBrowser(hostElement: HTMLElement): void {
         const listElement = this.listEl = document.createElement("div");
         listElement.style.position = "absolute";
         listElement.style.right = "0";
@@ -55,7 +67,8 @@ export class SoundTester {
             });
             listElement.appendChild(link);
         });
-        document.body.appendChild(listElement);
+        hostElement.appendChild(listElement);
+        TestToolSupport.applyPanelTheme(listElement);
     }
     private static buildHomeButton(): void {
         const homeButton = this.homeButton = document.createElement('button');
@@ -101,17 +114,6 @@ export class SoundTester {
             this.homeButton = undefined;
         }
         this.disposables.dispose();
-        try {
-            const { PipOverlay } = require("@/engine/renderable/entity/PipOverlay");
-            const { TextureUtils } = require("@/engine/gfx/TextureUtils");
-            PipOverlay?.clearCaches?.();
-            if (TextureUtils?.cache) {
-                TextureUtils.cache.forEach((tex: any) => tex.dispose?.());
-                TextureUtils.cache.clear();
-            }
-        }
-        catch (err) {
-            console.warn('[SoundTester] Failed to clear caches during destroy:', err);
-        }
+        TestToolSupport.clearState('sound');
     }
 }

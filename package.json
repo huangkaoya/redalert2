@@ -15,7 +15,9 @@
     "debug:terror-drone": "node scripts/terror-drone-flow.mjs",
     "debug:radiation": "node scripts/radiation-flow.mjs",
     "debug:storage-explorer": "node scripts/storage-explorer-flow.mjs",
-    "debug:options": "node scripts/options-flow.mjs"
+    "debug:options": "node scripts/options-flow.mjs",
+    "debug:test-entries": "node scripts/test-entry-flow.mjs",
+    "debug:tester-panels": "node scripts/tester-panel-flow.mjs"
   },
   "dependencies": {
     "@brakebein/threeoctree": "^2.0.1",

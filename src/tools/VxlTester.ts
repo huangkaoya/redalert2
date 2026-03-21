@@ -14,6 +14,10 @@ import { ShadowQuality } from '../engine/renderable/entity/unit/ShadowQuality';
 import { CanvasMetrics } from '../gui/CanvasMetrics';
 import { VirtualFileSystem } from '../data/vfs/VirtualFileSystem';
 import { Renderable } from '../engine/gfx/RenderableContainer';
+import { ResourceType } from '../engine/resourceConfigs';
+import { PipOverlay } from '../engine/renderable/entity/PipOverlay';
+import { TextureUtils } from '../engine/gfx/TextureUtils';
+import { TestToolSupport, type TestToolRuntimeContext } from './TestToolSupport';
 import * as THREE from 'three';
 const VXL_FILES = [
     "1tnk.vxl", "1tnkbarl.vxl", "1tnktur.vxl", "2tnk.vxl", "2tnkbarl.vxl",
@@ -58,7 +62,7 @@ class VxlWrapper implements Renderable {
     private builder: VxlNonBatchedBuilder;
     private wrapper: THREE.Object3D;
     constructor(vxlFile: VxlFile, hvaFile: any | undefined, palette: Palette, vxlGeometryPool: VxlGeometryPool, camera: THREE.Camera) {
-        this.builder = new VxlNonBatchedBuilder(vxlFile, hvaFile, palette, vxlGeometryPool, camera);
+        this.builder = new VxlNonBatchedBuilder(vxlFile, palette, hvaFile ?? null, vxlGeometryPool, camera);
         this.wrapper = new THREE.Object3D();
     }
     get3DObject(): THREE.Object3D {
@@ -120,37 +124,34 @@ export class VxlTester {
     private static currentVxl?: VxlWrapper;
     private static listEl?: HTMLDivElement;
     private static homeButton?: HTMLButtonElement;
+    private static hostElement?: HTMLElement;
     private static disposables = new CompositeDisposable();
-    static async main(vfs: VirtualFileSystem, runtimeVars: any): Promise<void> {
+    private static availableFiles: string[] = [];
+    static async main(vfs: VirtualFileSystem, runtimeVars: any, context: TestToolRuntimeContext = {}): Promise<void> {
+        await TestToolSupport.ensureResourceTypes([ResourceType.TheaterTemp, ResourceType.TheaterTemp2, ResourceType.Vxl], context.cdnResourceLoader);
+        const hostElement = this.hostElement = TestToolSupport.prepareHost(context, 1020, 600);
         const renderer = this.renderer = new Renderer(800, 600);
-        renderer.init(document.body);
+        renderer.init(hostElement);
+        TestToolSupport.placeRendererCanvas(renderer, 0, 0);
         renderer.initStats(document.body);
         this.vfs = vfs;
         this.vxlGeometryPool = new VxlGeometryPool(new VxlGeometryCache(null, null));
         this.palette = new Palette(vfs.openFile("unittem.pal"));
-        console.log('[VxlTester] Palette loaded, colors:', this.palette.colors.length);
+        this.availableFiles = TestToolSupport.getExistingFiles(VXL_FILES);
+        TestToolSupport.setState('vxl', {
+            availableFileCount: this.availableFiles.length,
+            selectedFile: null,
+            meshCount: 0,
+            visibleMeshCount: 0,
+        });
         const worldScene = this.worldScene = WorldScene.factory({ x: 0, y: 0, width: 800, height: 600 }, new BoxedVar(true), new BoxedVar(ShadowQuality.High));
         this.disposables.add(worldScene);
         worldScene.scene.background = new THREE.Color(0xE0E0E0);
         worldScene.camera.far += 1000;
         worldScene.camera.updateProjectionMatrix();
-        console.log('[VxlTester] World scene created');
-        console.log('[VxlTester] Camera:', {
-            position: worldScene.camera.position,
-            rotation: worldScene.camera.rotation,
-            near: worldScene.camera.near,
-            far: worldScene.camera.far,
-            type: worldScene.camera.type
-        });
         worldScene.create3DObject();
         worldScene.scene.traverse((obj) => {
             if (obj instanceof THREE.Light) {
-                console.log('[VxlTester] Light found:', {
-                    type: obj.type,
-                    intensity: (obj as any).intensity,
-                    position: obj.position,
-                    visible: obj.visible
-                });
                 if (obj instanceof THREE.AmbientLight) {
                     (obj as any).intensity = 1.0;
                 }
@@ -167,11 +168,10 @@ export class VxlTester {
         this.disposables.add(cameraZoomControls, pointerEvents);
         cameraZoomControls.init();
         this.createFloor();
-        this.buildBrowser();
+        this.buildBrowser(hostElement);
         renderer.addScene(worldScene);
         const animationLoop = this.uiAnimationLoop = new UiAnimationLoop(renderer);
         animationLoop.start();
-        console.log('[VxlTester] Animation loop started');
     }
     private static createFloor(): void {
         const geometry = new THREE.PlaneGeometry(10000, 10000);
@@ -189,52 +189,16 @@ export class VxlTester {
             this.currentVxl.destroy();
         }
         const file = this.vfs!.openFile(filename);
-        const startTime = new Date().getTime();
         const vxlFile = new VxlFile(file);
-        const endTime = new Date().getTime();
-        console.log(`Parsing took ${endTime - startTime}ms`);
-        console.log('[VxlTester] VXL file loaded:', filename);
-        console.log('[VxlTester] Sections count:', vxlFile.sections.length);
-        console.log('[VxlTester] Total voxel count:', vxlFile.voxelCount);
-        for (let i = 0; i < vxlFile.sections.length; i++) {
-            const section = vxlFile.sections[i];
-            console.log(`[VxlTester] Section ${i}:`, {
-                name: section.name,
-                size: { x: section.sizeX, y: section.sizeY, z: section.sizeZ },
-                minBounds: section.minBounds,
-                maxBounds: section.maxBounds,
-                spans: section.spans?.length || 0
-            });
-            const voxelData = section.getAllVoxels();
-            console.log(`[VxlTester] Section ${i} voxels:`, voxelData.voxels.length);
-        }
-        console.log('[VxlTester] Palette:', this.palette);
-        console.log('[VxlTester] VxlGeometryPool:', this.vxlGeometryPool);
         const vxl = this.currentVxl = new VxlWrapper(vxlFile, undefined, this.palette!, this.vxlGeometryPool!, this.worldScene!.camera);
-        console.log('[VxlTester] Created VxlWrapper');
         this.worldScene?.add(vxl);
-        console.log('[VxlTester] Added to scene');
         if (this.worldScene) {
             this.worldScene.processRenderQueue();
-            console.log('[VxlTester] Processed render queue');
-            const obj3d = vxl.get3DObject();
-            console.log('[VxlTester] VxlWrapper 3D object:', obj3d);
-            if (obj3d && obj3d.children.length > 0) {
-                console.log('[VxlTester] 3D object children:', obj3d.children);
-                obj3d.children.forEach((child, index) => {
-                    if (child instanceof THREE.Mesh) {
-                        console.log(`[VxlTester] Child ${index} mesh:`, {
-                            geometry: child.geometry,
-                            material: child.material,
-                            visible: child.visible,
-                            vertexCount: child.geometry.attributes.position?.count || 0
-                        });
-                    }
-                });
-            }
         }
+        const state = this.collectState(filename, vxlFile);
+        TestToolSupport.setState('vxl', state);
     }
-    private static buildBrowser(): void {
+    private static buildBrowser(hostElement: HTMLElement): void {
         const homeButton = document.createElement('button');
         homeButton.innerHTML = '点此返回主页';
         homeButton.style.cssText = `
@@ -284,19 +248,17 @@ export class VxlTester {
         title.style.marginTop = '0';
         title.style.marginBottom = '10px';
         listEl.appendChild(title);
-        VXL_FILES.forEach(filename => {
+        this.availableFiles.forEach(filename => {
             const link = document.createElement('a');
             link.style.display = 'block';
             link.style.padding = '4px 0';
-            link.style.color = '#333';
-            link.style.textDecoration = 'none';
             link.textContent = filename;
             link.setAttribute('href', 'javascript:;');
             link.onmouseover = () => {
-                link.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
+                link.style.backgroundColor = 'rgba(170, 16, 16, 0.95)';
             };
             link.onmouseout = () => {
-                link.style.backgroundColor = 'transparent';
+                link.style.backgroundColor = 'rgba(110, 6, 6, 0.72)';
             };
             link.addEventListener('click', () => {
                 console.log('Selected vxl', filename);
@@ -304,14 +266,41 @@ export class VxlTester {
             });
             listEl.appendChild(link);
         });
-        document.body.appendChild(listEl);
+        hostElement.appendChild(listEl);
+        TestToolSupport.applyPanelTheme(listEl);
         this.homeButton = homeButton;
         setTimeout(() => {
-            VxlTester.selectVxl('zep.vxl');
+            const initialFile = this.availableFiles[0];
+            if (initialFile) {
+                VxlTester.selectVxl(initialFile);
+            }
         }, 50);
     }
+    private static collectState(filename: string, vxlFile: VxlFile): Record<string, unknown> {
+        const object = this.currentVxl?.get3DObject();
+        const meshStats = {
+            meshCount: 0,
+            visibleMeshCount: 0,
+            vertexCount: 0,
+        };
+        object?.traverse((child) => {
+            if ((child as THREE.Mesh).isMesh) {
+                meshStats.meshCount += 1;
+                if (child.visible) {
+                    meshStats.visibleMeshCount += 1;
+                }
+                meshStats.vertexCount += (child as THREE.Mesh).geometry?.getAttribute?.('position')?.count ?? 0;
+            }
+        });
+        return {
+            availableFileCount: this.availableFiles.length,
+            selectedFile: filename,
+            sectionCount: vxlFile.sections.length,
+            voxelCount: vxlFile.voxelCount,
+            ...meshStats,
+        };
+    }
     static destroy(): void {
-        console.log('[VxlTester] Destroying VxlTester');
         if (this.currentVxl) {
             this.worldScene?.remove(this.currentVxl);
             this.currentVxl.destroy();
@@ -329,6 +318,7 @@ export class VxlTester {
             this.homeButton.remove();
             this.homeButton = undefined;
         }
+        this.hostElement = undefined;
         if (this.renderer) {
             this.renderer.dispose();
             this.renderer = undefined;
@@ -338,18 +328,14 @@ export class VxlTester {
         this.vfs = undefined;
         this.vxlGeometryPool = undefined;
         this.palette = undefined;
-        console.log('[VxlTester] VxlTester destroyed successfully');
-        try {
-            const { PipOverlay } = require("@/engine/renderable/entity/PipOverlay");
-            const { TextureUtils } = require("@/engine/gfx/TextureUtils");
-            PipOverlay?.clearCaches?.();
-            if (TextureUtils?.cache) {
-                TextureUtils.cache.forEach((tex: any) => tex.dispose?.());
-                TextureUtils.cache.clear();
-            }
+        this.availableFiles = [];
+        TestToolSupport.clearState('vxl');
+        if ((PipOverlay as any)?.clearCaches) {
+            PipOverlay.clearCaches();
         }
-        catch (err) {
-            console.warn('[VxlTester] Failed to clear caches during destroy:', err);
+        if ((TextureUtils as any)?.cache) {
+            TextureUtils.cache.forEach((tex: any) => tex.dispose?.());
+            TextureUtils.cache.clear();
         }
     }
 }

@@ -43,6 +43,8 @@ import { ShadowQuality } from "@/engine/renderable/entity/unit/ShadowQuality";
 import { CanvasMetrics } from "@/gui/CanvasMetrics";
 import { PipOverlay } from "@/engine/renderable/entity/PipOverlay";
 import { TextureUtils } from "@/engine/gfx/TextureUtils";
+import { ResourceType } from "@/engine/resourceConfigs";
+import { TestToolSupport, type TestToolRuntimeContext } from "@/tools/TestToolSupport";
 declare const THREE: any;
 export class InfantryTester {
     private static disposables = new CompositeDisposable();
@@ -58,11 +60,16 @@ export class InfantryTester {
     private static currentInfantry: any;
     private static listEl: HTMLDivElement;
     private static controlsEl: HTMLDivElement | undefined;
+    private static hostElement?: HTMLElement;
     private static vxlBuilderFactory: VxlBuilderFactory;
     private static autoRotate: boolean = false;
-    static async main(_args: any): Promise<void> {
+    private static currentInfantryType?: string;
+    static async main(_args: any, context: TestToolRuntimeContext = {}): Promise<void> {
+        await TestToolSupport.ensureTheater(TheaterType.Snow, context.cdnResourceLoader, [ResourceType.Anims]);
+        const hostElement = this.hostElement = TestToolSupport.prepareHost(context, 1224, 600);
         const renderer = (this.renderer = new Renderer(800, 600));
-        renderer.init(document.body);
+        renderer.init(hostElement);
+        TestToolSupport.placeRendererCanvas(renderer, 212, 0);
         renderer.initStats(document.body);
         this.buildHomeButton();
         const worldScene = WorldScene.factory({ x: 0, y: 0, width: 800, height: 600 }, new BoxedVar(true), new BoxedVar(ShadowQuality.High));
@@ -93,6 +100,7 @@ export class InfantryTester {
         this.worldScene = worldScene;
         this.vxlBuilderFactory = new VxlBuilderFactory(new VxlGeometryPool(new VxlGeometryCache(null, null)), false, worldScene.camera);
         this.addGrid();
+        this.syncState();
     }
     static addGrid(): void {
         const mapGrid = new MapGrid({ width: 10, height: 10 });
@@ -127,6 +135,7 @@ export class InfantryTester {
         const mapBounds = new MapBounds();
         const bridges = new Bridges(this.theater.tileSets, tileCollection, tileOccupation, mapBounds, this.rules);
         const infantry = (this.currentInfantry = new ObjectFactory(tileCollection, tileOccupation, bridges, new BoxedVar(1)).create(ObjectType.Infantry, infantryType, this.rules as any, this.art as any));
+        this.currentInfantryType = infantryType;
         infantry.owner = player;
         infantry.position.tile = { rx: 1, ry: 1, z: 0, rampType: 0 };
         const world = (this.world = new World());
@@ -138,12 +147,14 @@ export class InfantryTester {
         renderable.selectionModel.setSelectionLevel(SelectionLevel.Selected);
         renderable.selectionModel.setControlGroupNumber(3);
         this.buildControls();
+        this.syncState();
     }
     static buildControls(): void {
         if (this.controlsEl) {
-            document.body.removeChild(this.controlsEl);
+            this.controlsEl.remove();
         }
         const controls = (this.controlsEl = document.createElement("div"));
+        controls.dataset.testid = "infantry-controls";
         controls.style.position = "absolute";
         controls.style.left = "0";
         controls.style.top = "0";
@@ -154,9 +165,11 @@ export class InfantryTester {
         controls.appendChild(document.createTextNode("Remap color:"));
         const colorMap = new Map(this.rules.getMultiplayerColors());
         const colorSelect = document.createElement("select");
+        colorSelect.dataset.testid = "infantry-color";
         colorSelect.style.display = "block";
         colorSelect.addEventListener("change", () => {
             this.currentInfantry.owner.color = colorMap.get(colorSelect.value);
+            this.syncState();
         });
         controls.appendChild(colorSelect);
         colorMap.forEach((color, name) => {
@@ -172,7 +185,11 @@ export class InfantryTester {
         [SelectionLevel.None, SelectionLevel.Hover, SelectionLevel.Selected].forEach((level) => {
             const btn = document.createElement("button");
             btn.innerHTML = SelectionLevel[level];
-            btn.addEventListener("click", () => this.currentRenderable.selectionModel.setSelectionLevel(level));
+            btn.dataset.testid = `infantry-selection-${SelectionLevel[level].toLowerCase()}`;
+            btn.addEventListener("click", () => {
+                this.currentRenderable.selectionModel.setSelectionLevel(level);
+                this.syncState();
+            });
             selDiv.appendChild(btn);
         });
         controls.appendChild(document.createTextNode("Veteran level:"));
@@ -181,18 +198,22 @@ export class InfantryTester {
         [VeteranLevel.None, VeteranLevel.Veteran, VeteranLevel.Elite].forEach((lvl) => {
             const btn = document.createElement("button");
             btn.innerHTML = VeteranLevel[lvl];
+            btn.dataset.testid = `infantry-veteran-${VeteranLevel[lvl].toLowerCase()}`;
             btn.addEventListener("click", () => {
                 if (this.currentInfantry.veteranTrait) {
                     this.currentInfantry.veteranTrait.veteranLevel = lvl;
                 }
+                this.syncState();
             });
             vetDiv.appendChild(btn);
         });
         controls.appendChild(document.createTextNode("SubCell:"));
         const subCell = document.createElement("select");
+        subCell.dataset.testid = "infantry-subcell";
         subCell.style.display = "block";
         subCell.addEventListener("change", () => {
             this.currentInfantry.position.subCell = Number(subCell.value);
+            this.syncState();
         });
         controls.appendChild(subCell);
         for (let i = 0; i < 5; i++) {
@@ -207,44 +228,53 @@ export class InfantryTester {
         this.createStanceSelect(controls);
         controls.appendChild(document.createTextNode("isMoving:"));
         const moving = document.createElement("input");
+        moving.dataset.testid = "infantry-moving";
         moving.type = "checkbox";
         moving.style.display = "block";
         moving.addEventListener("change", (e) => {
             this.currentInfantry.moveTrait.moveState = (e.target as HTMLInputElement).checked
                 ? MoveState.Moving
                 : MoveState.Idle;
+            this.syncState();
         });
         controls.appendChild(moving);
         controls.appendChild(document.createTextNode("isFiring:"));
         const firing = document.createElement("input");
+        firing.dataset.testid = "infantry-firing";
         firing.type = "checkbox";
         firing.disabled = !this.currentInfantry.rules.primary;
         firing.style.display = "block";
         firing.addEventListener("change", (e) => {
             this.currentInfantry.isFiring = (e.target as HTMLInputElement).checked;
+            this.syncState();
         });
         controls.appendChild(firing);
         controls.appendChild(document.createTextNode("isPanicked:"));
         const panic = document.createElement("input");
+        panic.dataset.testid = "infantry-panic";
         panic.type = "checkbox";
         panic.disabled = !this.currentInfantry.rules.fraidycat;
         panic.style.display = "block";
         panic.addEventListener("change", (e) => {
             this.currentInfantry.isPanicked = (e.target as HTMLInputElement).checked;
+            this.syncState();
         });
         controls.appendChild(panic);
         controls.appendChild(document.createTextNode("Warped out:"));
         const warped = document.createElement("input");
+        warped.dataset.testid = "infantry-warped";
         warped.type = "checkbox";
         warped.style.display = "block";
         warped.addEventListener("change", (e) => {
             this.currentInfantry.warpedOutTrait.debugSetActive((e.target as HTMLInputElement).checked);
+            this.syncState();
         });
         controls.appendChild(warped);
         this.createDeathSelect(controls);
         controls.appendChild(document.createElement("hr"));
         controls.appendChild(document.createTextNode("Facing (0-7):"));
         const facingSelect = document.createElement("select");
+        facingSelect.dataset.testid = "infantry-facing";
         facingSelect.style.display = "block";
         const facingLabels = ["0 上", "1 左上", "2 左", "3 左下", "4 下", "5 右下", "6 右", "7 右上"];
         for (let i = 0; i < 8; i++) {
@@ -257,17 +287,20 @@ export class InfantryTester {
             const n = Number(facingSelect.value) % 8;
             const dir = (45 + (360 * n) / 8) % 360;
             this.currentInfantry.direction = dir;
+            this.syncState();
         });
         controls.appendChild(facingSelect);
         controls.appendChild(document.createTextNode("Direction (0-359):"));
         const dirWrap = document.createElement("div");
         const dirInput = document.createElement("input");
+        dirInput.dataset.testid = "infantry-direction-input";
         dirInput.type = "number";
         dirInput.min = "0";
         dirInput.max = "359";
         dirInput.style.width = "80px";
         dirInput.value = String(this.currentInfantry?.direction ?? 0);
         const dirBtn = document.createElement("button");
+        dirBtn.dataset.testid = "infantry-direction-apply";
         dirBtn.innerHTML = "Apply";
         dirBtn.addEventListener("click", () => {
             let v = Number(dirInput.value);
@@ -275,84 +308,117 @@ export class InfantryTester {
                 v = 0;
             v = ((Math.floor(v) % 360) + 360) % 360;
             this.currentInfantry.direction = v;
+            this.syncState();
         });
         dirWrap.appendChild(dirInput);
         dirWrap.appendChild(dirBtn);
         controls.appendChild(dirWrap);
         controls.appendChild(document.createTextNode("Auto rotate:"));
         const autoRot = document.createElement("input");
+        autoRot.dataset.testid = "infantry-auto-rotate";
         autoRot.type = "checkbox";
         autoRot.style.display = "block";
         autoRot.checked = this.autoRotate;
         autoRot.addEventListener("change", (e) => {
             this.autoRotate = (e.target as HTMLInputElement).checked;
+            this.syncState();
         });
         controls.appendChild(autoRot);
-        document.body.appendChild(controls);
+        this.hostElement?.appendChild(controls);
+        TestToolSupport.applyPanelTheme(controls);
+        this.syncState();
+    }
+    private static getZoneValues(): ZoneType[] {
+        const values = [ZoneType.Ground];
+        if (this.currentInfantry?.rules.consideredAircraft) {
+            values.push(ZoneType.Air);
+        }
+        if (this.currentInfantry?.rules.speedType === SpeedType.Amphibious) {
+            values.push(ZoneType.Water);
+        }
+        return values;
+    }
+    private static getStanceValues(): StanceType[] {
+        const values = [StanceType.None, StanceType.Guard, StanceType.Paradrop, StanceType.Cheer];
+        if (!this.currentInfantry?.rules.fearless) {
+            values.push(StanceType.Prone);
+        }
+        if (this.currentInfantry?.rules.deployer) {
+            values.push(StanceType.Deployed);
+        }
+        return values;
+    }
+    private static syncState(): void {
+        const infantry = this.currentInfantry;
+        const renderable = this.currentRenderable;
+        const selectionLevel = renderable?.selectionModel?.getSelectionLevel?.();
+        const veteranLevel = infantry?.veteranTrait?.veteranLevel ?? infantry?.veteranLevel ?? VeteranLevel.None;
+        TestToolSupport.setState('infantry', {
+            availableInfantry: this.listEl?.querySelectorAll('a').length ?? 0,
+            selectedInfantry: this.currentInfantryType ?? null,
+            rendered: Boolean(renderable?.get3DObject?.() ?? renderable),
+            selectionLevelValue: selectionLevel ?? null,
+            selectionLevel: TestToolSupport.enumLabel(SelectionLevel, selectionLevel),
+            selectionLevelOptions: TestToolSupport.enumOptions(SelectionLevel, [SelectionLevel.None, SelectionLevel.Hover, SelectionLevel.Selected]),
+            veteranLevelValue: infantry ? veteranLevel : null,
+            veteranLevel: infantry ? TestToolSupport.enumLabel(VeteranLevel, veteranLevel) : null,
+            veteranLevelOptions: TestToolSupport.enumOptions(VeteranLevel, [VeteranLevel.None, VeteranLevel.Veteran, VeteranLevel.Elite]),
+            subCell: infantry?.position?.subCell ?? null,
+            subCellOptions: [0, 1, 2, 3, 4].map(String),
+            zoneValue: infantry?.zone ?? null,
+            zone: TestToolSupport.enumLabel(ZoneType, infantry?.zone),
+            zoneOptions: TestToolSupport.enumOptions(ZoneType, this.getZoneValues()),
+            stanceValue: infantry?.stance ?? null,
+            stance: TestToolSupport.enumLabel(StanceType, infantry?.stance),
+            stanceOptions: TestToolSupport.enumOptions(StanceType, this.getStanceValues()),
+            moveState: infantry?.moveTrait?.moveState ?? null,
+            isMoving: infantry?.moveTrait?.moveState === MoveState.Moving,
+            isFiring: Boolean(infantry?.isFiring),
+            isPanicked: Boolean(infantry?.isPanicked),
+            warpedOut: Boolean(infantry?.warpedOutTrait?.isActive?.()),
+            direction: infantry?.direction ?? null,
+            autoRotate: this.autoRotate,
+            ownerColor: infantry?.owner?.color?.asHexString?.() ?? null,
+        });
     }
     static createZoneSelect(container: HTMLElement): void {
         const select = document.createElement("select");
+        select.dataset.testid = "infantry-zone";
         select.style.display = "block";
         select.addEventListener("change", () => {
             this.currentInfantry.zone = Number(select.value);
+            this.syncState();
         });
         container.appendChild(select);
-        const ground = document.createElement("option");
-        ground.value = String(ZoneType.Ground);
-        ground.innerHTML = ZoneType[ZoneType.Ground];
-        select.appendChild(ground);
-        if (this.currentInfantry.rules.consideredAircraft) {
-            const air = document.createElement("option");
-            air.value = String(ZoneType.Air);
-            air.innerHTML = ZoneType[ZoneType.Air];
-            select.appendChild(air);
-        }
-        if (this.currentInfantry.rules.speedType === SpeedType.Amphibious) {
-            const water = document.createElement("option");
-            water.value = String(ZoneType.Water);
-            water.innerHTML = ZoneType[ZoneType.Water];
-            select.appendChild(water);
-        }
+        this.getZoneValues().forEach((zoneValue) => {
+            const option = document.createElement("option");
+            option.value = String(zoneValue);
+            option.innerHTML = ZoneType[zoneValue];
+            option.selected = zoneValue === this.currentInfantry?.zone;
+            select.appendChild(option);
+        });
     }
     static createStanceSelect(container: HTMLElement): void {
         const select = document.createElement("select");
+        select.dataset.testid = "infantry-stance";
         select.style.display = "block";
         select.addEventListener("change", () => {
             this.currentInfantry.stance = Number(select.value);
+            this.syncState();
         });
         container.appendChild(select);
-        const none = document.createElement("option");
-        none.value = String(StanceType.None);
-        none.innerHTML = StanceType[StanceType.None];
-        select.appendChild(none);
-        const guard = document.createElement("option");
-        guard.value = String(StanceType.Guard);
-        guard.innerHTML = StanceType[StanceType.Guard];
-        select.appendChild(guard);
-        const paradrop = document.createElement("option");
-        paradrop.value = String(StanceType.Paradrop);
-        paradrop.innerHTML = StanceType[StanceType.Paradrop];
-        select.appendChild(paradrop);
-        const cheer = document.createElement("option");
-        cheer.value = String(StanceType.Cheer);
-        cheer.innerHTML = StanceType[StanceType.Cheer];
-        select.appendChild(cheer);
-        if (!this.currentInfantry.rules.fearless) {
-            const prone = document.createElement("option");
-            prone.value = String(StanceType.Prone);
-            prone.innerHTML = StanceType[StanceType.Prone];
-            select.appendChild(prone);
-        }
-        if (this.currentInfantry.rules.deployer) {
-            const deployed = document.createElement("option");
-            deployed.value = String(StanceType.Deployed);
-            deployed.innerHTML = StanceType[StanceType.Deployed];
-            select.appendChild(deployed);
-        }
+        this.getStanceValues().forEach((stanceValue) => {
+            const option = document.createElement("option");
+            option.value = String(stanceValue);
+            option.innerHTML = StanceType[stanceValue];
+            option.selected = stanceValue === this.currentInfantry?.stance;
+            select.appendChild(option);
+        });
     }
     static createDeathSelect(container: HTMLElement): void {
         container.appendChild(document.createTextNode("Death"));
         const select = document.createElement("select");
+        select.dataset.testid = "infantry-death";
         let i = 1;
         let name: string | undefined = InfDeathType[i] as any;
         while (name !== undefined) {
@@ -365,6 +431,7 @@ export class InfantryTester {
         }
         container.appendChild(select);
         const kill = document.createElement("button");
+        kill.dataset.testid = "infantry-kill";
         kill.style.display = "block";
         kill.style.color = "red";
         kill.innerHTML = "KILL";
@@ -373,10 +440,13 @@ export class InfantryTester {
             this.currentInfantry.infDeathType = Number(select.value);
             this.world.removeObject(this.currentInfantry);
             this.currentInfantry.dispose();
+            this.currentInfantry = undefined;
+            this.currentInfantryType = undefined;
             if (this.controlsEl) {
-                document.body.removeChild(this.controlsEl);
+                this.controlsEl?.remove();
                 this.controlsEl = undefined;
             }
+            this.syncState();
         });
         container.appendChild(kill);
     }
@@ -414,6 +484,7 @@ export class InfantryTester {
         const types = withArt.sort();
         types.forEach((name) => {
             const link = document.createElement("a");
+            link.dataset.infantryType = name;
             link.style.display = "block";
             link.textContent = name;
             link.setAttribute("href", "javascript:;");
@@ -423,7 +494,9 @@ export class InfantryTester {
             });
             browser.appendChild(link);
         });
-        document.body.appendChild(browser);
+        this.hostElement?.appendChild(browser);
+        TestToolSupport.applyPanelTheme(browser);
+        this.syncState();
         setTimeout(() => {
             this.selectInfantry(types[0]);
             this.animateInfantry();
@@ -481,7 +554,9 @@ export class InfantryTester {
             this.controlsEl.remove();
             this.controlsEl = undefined;
         }
+        this.currentInfantryType = undefined;
         this.disposables.dispose();
+        TestToolSupport.clearState('infantry');
         try {
             if ((PipOverlay as any)?.clearCaches) {
                 PipOverlay.clearCaches();

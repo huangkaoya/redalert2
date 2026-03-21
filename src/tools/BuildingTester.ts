@@ -43,6 +43,8 @@ import { CanvasMetrics } from "@/gui/CanvasMetrics";
 import { getRandomInt } from "@/util/math";
 import { PipOverlay } from "@/engine/renderable/entity/PipOverlay";
 import { TextureUtils } from "@/engine/gfx/TextureUtils";
+import { ResourceType } from "@/engine/resourceConfigs";
+import { TestToolSupport, type TestToolRuntimeContext } from "@/tools/TestToolSupport";
 declare const THREE: any;
 interface BuildingRule {
     techLevel: number;
@@ -106,9 +108,15 @@ export class BuildingTester {
     private static occupiedButtonsWrap: HTMLDivElement;
     private static controlsElement: HTMLDivElement | undefined;
     private static listEl: HTMLDivElement;
-    static async main(args: any[]): Promise<void> {
+    private static hostElement?: HTMLElement;
+    private static currentBuildingType?: string;
+    private static currentBuildingColor?: Color;
+    static async main(args: any[], context: TestToolRuntimeContext = {}): Promise<void> {
+        await TestToolSupport.ensureTheater(TheaterType.Snow, context.cdnResourceLoader, [ResourceType.BuildGen, ResourceType.Anims]);
+        const hostElement = this.hostElement = TestToolSupport.prepareHost(context, 1244, 600);
         const renderer = (this.renderer = new Renderer(800, 600));
-        renderer.init(document.body);
+        renderer.init(hostElement);
+        TestToolSupport.placeRendererCanvas(renderer, 232, 0);
         renderer.initStats(document.body);
         this.buildHomeButton();
         const worldScene = WorldScene.factory({ x: 0, y: 0, width: 800, height: 600 }, new BoxedVar(true), new BoxedVar(ShadowQuality.High));
@@ -137,6 +145,7 @@ export class BuildingTester {
         this.worldScene = worldScene;
         this.vxlGeometryPool = new VxlGeometryPool(new VxlGeometryCache());
         this.addGrid();
+        this.syncState();
     }
     static addGrid(): void {
         const mapGrid = new MapGrid({ width: 10, height: 10 });
@@ -153,9 +162,12 @@ export class BuildingTester {
         const buildingRule = this.rules.getBuilding(buildingType);
         const player = new Player("Player");
         this.disposables.add(player);
-        player.color = buildingRule.techLevel !== -1 || buildingRule.constructionYard
-            ? this.rules.getMultiplayerColors().get("DarkRed")
+        const defaultColor = (buildingRule.techLevel !== -1 || buildingRule.constructionYard)
+            ? this.rules.getMultiplayerColors().get("DarkRed")?.clone() ?? new Color(255, 0, 0)
             : new Color(255, 255, 255);
+        const selectedColor = this.currentBuildingColor?.clone() ?? defaultColor;
+        player.color = selectedColor;
+        this.currentBuildingColor = selectedColor?.clone();
         const playerList = new PlayerList();
         playerList.addPlayer(player);
         const alliances = new Alliances(playerList);
@@ -168,6 +180,7 @@ export class BuildingTester {
         const mapBounds = new MapBounds();
         const bridges = new Bridges(this.theater.tileSets, tileCollection, tileOccupation, mapBounds, this.rules);
         const building = (this.currentBuilding = new ObjectFactory(tileCollection, tileOccupation, bridges, new BoxedVar(1)).create(ObjectType.Building, buildingType, this.rules, this.art) as GameObject);
+        this.currentBuildingType = buildingType;
         building.owner = player;
         building.position.tile = { rx: 1, ry: 1, z: 0, rampType: 0 };
         building.position.setCenterOffset(building.getFoundationCenterOffset());
@@ -183,16 +196,20 @@ export class BuildingTester {
             this.buildBuildingControls();
             this.createAnimButtons();
             this.createOccupiedButtons();
+            this.syncState();
         }, 50);
+        this.syncState();
     }
     static selectAnimation(animationType: AnimationType): void {
         if (this.currentRenderable) {
             this.currentRenderable.setAnimation(animationType, performance.now());
+            this.syncState();
         }
     }
     static stopCurrentAnimation(): void {
         if (this.currentRenderable) {
             this.currentRenderable.endCurrentAnimation();
+            this.syncState();
         }
     }
     static setDamageType(damageType: DamageType | null): void {
@@ -203,10 +220,12 @@ export class BuildingTester {
                 ? this.rules.audioVisual.conditionYellow
                 : this.rules.audioVisual.conditionRed)
             : 100;
+        this.syncState();
     }
     static setActiveState(active: boolean): void {
         if (this.currentRenderable) {
             this.currentRenderable.setPowered(active);
+            this.syncState();
         }
     }
     static createAnimButtons(): void {
@@ -227,6 +246,7 @@ export class BuildingTester {
         for (const animType of animationTypes) {
             const button = document.createElement("button");
             button.innerHTML = AnimationType[animType];
+            button.dataset.testid = `building-animation-${AnimationType[animType].toLowerCase()}`;
             button.style.display = "block";
             button.addEventListener("click", () => this.selectAnimation(animType));
             if (!this.currentRenderable) {
@@ -237,11 +257,16 @@ export class BuildingTester {
             button.style.opacity = hasAnimation ? "1" : ".5";
             container.appendChild(button);
         }
+        if (this.controlsElement) {
+            TestToolSupport.applyPanelTheme(this.controlsElement);
+        }
+        this.syncState();
     }
     static createOccupiedButtons(): void {
         const container = this.occupiedButtonsWrap;
         container.innerHTML = "";
         const select = document.createElement("select");
+        select.dataset.testid = "building-occupants";
         select.disabled = !this.currentBuilding?.garrisonTrait;
         select.style.display = "block";
         select.addEventListener("change", () => {
@@ -249,6 +274,7 @@ export class BuildingTester {
                 this.currentBuilding.garrisonTrait.units = new Array(Number(select.value))
                     .fill(0)
                     .map(() => new Infantry("dummy", this.rules.getObject("E1", ObjectType.Infantry), null));
+                this.syncState();
             }
         });
         const maxOccupants = this.currentBuilding?.rules.maxNumberOccupants || 0;
@@ -260,12 +286,16 @@ export class BuildingTester {
             select.appendChild(option);
         }
         container.appendChild(select);
+        if (this.controlsElement) {
+            TestToolSupport.applyPanelTheme(this.controlsElement);
+        }
     }
     static buildBuildingControls(): void {
         if (this.controlsElement) {
-            document.body.removeChild(this.controlsElement);
+            this.controlsElement.remove();
         }
         const controls = (this.controlsElement = document.createElement("div"));
+        controls.dataset.testid = "building-controls";
         controls.style.position = "absolute";
         controls.style.left = "0";
         controls.style.top = "0";
@@ -277,12 +307,8 @@ export class BuildingTester {
         const colorMap = new Map(this.rules.getMultiplayerColors());
         colorMap.set("None", new Color(255, 255, 255));
         const colorSelect = document.createElement("select");
+        colorSelect.dataset.testid = "building-color";
         colorSelect.style.display = "block";
-        colorSelect.addEventListener("change", () => {
-            if (this.currentBuilding) {
-                this.currentBuilding.owner.color = colorMap.get(colorSelect.value) as Color;
-            }
-        });
         controls.appendChild(colorSelect);
         colorMap.forEach((color, name) => {
             const option = document.createElement("option");
@@ -292,6 +318,13 @@ export class BuildingTester {
                 color.asHex() === this.currentBuilding.owner.color.asHex() : false;
             colorSelect.appendChild(option);
         });
+        colorSelect.addEventListener("change", () => {
+            const nextColor = colorMap.get(colorSelect.value) as Color | undefined;
+            if (nextColor && this.currentBuildingType) {
+                this.currentBuildingColor = nextColor.clone();
+                this.selectBuilding(this.currentBuildingType);
+            }
+        });
         controls.appendChild(document.createTextNode("Selection level:"));
         const selectionDiv = document.createElement("div");
         controls.appendChild(selectionDiv);
@@ -299,11 +332,13 @@ export class BuildingTester {
             console.log('current level', level, this.currentBuilding.rules);
             const button = document.createElement("button");
             button.innerHTML = SelectionLevel[level];
+            button.dataset.testid = `building-selection-${SelectionLevel[level].toLowerCase()}`;
             button.disabled = level === SelectionLevel.Selected &&
                 (!this.currentBuilding || !this.currentBuilding.rules.selectable);
             button.addEventListener("click", () => {
                 if (this.currentRenderable) {
                     this.currentRenderable.selectionModel.setSelectionLevel(level);
+                    this.syncState();
                 }
             });
             selectionDiv.appendChild(button);
@@ -312,6 +347,7 @@ export class BuildingTester {
         this.animButtonsWrap = document.createElement("div");
         controls.appendChild(this.animButtonsWrap);
         const stopButton = document.createElement("button");
+        stopButton.dataset.testid = "building-animation-stop";
         stopButton.innerHTML = "Stop current";
         stopButton.style.display = "block";
         stopButton.addEventListener("click", () => this.stopCurrentAnimation());
@@ -321,21 +357,25 @@ export class BuildingTester {
         controls.appendChild(this.occupiedButtonsWrap);
         controls.appendChild(document.createTextNode("Damage type:"));
         const normalButton = document.createElement("button");
+        normalButton.dataset.testid = "building-damage-normal";
         normalButton.innerHTML = "NORMAL";
         normalButton.style.display = "block";
         normalButton.addEventListener("click", () => this.setDamageType(DamageType.NORMAL));
         controls.appendChild(normalButton);
         const yellowButton = document.createElement("button");
+        yellowButton.dataset.testid = "building-damage-yellow";
         yellowButton.innerHTML = "YELLOW";
         yellowButton.style.display = "block";
         yellowButton.addEventListener("click", () => this.setDamageType(DamageType.CONDITION_YELLOW));
         controls.appendChild(yellowButton);
         const redButton = document.createElement("button");
+        redButton.dataset.testid = "building-damage-red";
         redButton.innerHTML = "RED";
         redButton.style.display = "block";
         redButton.addEventListener("click", () => this.setDamageType(DamageType.CONDITION_RED));
         controls.appendChild(redButton);
         const destroyButton = document.createElement("button");
+        destroyButton.dataset.testid = "building-destroy";
         destroyButton.innerHTML = "DESTROYED";
         destroyButton.style.display = "block";
         destroyButton.addEventListener("click", async () => {
@@ -344,46 +384,100 @@ export class BuildingTester {
                 this.currentBuilding.healthTrait.health = 0;
                 this.world.removeObject(this.currentBuilding);
                 this.currentBuilding.dispose();
+                this.currentBuilding = null;
+                this.currentRenderable = null;
+                this.currentBuildingType = undefined;
                 if (this.controlsElement) {
-                    document.body.removeChild(this.controlsElement);
+                    this.controlsElement?.remove();
                     this.controlsElement = undefined;
                 }
+                this.syncState();
             }
         });
         controls.appendChild(destroyButton);
         const repairButton = document.createElement("button");
+        repairButton.dataset.testid = "building-repair";
         repairButton.innerHTML = "Toggle repair";
         repairButton.style.display = "block";
+        repairButton.disabled = !this.currentBuilding?.traits.get(AutoRepairTrait);
         repairButton.addEventListener("click", () => {
             if (this.currentBuilding) {
                 const autoRepairTrait = this.currentBuilding.traits.get(AutoRepairTrait);
                 autoRepairTrait.setDisabled(!autoRepairTrait.isDisabled());
+                this.syncState();
             }
         });
         controls.appendChild(repairButton);
         controls.appendChild(document.createTextNode("Powered state:"));
         const inactiveButton = document.createElement("button");
+        inactiveButton.dataset.testid = "building-power-inactive";
         inactiveButton.innerHTML = "INACTIVE";
         inactiveButton.style.display = "block";
         inactiveButton.addEventListener("click", () => this.setActiveState(false));
         controls.appendChild(inactiveButton);
         const activeButton = document.createElement("button");
+        activeButton.dataset.testid = "building-power-active";
         activeButton.innerHTML = "ACTIVE";
         activeButton.style.display = "block";
         activeButton.addEventListener("click", () => this.setActiveState(true));
         controls.appendChild(activeButton);
         controls.appendChild(document.createTextNode("Warped out:"));
         const warpedCheckbox = document.createElement("input");
+        warpedCheckbox.dataset.testid = "building-warped";
         warpedCheckbox.type = "checkbox";
         warpedCheckbox.style.display = "block";
         warpedCheckbox.addEventListener("change", (event) => {
             if (this.currentBuilding && event.target) {
                 const target = event.target as HTMLInputElement;
                 this.currentBuilding.warpedOutTrait.debugSetActive(target.checked);
+                this.syncState();
             }
         });
         controls.appendChild(warpedCheckbox);
-        document.body.appendChild(controls);
+        this.hostElement?.appendChild(controls);
+        TestToolSupport.applyPanelTheme(controls);
+        this.syncState();
+    }
+    private static syncState(): void {
+        const building = this.currentBuilding;
+        const renderable = this.currentRenderable as any;
+        const selectionLevel = renderable?.selectionModel?.getSelectionLevel?.();
+        const health = building?.healthTrait?.health;
+        const damageType = health === undefined
+            ? null
+            : health <= 100 * this.rules.audioVisual.conditionRed
+                ? DamageType.CONDITION_RED
+                : health <= 100 * this.rules.audioVisual.conditionYellow
+                    ? DamageType.CONDITION_YELLOW
+                    : DamageType.NORMAL;
+        const animationButtons = this.animButtonsWrap
+            ? Array.from(this.animButtonsWrap.querySelectorAll('button')).map((button) => ({
+                label: button.textContent?.trim() ?? '',
+                enabled: !button.disabled,
+            }))
+            : [];
+        TestToolSupport.setState('building', {
+            availableBuildings: this.listEl?.querySelectorAll('a').length ?? 0,
+            selectedBuilding: this.currentBuildingType ?? null,
+            rendered: Boolean(renderable?.get3DObject?.() ?? renderable),
+            selectable: Boolean(building?.rules.selectable),
+            maxOccupants: building?.rules.maxNumberOccupants ?? 0,
+            occupantCount: building?.garrisonTrait?.units.length ?? 0,
+            selectionLevelValue: selectionLevel ?? null,
+            selectionLevel: TestToolSupport.enumLabel(SelectionLevel, selectionLevel),
+            selectionLevelOptions: TestToolSupport.enumOptions(SelectionLevel, [SelectionLevel.None, SelectionLevel.Hover, SelectionLevel.Selected]),
+            currentAnimationValue: renderable?.currentAnimType ?? null,
+            currentAnimation: TestToolSupport.enumLabel(AnimationType, renderable?.currentAnimType),
+            animationButtons,
+            damageTypeValue: damageType,
+            damageType: TestToolSupport.enumLabel(DamageType, damageType),
+            damageTypeOptions: TestToolSupport.enumOptions(DamageType, [DamageType.NORMAL, DamageType.CONDITION_YELLOW, DamageType.CONDITION_RED]),
+            powered: renderable?.powered ?? null,
+            repairAvailable: Boolean(building?.traits?.get(AutoRepairTrait)),
+            autoRepairDisabled: building?.traits?.get(AutoRepairTrait)?.isDisabled?.() ?? null,
+            warpedOut: Boolean(building?.warpedOutTrait?.isActive?.()),
+            ownerColor: building?.owner?.color?.asHexString?.() ?? null,
+        });
     }
     static buildBrowser(buildingRules: Map<string, any>): void {
         const browser = (this.listEl = document.createElement("div"));
@@ -409,6 +503,7 @@ export class BuildingTester {
         buildingTypes.sort();
         buildingTypes.forEach((type) => {
             const link = document.createElement("a");
+            link.dataset.buildingType = type;
             link.style.display = "block";
             link.textContent = type;
             link.setAttribute("href", "javascript:;");
@@ -418,7 +513,9 @@ export class BuildingTester {
             });
             browser.appendChild(link);
         });
-        document.body.appendChild(browser);
+        this.hostElement?.appendChild(browser);
+        TestToolSupport.applyPanelTheme(browser);
+        this.syncState();
         setTimeout(() => {
             this.selectBuilding(buildingTypes[0]);
         }, 50);
@@ -469,7 +566,10 @@ export class BuildingTester {
             this.controlsElement.remove();
             this.controlsElement = undefined;
         }
+        this.currentBuildingType = undefined;
+        this.currentBuildingColor = undefined;
         this.disposables.dispose();
+        TestToolSupport.clearState('building');
         try {
             if ((PipOverlay as any)?.clearCaches) {
                 PipOverlay.clearCaches();

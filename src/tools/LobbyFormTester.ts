@@ -15,6 +15,7 @@ import { PlayerRankType } from "@/network/ladder/PlayerRankType";
 import { LadderType } from "@/network/ladder/wladderConfig";
 import { ShpBuilder } from '@/engine/renderable/builder/ShpBuilder';
 import { TextureUtils } from '@/engine/gfx/TextureUtils.js';
+import { TestToolSupport, type TestToolRuntimeContext } from '@/tools/TestToolSupport';
 interface PlayerProfile {
     name: string;
     rank: number;
@@ -50,9 +51,11 @@ interface ViewportBounds {
 export class LobbyFormTester {
     private static disposables = new CompositeDisposable();
     private static homeButton?: HTMLButtonElement;
-    static main(container: HTMLElement, strings: any): void {
+    static main(container: HTMLElement, strings: any, context: TestToolRuntimeContext = {}): void {
+        const hostElement = TestToolSupport.prepareHost(context, 800, 600);
         const renderer = new Renderer(800, 600);
-        renderer.init(container);
+        renderer.init(hostElement);
+        TestToolSupport.placeRendererCanvas(renderer, 0, 0);
         renderer.initStats(document.body);
         this.disposables.add(renderer);
         const uiScene = UiScene.factory({
@@ -209,6 +212,11 @@ export class LobbyFormTester {
         container.appendChild(uiScene.getHtmlContainer().getElement());
         this.disposables.add(() => container.removeChild(uiScene.getHtmlContainer().getElement()));
         this.buildHomeButton(container);
+        TestToolSupport.setState('lobby', {
+            slotCount: 4,
+            lobbyType: LobbyType.MultiplayerHost,
+            maxTeams: 4,
+        });
     }
     private static buildHomeButton(parent: HTMLElement): void {
         const homeButton = this.homeButton = document.createElement('button');
@@ -249,6 +257,7 @@ export class LobbyFormTester {
         this.disposables.add(() => homeButton.remove());
     }
     static destroy(): void {
+        TestToolSupport.clearState('lobby');
         this.disposables.dispose();
         if (this.homeButton) {
             this.homeButton.remove();

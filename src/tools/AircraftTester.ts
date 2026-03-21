@@ -41,6 +41,8 @@ import { PipOverlay } from "@/engine/renderable/entity/PipOverlay";
 import { TextureUtils } from "@/engine/gfx/TextureUtils";
 import { ZoneType } from "@/game/gameobject/unit/ZoneType";
 import { LightingDirector } from "@/engine/gfx/lighting/LightingDirector";
+import { ResourceType } from "@/engine/resourceConfigs";
+import { TestToolSupport, type TestToolRuntimeContext } from "@/tools/TestToolSupport";
 declare const THREE: any;
 export class AircraftTester {
     private static disposables = new CompositeDisposable();
@@ -58,10 +60,15 @@ export class AircraftTester {
     private static currentAircraft: any;
     private static listEl: HTMLDivElement;
     private static controlsEl: HTMLDivElement | undefined;
+    private static hostElement?: HTMLElement;
     private static vxlGeometryPool: VxlGeometryPool;
-    static async main(_args: any): Promise<void> {
+    private static currentAircraftType?: string;
+    static async main(_args: any, context: TestToolRuntimeContext = {}): Promise<void> {
+        await TestToolSupport.ensureTheater(TheaterType.Temperate, context.cdnResourceLoader, [ResourceType.Vxl, ResourceType.Anims]);
+        const hostElement = this.hostElement = TestToolSupport.prepareHost(context, 1224, 600);
         const renderer = (this.renderer = new Renderer(800, 600));
-        renderer.init(document.body);
+        renderer.init(hostElement);
+        TestToolSupport.placeRendererCanvas(renderer, 212, 0);
         renderer.initStats(document.body);
         this.buildHomeButton();
         const worldScene = WorldScene.factory({ x: 0, y: 0, width: 800, height: 600 }, new BoxedVar(true), new BoxedVar(ShadowQuality.High));
@@ -95,6 +102,7 @@ export class AircraftTester {
         this.vxlGeometryPool = new VxlGeometryPool(new VxlGeometryCache(null, null));
         this.addGrid();
         this.createFloor();
+        this.syncState();
     }
     static addGrid(): void {
         const mapGrid = new MapGrid({ width: 10, height: 10 });
@@ -139,6 +147,7 @@ export class AircraftTester {
         const mapBounds = new MapBounds();
         const bridges = new Bridges(this.theater.tileSets, tileCollection, tileOccupation, mapBounds, this.rules);
         const aircraft = (this.currentAircraft = new ObjectFactory(tileCollection, tileOccupation, bridges, new BoxedVar(0)).create(ObjectType.Aircraft, aircraftType, this.rules as any, this.art as any));
+        this.currentAircraftType = aircraftType;
         aircraft.owner = player;
         aircraft.position.tile = { rx: 1, ry: 1, z: 0, rampType: 0 };
         const world = (this.world = new World());
@@ -150,12 +159,14 @@ export class AircraftTester {
         renderable.selectionModel.setSelectionLevel(SelectionLevel.None);
         renderable.selectionModel.setControlGroupNumber(3);
         this.buildControls();
+        this.syncState();
     }
     static buildControls(): void {
         if (this.controlsEl) {
-            document.body.removeChild(this.controlsEl);
+            this.controlsEl.remove();
         }
         const controls = (this.controlsEl = document.createElement("div"));
+        controls.dataset.testid = "aircraft-controls";
         controls.style.position = "absolute";
         controls.style.left = "0";
         controls.style.top = "0";
@@ -166,9 +177,11 @@ export class AircraftTester {
         controls.appendChild(document.createTextNode("Remap color:"));
         const colorMap = new Map(this.rules.getMultiplayerColors());
         const colorSelect = document.createElement("select");
+        colorSelect.dataset.testid = "aircraft-color";
         colorSelect.style.display = "block";
         colorSelect.addEventListener("change", () => {
             this.currentAircraft.owner.color = colorMap.get(colorSelect.value);
+            this.syncState();
         });
         controls.appendChild(colorSelect);
         colorMap.forEach((color, name) => {
@@ -185,7 +198,11 @@ export class AircraftTester {
             const btn = document.createElement("button");
             btn.innerHTML = SelectionLevel[level];
             btn.disabled = !this.currentAircraft.rules.selectable && level === SelectionLevel.Selected;
-            btn.addEventListener("click", () => this.currentRenderable.selectionModel.setSelectionLevel(level));
+            btn.dataset.testid = `aircraft-selection-${SelectionLevel[level].toLowerCase()}`;
+            btn.addEventListener("click", () => {
+                this.currentRenderable.selectionModel.setSelectionLevel(level);
+                this.syncState();
+            });
             selDiv.appendChild(btn);
         });
         controls.appendChild(document.createTextNode("Veteran level:"));
@@ -195,12 +212,17 @@ export class AircraftTester {
             [VeteranLevel.None, VeteranLevel.Veteran, VeteranLevel.Elite].forEach((lvl) => {
                 const btn = document.createElement("button");
                 btn.innerHTML = VeteranLevel[lvl];
-                btn.addEventListener("click", () => (this.currentAircraft.veteranTrait.veteranLevel = lvl));
+                btn.dataset.testid = `aircraft-veteran-${VeteranLevel[lvl].toLowerCase()}`;
+                btn.addEventListener("click", () => {
+                    this.currentAircraft.veteranTrait.veteranLevel = lvl;
+                    this.syncState();
+                });
                 vetDiv.appendChild(btn);
             });
         }
         controls.appendChild(document.createTextNode("Rudder:"));
         const yaw = document.createElement("input");
+        yaw.dataset.testid = "aircraft-yaw";
         yaw.style.display = "block";
         yaw.type = "range";
         yaw.min = "-180";
@@ -208,9 +230,11 @@ export class AircraftTester {
         yaw.value = "0";
         yaw.addEventListener("input", () => {
             this.currentAircraft.yaw = Number(yaw.value);
+            this.syncState();
         });
         controls.appendChild(yaw);
         const pitch = document.createElement("input");
+        pitch.dataset.testid = "aircraft-pitch";
         pitch.style.display = "block";
         pitch.type = "range";
         pitch.min = "-180";
@@ -218,9 +242,11 @@ export class AircraftTester {
         pitch.value = "0";
         pitch.addEventListener("input", () => {
             this.currentAircraft.pitch = Number(pitch.value);
+            this.syncState();
         });
         controls.appendChild(pitch);
         const roll = document.createElement("input");
+        roll.dataset.testid = "aircraft-roll";
         roll.style.display = "block";
         roll.type = "range";
         roll.min = "-180";
@@ -228,10 +254,12 @@ export class AircraftTester {
         roll.value = "0";
         roll.addEventListener("input", () => {
             this.currentAircraft.roll = Number(roll.value);
+            this.syncState();
         });
         controls.appendChild(roll);
         controls.appendChild(document.createTextNode("Height:"));
         const height = document.createElement("input");
+        height.dataset.testid = "aircraft-height";
         height.type = "range";
         height.min = "0";
         height.max = "2560";
@@ -239,27 +267,33 @@ export class AircraftTester {
         height.style.display = "block";
         height.addEventListener("input", () => {
             this.currentAircraft.position.tileElevation = Coords.worldToTileHeight(Number(height.value));
+            this.syncState();
         });
         controls.appendChild(height);
         controls.appendChild(document.createTextNode("isMoving:"));
         const moving = document.createElement("input");
+        moving.dataset.testid = "aircraft-moving";
         moving.type = "checkbox";
         moving.style.display = "block";
         moving.addEventListener("change", (e) => {
             const checked = (e.target as HTMLInputElement).checked;
             this.currentAircraft.moveTrait.moveState = checked ? MoveState.Moving : MoveState.Idle;
             this.currentAircraft.zone = checked ? ZoneType.Air : ZoneType.Ground;
+            this.syncState();
         });
         controls.appendChild(moving);
         controls.appendChild(document.createTextNode("Warped out:"));
         const warped = document.createElement("input");
+        warped.dataset.testid = "aircraft-warped";
         warped.type = "checkbox";
         warped.style.display = "block";
         warped.addEventListener("change", (e) => {
             this.currentAircraft.warpedOutTrait.debugSetActive((e.target as HTMLInputElement).checked);
+            this.syncState();
         });
         controls.appendChild(warped);
         const destroy = document.createElement("button");
+        destroy.dataset.testid = "aircraft-destroy";
         destroy.style.display = "block";
         destroy.style.color = "red";
         destroy.innerHTML = "DESTROY";
@@ -268,11 +302,42 @@ export class AircraftTester {
             this.world.removeObject(this.currentAircraft);
             this.currentAircraft.dispose();
             this.currentAircraft = undefined;
-            document.body.removeChild(this.controlsEl!);
+            this.currentAircraftType = undefined;
+            this.controlsEl?.remove();
             this.controlsEl = undefined;
+            this.syncState();
         });
         controls.appendChild(destroy);
-        document.body.appendChild(controls);
+        this.hostElement?.appendChild(controls);
+        TestToolSupport.applyPanelTheme(controls);
+        this.syncState();
+    }
+    private static syncState(): void {
+        const aircraft = this.currentAircraft;
+        const renderable = this.currentRenderable;
+        const selectionLevel = renderable?.selectionModel?.getSelectionLevel?.();
+        const veteranLevel = aircraft?.veteranTrait?.veteranLevel ?? aircraft?.veteranLevel ?? VeteranLevel.None;
+        TestToolSupport.setState('aircraft', {
+            availableAircraft: this.listEl?.querySelectorAll('a').length ?? 0,
+            selectedAircraft: this.currentAircraftType ?? null,
+            rendered: Boolean(renderable?.get3DObject?.() ?? renderable),
+            selectionLevelValue: selectionLevel ?? null,
+            selectionLevel: TestToolSupport.enumLabel(SelectionLevel, selectionLevel),
+            selectionLevelOptions: TestToolSupport.enumOptions(SelectionLevel, [SelectionLevel.None, SelectionLevel.Hover, SelectionLevel.Selected]),
+            veteranLevelValue: aircraft ? veteranLevel : null,
+            veteranLevel: aircraft ? TestToolSupport.enumLabel(VeteranLevel, veteranLevel) : null,
+            veteranLevelOptions: TestToolSupport.enumOptions(VeteranLevel, [VeteranLevel.None, VeteranLevel.Veteran, VeteranLevel.Elite]),
+            yaw: aircraft?.yaw ?? null,
+            pitch: aircraft?.pitch ?? null,
+            roll: aircraft?.roll ?? null,
+            tileElevation: aircraft?.position?.tileElevation ?? null,
+            moveState: aircraft?.moveTrait?.moveState ?? null,
+            isMoving: aircraft?.moveTrait?.moveState === MoveState.Moving,
+            zoneValue: aircraft?.zone ?? null,
+            zone: TestToolSupport.enumLabel(ZoneType, aircraft?.zone),
+            warpedOut: Boolean(aircraft?.warpedOutTrait?.isActive?.()),
+            ownerColor: aircraft?.owner?.color?.asHexString?.() ?? null,
+        });
     }
     static buildBrowser(aircraftRules: Map<string, any>): void {
         const list = (this.listEl = document.createElement("div"));
@@ -291,6 +356,7 @@ export class AircraftTester {
             .sort();
         types.forEach((name) => {
             const link = document.createElement("a");
+            link.dataset.aircraftType = name;
             link.style.display = "block";
             link.textContent = name;
             link.setAttribute("href", "javascript:;");
@@ -300,7 +366,9 @@ export class AircraftTester {
             });
             list.appendChild(link);
         });
-        document.body.appendChild(list);
+        this.hostElement?.appendChild(list);
+        TestToolSupport.applyPanelTheme(list);
+        this.syncState();
         setTimeout(() => {
             if (types.length)
                 this.selectAircraft(types[0]);
@@ -352,7 +420,9 @@ export class AircraftTester {
             this.controlsEl.remove();
             this.controlsEl = undefined;
         }
+        this.currentAircraftType = undefined;
         this.disposables.dispose();
+        TestToolSupport.clearState('aircraft');
         try {
             if ((PipOverlay as any)?.clearCaches) {
                 PipOverlay.clearCaches();

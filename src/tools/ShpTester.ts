@@ -42,6 +42,8 @@ import { IniSection } from "@/data/IniSection";
 import { ChatHistory } from "@/gui/chat/ChatHistory";
 import { SidebarItemTargetType, SidebarCategory, SidebarItemStatus } from "@/gui/screen/game/component/hud/viewmodel/SidebarModel";
 import { PlayerFactory } from "@/game/player/PlayerFactory";
+import { ResourceType } from "@/engine/resourceConfigs";
+import { TestToolSupport, type TestToolRuntimeContext } from "@/tools/TestToolSupport";
 declare const THREE: any;
 interface GameOptions {
     superWeapons: boolean;
@@ -66,10 +68,13 @@ interface MenuButton {
 }
 export class ShpTester {
     private static disposables = new CompositeDisposable();
-    static async main(mixFileLoader: any, gameMap: any, parentElement: HTMLElement, strings: any): Promise<void> {
+    static async main(mixFileLoader: any, gameMap: any, parentElement: HTMLElement, strings: any, context: TestToolRuntimeContext = {}): Promise<void> {
+        await TestToolSupport.ensureTheater(TheaterType.Temperate, context.cdnResourceLoader, [ResourceType.UiAlly, ResourceType.Cameo]);
         this.buildHomeButton();
+        const hostElement = TestToolSupport.prepareHost(context, 800, 600);
         const renderer = new Renderer(800, 600);
-        renderer.init(parentElement);
+        renderer.init(hostElement);
+        TestToolSupport.placeRendererCanvas(renderer, 0, 0);
         renderer.initStats(document.body);
         this.disposables.add(renderer);
         const uiScene = UiScene.factory({
@@ -79,7 +84,6 @@ export class ShpTester {
             height: 600,
         });
         this.disposables.add(uiScene);
-        await mixFileLoader.addMixFile("sidec01.mix");
         const cameoDatabase = mixDatabase.get("cameo.mix");
         if (!cameoDatabase) {
             throw new Error("Missing file list database for cameos");
@@ -251,9 +255,15 @@ export class ShpTester {
         uiAnimationLoop.start();
         const endTime = new Date().getTime();
         console.log("Rendering took " + (endTime - startTime) + "ms");
-        parentElement.appendChild(uiScene.getHtmlContainer().getElement());
+        hostElement.appendChild(uiScene.getHtmlContainer().getElement());
         this.disposables.add(() => {
-            parentElement.removeChild(uiScene.getHtmlContainer().getElement());
+            uiScene.getHtmlContainer().getElement().remove();
+        });
+        TestToolSupport.setState('shp', {
+            activeTab: combatantSidebarModel.activeTab.id,
+            structureItems: combatantSidebarModel.tabs[SidebarCategory.Structures].items.length,
+            infantryItems: combatantSidebarModel.tabs[SidebarCategory.Infantry].items.length,
+            messageCount: messageList.getAll().length,
         });
     }
     private static buildHomeButton(): void {
@@ -295,6 +305,7 @@ export class ShpTester {
         this.disposables.add(() => homeButton.remove());
     }
     static destroy(): void {
+        TestToolSupport.clearState('shp');
         this.disposables.dispose();
         try {
             import("@/engine/renderable/entity/PipOverlay").then(({ PipOverlay }) => {

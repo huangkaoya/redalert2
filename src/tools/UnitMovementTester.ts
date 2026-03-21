@@ -43,6 +43,9 @@ import { Game } from "@/game/Game";
 import { OrderType } from "@/game/order/OrderType";
 import { MoveOrder } from "@/game/order/MoveOrder";
 import { MapPanningHelper } from "@/engine/util/MapPanningHelper";
+import { ResourceType } from "@/engine/resourceConfigs";
+import { SellTrait } from "@/game/trait/SellTrait";
+import { TestToolSupport, type TestToolRuntimeContext } from "@/tools/TestToolSupport";
 declare const THREE: any;
 export class UnitMovementTester {
     private static disposables = new CompositeDisposable();
@@ -72,10 +75,13 @@ export class UnitMovementTester {
     private static bodyMozUserSelectPrev?: string;
     private static bodyMsUserSelectPrev?: string;
     private static canvas?: HTMLCanvasElement;
-    static async main(mixFileLoader: any, gameMapFile: any, parentElement: HTMLElement, _strings: any): Promise<void> {
+    static async main(mixFileLoader: any, gameMapFile: any, parentElement: HTMLElement, _strings: any, context: TestToolRuntimeContext = {}): Promise<void> {
+        await TestToolSupport.ensureTheater(TheaterType.Temperate, context.cdnResourceLoader, [ResourceType.UiAlly, ResourceType.Vxl, ResourceType.Anims]);
         this.buildHomeButton();
+        const hostElement = TestToolSupport.prepareHost(context, 800, 600);
         const renderer = (this.renderer = new Renderer(800, 600));
-        renderer.init(parentElement);
+        renderer.init(hostElement);
+        TestToolSupport.placeRendererCanvas(renderer, 0, 0);
         renderer.initStats(document.body);
         this.disposables.add(renderer);
         const worldScene = (this.worldScene = WorldScene.factory({ x: 0, y: 0, width: 800, height: 600 }, new BoxedVar(true), new BoxedVar(ShadowQuality.High)));
@@ -83,7 +89,6 @@ export class UnitMovementTester {
         IsoCoords.init({ x: 0, y: 0 });
         worldScene.create3DObject();
         (worldScene.scene as any).background = new (THREE as any).Color(0xE0E0E0);
-        await mixFileLoader.addMixFile("sidec01.mix");
         const rules = new Rules(Engine.getRules());
         const art = new Art(rules, Engine.getArt(), undefined, undefined);
         const theater = await Engine.loadTheater(TheaterType.Temperate);
@@ -156,6 +161,8 @@ export class UnitMovementTester {
         const game = (this.game = new Game(world, gameMap, rules, art, {}, 1, Date.now(), gameOpts, "Standard", playerList, unitSelection, alliances, nextObjectId, objectFactory, botManager));
         (game as any).mapShroudTrait = { getPlayerShroud() { return undefined; } };
         (game as any).crateGeneratorTrait = { peekInsideCrate() { return undefined; }, pickupCrate() { } };
+        game.sellTrait = new SellTrait(game, game.rules.general);
+        game.traits.add(game.sellTrait);
         const infantryTypes = [...(rules as any).infantryRules.keys()].filter((name: string) => art.hasObject(name, ObjectType.Infantry));
         const infantryName = infantryTypes[0] ?? "E1";
         const unit = objectFactory.create(ObjectType.Infantry, infantryName, rules as any, art as any);
@@ -665,6 +672,13 @@ export class UnitMovementTester {
                 this.gameTickTimer = undefined;
             }
         });
+        TestToolSupport.setState('unitmovement', {
+            mapWidth: gameMapFile.fullSize.width,
+            mapHeight: gameMapFile.fullSize.height,
+            hasInfantry: Boolean(unit),
+            hasVehicle: Boolean(vehicle),
+            hasAircraft: Boolean(aircraft),
+        });
     }
     private static buildHomeButton(): void {
         const homeButton = document.createElement('button');
@@ -741,6 +755,7 @@ export class UnitMovementTester {
         this.disposables.add(() => box.remove());
     }
     static destroy(): void {
+        TestToolSupport.clearState('unitmovement');
         if (this.uiAnimationLoop) {
             this.uiAnimationLoop.destroy();
             this.uiAnimationLoop = undefined;

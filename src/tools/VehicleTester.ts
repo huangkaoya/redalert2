@@ -41,6 +41,8 @@ import { TextureUtils } from "@/engine/gfx/TextureUtils";
 import { ZoneType } from "@/game/gameobject/unit/ZoneType";
 import { LightingDirector } from "@/engine/gfx/lighting/LightingDirector";
 import { rampHeights } from "@/game/theater/rampHeights";
+import { ResourceType } from "@/engine/resourceConfigs";
+import { TestToolSupport, type TestToolRuntimeContext } from "@/tools/TestToolSupport";
 declare const THREE: any;
 export class VehicleTester {
     private static disposables = new CompositeDisposable();
@@ -58,12 +60,17 @@ export class VehicleTester {
     private static currentVehicle: any;
     private static listEl: HTMLDivElement;
     private static controlsEl: HTMLDivElement | undefined;
+    private static hostElement?: HTMLElement;
     private static vxlGeometryPool: VxlGeometryPool;
     private static fixedDirection: number | undefined;
     private static animateTimer: number | undefined;
-    static async main(_args: any): Promise<void> {
+    private static currentVehicleType?: string;
+    static async main(_args: any, context: TestToolRuntimeContext = {}): Promise<void> {
+        await TestToolSupport.ensureTheater(TheaterType.Temperate, context.cdnResourceLoader, [ResourceType.Vxl, ResourceType.Anims]);
+        const hostElement = this.hostElement = TestToolSupport.prepareHost(context, 1224, 600);
         const renderer = (this.renderer = new Renderer(800, 600));
-        renderer.init(document.body);
+        renderer.init(hostElement);
+        TestToolSupport.placeRendererCanvas(renderer, 212, 0);
         renderer.initStats(document.body);
         this.buildHomeButton();
         const worldScene = WorldScene.factory({ x: 0, y: 0, width: 800, height: 600 }, new BoxedVar(true), new BoxedVar(ShadowQuality.High));
@@ -97,6 +104,7 @@ export class VehicleTester {
         this.vxlGeometryPool = new VxlGeometryPool(new VxlGeometryCache(null, null));
         this.addGrid();
         this.createFloor();
+        this.syncState();
     }
     static addGrid(): void {
         const mapGrid = new MapGrid({ width: 10, height: 10 });
@@ -142,6 +150,7 @@ export class VehicleTester {
         const mapBounds = new MapBounds();
         const bridges = new Bridges(this.theater.tileSets, tileCollection, tileOccupation, mapBounds, this.rules);
         const vehicle = (this.currentVehicle = new ObjectFactory(tileCollection, tileOccupation, bridges, new BoxedVar(1)).create(ObjectType.Vehicle, vehicleType, this.rules as any, this.art as any));
+        this.currentVehicleType = vehicleType;
         vehicle.owner = player;
         vehicle.position.tile = this.tile;
         const world = (this.world = new World());
@@ -154,6 +163,7 @@ export class VehicleTester {
         renderable.selectionModel.setControlGroupNumber(3);
         this.buildControls();
         this.startAutoAnimate();
+        this.syncState();
     }
     private static startAutoAnimate(): void {
         if (this.animateTimer) {
@@ -172,9 +182,10 @@ export class VehicleTester {
     }
     static buildControls(): void {
         if (this.controlsEl) {
-            document.body.removeChild(this.controlsEl);
+            this.controlsEl.remove();
         }
         const controls = (this.controlsEl = document.createElement("div"));
+        controls.dataset.testid = "vehicle-controls";
         controls.style.position = "absolute";
         controls.style.left = "0";
         controls.style.top = "0";
@@ -185,9 +196,11 @@ export class VehicleTester {
         controls.appendChild(document.createTextNode("Remap color:"));
         const colorMap = new Map(this.rules.getMultiplayerColors());
         const colorSelect = document.createElement("select");
+        colorSelect.dataset.testid = "vehicle-color";
         colorSelect.style.display = "block";
         colorSelect.addEventListener("change", () => {
             this.currentVehicle.owner.color = colorMap.get(colorSelect.value);
+            this.syncState();
         });
         controls.appendChild(colorSelect);
         colorMap.forEach((color, name) => {
@@ -203,7 +216,11 @@ export class VehicleTester {
         [SelectionLevel.None, SelectionLevel.Hover, SelectionLevel.Selected].forEach((level) => {
             const btn = document.createElement("button");
             btn.innerHTML = SelectionLevel[level];
-            btn.addEventListener("click", () => this.currentRenderable.selectionModel.setSelectionLevel(level));
+            btn.dataset.testid = `vehicle-selection-${SelectionLevel[level].toLowerCase()}`;
+            btn.addEventListener("click", () => {
+                this.currentRenderable.selectionModel.setSelectionLevel(level);
+                this.syncState();
+            });
             selDiv.appendChild(btn);
         });
         controls.appendChild(document.createTextNode("Veteran level:"));
@@ -213,16 +230,22 @@ export class VehicleTester {
             [VeteranLevel.None, VeteranLevel.Veteran, VeteranLevel.Elite].forEach((lvl) => {
                 const btn = document.createElement("button");
                 btn.innerHTML = VeteranLevel[lvl];
-                btn.addEventListener("click", () => (this.currentVehicle.veteranTrait.veteranLevel = lvl));
+                btn.dataset.testid = `vehicle-veteran-${VeteranLevel[lvl].toLowerCase()}`;
+                btn.addEventListener("click", () => {
+                    this.currentVehicle.veteranTrait.veteranLevel = lvl;
+                    this.syncState();
+                });
                 vetDiv.appendChild(btn);
             });
         }
         controls.appendChild(document.createTextNode("Ramp type:"));
         const rampSelect = document.createElement("select");
+        rampSelect.dataset.testid = "vehicle-ramp";
         rampSelect.style.display = "block";
         rampSelect.addEventListener("change", () => {
             this.tile.rampType = Number(rampSelect.value);
             this.currentVehicle.tilterTrait?.onTileChange?.(this.currentVehicle);
+            this.syncState();
         });
         for (let i = 0; i < rampHeights.length; i++) {
             const opt = document.createElement("option");
@@ -233,10 +256,12 @@ export class VehicleTester {
         controls.appendChild(rampSelect);
         controls.appendChild(document.createTextNode("Turret #:"));
         const turretSelect = document.createElement("select");
+        turretSelect.dataset.testid = "vehicle-turret";
         turretSelect.style.display = "block";
         turretSelect.disabled = !this.currentVehicle.rules.turret;
         turretSelect.addEventListener("change", () => {
             this.currentVehicle.turretNo = Number(turretSelect.value);
+            this.syncState();
         });
         for (let t = 0; t < (this.currentVehicle.rules.turretCount || 0); t++) {
             const opt = document.createElement("option");
@@ -247,6 +272,7 @@ export class VehicleTester {
         controls.appendChild(turretSelect);
         controls.appendChild(document.createTextNode("isMoving:"));
         const moving = document.createElement("input");
+        moving.dataset.testid = "vehicle-moving";
         moving.type = "checkbox";
         moving.style.display = "block";
         moving.addEventListener("change", (e) => {
@@ -258,18 +284,22 @@ export class VehicleTester {
             else {
                 this.currentVehicle.zone = this.currentVehicle.rules.naval ? ZoneType.Water : ZoneType.Ground;
             }
+            this.syncState();
         });
         controls.appendChild(moving);
         controls.appendChild(document.createTextNode("isFiring:"));
         const firing = document.createElement("input");
+        firing.dataset.testid = "vehicle-firing";
         firing.type = "checkbox";
         firing.style.display = "block";
         firing.addEventListener("change", (e) => {
             this.currentVehicle.isFiring = (e.target as HTMLInputElement).checked;
+            this.syncState();
         });
         controls.appendChild(firing);
         controls.appendChild(document.createTextNode("isRocking:"));
         const rocking = document.createElement("input");
+        rocking.dataset.testid = "vehicle-rocking";
         rocking.type = "checkbox";
         rocking.style.display = "block";
         rocking.addEventListener("change", (e) => {
@@ -278,32 +308,38 @@ export class VehicleTester {
                 this.currentVehicle.applyRocking(360 * Math.random(), 1);
             else
                 this.currentVehicle.rocking = undefined;
+            this.syncState();
         });
         controls.appendChild(rocking);
         if (this.currentVehicle.airSpawnTrait) {
             controls.appendChild(document.createTextNode("hasSpawns:"));
             const hasSpawns = document.createElement("input");
+            hasSpawns.dataset.testid = "vehicle-has-spawns";
             hasSpawns.type = "checkbox";
             hasSpawns.style.display = "block";
             hasSpawns.checked = !!this.currentVehicle.airSpawnTrait.availableSpawns;
             hasSpawns.addEventListener("change", (e) => {
                 const v = (e.target as HTMLInputElement).checked ? 1 : 0;
                 this.currentVehicle.airSpawnTrait.debugSetStorage(null, v);
+                this.syncState();
             });
             controls.appendChild(hasSpawns);
         }
         controls.appendChild(document.createTextNode("Warped out:"));
         const warped = document.createElement("input");
+        warped.dataset.testid = "vehicle-warped";
         warped.type = "checkbox";
         warped.style.display = "block";
         warped.addEventListener("change", (e) => {
             this.currentVehicle.warpedOutTrait?.debugSetActive((e.target as HTMLInputElement).checked);
+            this.syncState();
         });
         controls.appendChild(warped);
         controls.appendChild(document.createTextNode("Direction:"));
         const dirWrap = document.createElement("div");
         controls.appendChild(dirWrap);
         const dir = document.createElement("input");
+        dir.dataset.testid = "vehicle-direction";
         dir.type = "range";
         dir.min = "-180";
         dir.max = "180";
@@ -312,9 +348,11 @@ export class VehicleTester {
         dir.style.verticalAlign = "middle";
         dir.addEventListener("input", () => {
             this.fixedDirection = Number(dir.value);
+            this.syncState();
         });
         dirWrap.appendChild(dir);
         const reset = document.createElement("button");
+        reset.dataset.testid = "vehicle-direction-reset";
         reset.innerHTML = "Reset";
         reset.disabled = this.fixedDirection === undefined;
         reset.style.verticalAlign = "middle";
@@ -322,10 +360,12 @@ export class VehicleTester {
             if (this.fixedDirection !== undefined) {
                 this.fixedDirection = 0;
                 dir.value = "0";
+                this.syncState();
             }
         });
         dirWrap.appendChild(reset);
         const autoRotate = document.createElement("input");
+        autoRotate.dataset.testid = "vehicle-auto-rotate";
         autoRotate.type = "checkbox";
         autoRotate.checked = this.fixedDirection === undefined;
         autoRotate.addEventListener("change", (e) => {
@@ -334,12 +374,14 @@ export class VehicleTester {
             dir.disabled = disabled;
             reset.disabled = disabled;
             dir.value = "0";
+            this.syncState();
         });
         controls.appendChild(autoRotate);
         const autoLabel = document.createElement("label");
         autoLabel.innerHTML = "Auto rotate";
         controls.appendChild(autoLabel);
         const destroy = document.createElement("button");
+        destroy.dataset.testid = "vehicle-destroy";
         destroy.style.display = "block";
         destroy.style.color = "red";
         destroy.innerHTML = "DESTROY";
@@ -348,11 +390,50 @@ export class VehicleTester {
             this.world.removeObject(this.currentVehicle);
             this.currentVehicle.dispose();
             this.currentVehicle = undefined;
-            document.body.removeChild(this.controlsEl!);
+            this.currentVehicleType = undefined;
+            this.controlsEl?.remove();
             this.controlsEl = undefined;
+            this.syncState();
         });
         controls.appendChild(destroy);
-        document.body.appendChild(controls);
+        this.hostElement?.appendChild(controls);
+        TestToolSupport.applyPanelTheme(controls);
+        this.syncState();
+    }
+    private static syncState(): void {
+        const vehicle = this.currentVehicle;
+        const renderable = this.currentRenderable;
+        const selectionLevel = renderable?.selectionModel?.getSelectionLevel?.();
+        const veteranLevel = vehicle?.veteranTrait?.veteranLevel ?? vehicle?.veteranLevel ?? VeteranLevel.None;
+        TestToolSupport.setState('vehicle', {
+            availableVehicles: this.listEl?.querySelectorAll('a').length ?? 0,
+            selectedVehicle: this.currentVehicleType ?? null,
+            rendered: Boolean(renderable?.get3DObject?.() ?? renderable),
+            selectionLevelValue: selectionLevel ?? null,
+            selectionLevel: TestToolSupport.enumLabel(SelectionLevel, selectionLevel),
+            selectionLevelOptions: TestToolSupport.enumOptions(SelectionLevel, [SelectionLevel.None, SelectionLevel.Hover, SelectionLevel.Selected]),
+            veteranLevelValue: vehicle ? veteranLevel : null,
+            veteranLevel: vehicle ? TestToolSupport.enumLabel(VeteranLevel, veteranLevel) : null,
+            veteranLevelOptions: TestToolSupport.enumOptions(VeteranLevel, [VeteranLevel.None, VeteranLevel.Veteran, VeteranLevel.Elite]),
+            rampType: vehicle ? this.tile.rampType : null,
+            rampOptions: rampHeights.map((_, index) => String(index)),
+            turretNo: vehicle ? this.currentVehicle.turretNo ?? 0 : null,
+            turretOptions: vehicle ? Array.from({ length: this.currentVehicle.rules.turretCount || 0 }, (_, index) => String(index)) : [],
+            hasTurret: Boolean(vehicle?.turretTrait),
+            moveState: vehicle?.moveTrait?.moveState ?? null,
+            isMoving: vehicle?.moveTrait?.moveState === MoveState.Moving,
+            zoneValue: vehicle?.zone ?? null,
+            zone: TestToolSupport.enumLabel(ZoneType, vehicle?.zone),
+            isFiring: Boolean(vehicle?.isFiring),
+            isRocking: Boolean(vehicle?.rocking),
+            hasSpawns: Boolean(vehicle?.airSpawnTrait),
+            availableSpawns: vehicle?.airSpawnTrait?.availableSpawns ?? null,
+            warpedOut: Boolean(vehicle?.warpedOutTrait?.isActive?.()),
+            direction: vehicle?.direction ?? null,
+            fixedDirection: this.fixedDirection ?? null,
+            autoRotate: this.fixedDirection === undefined,
+            ownerColor: vehicle?.owner?.color?.asHexString?.() ?? null,
+        });
     }
     static buildBrowser(vehicleRules: Map<string, any>): void {
         const list = (this.listEl = document.createElement("div"));
@@ -371,6 +452,7 @@ export class VehicleTester {
             .sort();
         types.forEach((name) => {
             const link = document.createElement("a");
+            link.dataset.vehicleType = name;
             link.style.display = "block";
             link.textContent = name;
             link.setAttribute("href", "javascript:;");
@@ -380,7 +462,9 @@ export class VehicleTester {
             });
             list.appendChild(link);
         });
-        document.body.appendChild(list);
+        this.hostElement?.appendChild(list);
+        TestToolSupport.applyPanelTheme(list);
+        this.syncState();
         setTimeout(() => {
             if (types.length) {
                 this.selectVehicle(types[0]);
@@ -437,7 +521,9 @@ export class VehicleTester {
             clearTimeout(this.animateTimer);
             this.animateTimer = undefined;
         }
+        this.currentVehicleType = undefined;
         this.disposables.dispose();
+        TestToolSupport.clearState('vehicle');
         try {
             if ((PipOverlay as any)?.clearCaches) {
                 PipOverlay.clearCaches();
