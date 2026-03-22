@@ -20,322 +20,217 @@ It should be noted that the owner of Chronodivide has never open-sourced the gam
 
 ![image](https://github.com/user-attachments/assets/4781f451-7a51-45e2-919b-cbcb8bbd727a)
 
-## 🎮 项目简介
+## 项目简介
 
-本项目是红色警戒2（Red Alert 2）的完整TypeScript重构版本，基于原版游戏逻辑进行现代化改造。目前处于开发阶段，正在逐步实现完整的游戏功能。
+本项目是使用Typescript编写，完全对标“红色警戒2”的游戏引擎，本地自行导入红色警戒2美术素材后，就可以获得类似红警2的游玩体验
 
-**注意：这是一个开发中的项目，并非完整可玩的游戏版本。**
+## 当前技术状态
 
-## ✨ 主要特性
+### 运行时和构建
 
-### 🎯 开发进度
-- **游戏引擎** - ✅ 基础引擎架构完成
-- **数据解析** - ✅ 支持原版文件格式（MIX、SHP、VXL、INI等）
-- **图形渲染** - ✅ Three.js渲染系统
-- **音频系统** - ✅ 完整音频引擎
-- **用户界面** - 🚧 自定义JSX渲染器开发中
-- **游戏逻辑** - 🚧 核心游戏机制实现中
-- **网络对战** - 📋 计划中（基础框架已搭建）
+- 包管理与本地运行时：`Bun 1.3.10`
+- 开发服务器：`Vite 8.0.1`
+- UI：`React 19.2.4` + `react-dom 19.2.4`
+- 类型系统：`TypeScript 5.9.3`
+- 渲染：`three 0.183.2`
+- 自动化：`Playwright 1.58.2`
+- 默认开发和预览端口：`127.0.0.1:4000`
 
-### 🎵 音频系统
-- **多格式支持** - WAV、MP3音频文件解析
-- **Web Audio API** - 现代浏览器音频处理
-- **音频混合器** - 支持多通道音量控制
-- **AudioBag支持** - 原版音频包格式兼容
-- **浏览器策略** - 自动处理音频播放限制
-
-### 🎨 图形渲染
-- **Three.js引擎** - 基于WebGL的现代3D渲染
-- **原版资源** - SHP、VXL、TMP、PCX格式完整支持
-- **等距视角** - 忠实还原原版等距投影
-- **Sprite批处理** - 优化的2D精灵渲染
-- **着色器系统** - 可扩展的GLSL着色器支持
-- **React集成** - 自定义JSX渲染器用于UI
-
-### 📁 文件系统
-- **虚拟文件系统** - 完整的VFS抽象层
-- **MIX档案支持** - 原版MIX文件格式解析
-- **文件系统API** - 现代浏览器本地文件访问
-- **懒加载** - 按需资源加载和缓存
-- **7z解压** - 支持压缩包资源导入
-- **跨平台** - 支持所有现代浏览器
-
-## 🚀 快速开始
+## 快速开始
 
 ### 环境要求
 
-- Node.js 18+ 
-- npm 或 yarn
-- 现代浏览器（支持ES2020+、WebGL 2.0、Web Audio API）
-- 支持File System Access API的浏览器（推荐Chrome/Edge）
+- `Bun 1.3+`
+- 现代浏览器，推荐 Chrome / Edge
+- 浏览器需要支持：
+  - `WebGL`
+  - `Web Audio API`
+  - `File System Access API`
 
-### 安装步骤
+### 安装与启动
 
-1. **克隆项目**
 ```bash
-git clone <repository-url>
-cd ra2web-react
+cd redalert2
+bun install
+bun run dev
 ```
 
-2. **安装依赖**
+默认访问地址：
+
+```text
+http://127.0.0.1:4000
+```
+
+生产构建与预览：
+
 ```bash
-npm install
+bun run build
+bun run preview
 ```
 
-3. **启动开发服务器**
+类型检查：
+
 ```bash
-npm run dev
+bun run typecheck:entry
 ```
 
-4. **访问应用**
-打开浏览器访问 `http://127.0.0.1:4000`
+## 自动化回归
 
-**调试模式：**
-- `http://127.0.0.1:4000?test=glsl` - GLSL着色器测试
-- `http://127.0.0.1:4000?debug=true` - 启用调试模式
+仓库当前已经不再只依赖手点验证。`scripts/` 下维护了一组可直接执行的回归脚本，主要覆盖大厅、进图、机制和 tester 入口。
 
-### 开发测试
+常用命令包括：
 
-项目包含多个测试工具用于验证各个模块：
-
-1. **文件格式测试** - 验证MIX、SHP、VXL等文件解析
-2. **渲染测试** - 测试图形渲染和着色器
-3. **音频测试** - 验证音频系统功能
-4. **数据结构测试** - 验证游戏数据解析
-
-**注意：** 完整游戏功能仍在开发中。
-
-## 🛠 技术架构
-
-### 技术栈
-- **React 18** - 用户界面框架
-- **TypeScript 5.3+** - 严格类型检查
-- **Vite** - 现代构建工具和开发服务器
-- **Three.js 0.177** - WebGL 3D渲染引擎
-- **Web Audio API** - 现代音频处理
-- **File System Access API** - 本地文件访问
-- **WebWorkers** - 后台数据处理
-- **7z-wasm** - 压缩文件解析
-
-### 核心模块
-
-#### 🎮 游戏引擎 (`src/engine/`)
-- **Engine.ts** - 游戏引擎核心和资源管理
-- **gfx/** - WebGL渲染系统和着色器
-- **sound/** - 音频系统（AudioSystem、Mixer、Music等）
-- **renderable/** - 可渲染对象系统（100+个渲染组件）
-- **gameRes/** - 游戏资源配置和加载
-- **animation/** - 动画系统
-
-#### 🎨 用户界面 (`src/gui/`)
-- **Gui.ts** - GUI系统主控制器
-- **jsx/** - 自定义JSX渲染器实现
-- **screen/** - 屏幕管理系统（190+个屏幕文件）
-- **component/** - React UI组件库（30个组件）
-- **HtmlReactElement** - HTML与React桥接
-- **Viewport.ts** - 视口管理
-
-#### 📁 数据处理 (`src/data/`)
-- **文件格式** - MixFile、ShpFile、VxlFile、TmpFile、PcxFile等
-- **编码解析** - Blowfish、Format80、Format5、MiniLzo等
-- **地图数据** - 完整的地图文件解析和对象系统
-- **虚拟文件系统** - VFS抽象层（10个VFS组件）
-- **数据流** - 二进制数据读取和CRC32校验
-- **配置文件** - INI文件解析器
-
-#### 🌐 网络系统 (`src/network/`)
-- **WolConnection** - 基础网络连接框架
-- **IRC连接** - 聊天系统支持
-- **天梯系统** - 排行榜和玩家档案
-- **HTTP请求** - RESTful API客户端
-- **回放系统** - 游戏录像数据结构
-
-**注意：** 网络对战功能仍在开发中
-
-## 🛠 开发指南
-
-### 项目当前状态
-
-1. **已完成模块**
-   - 数据文件解析（MIX、SHP、VXL等）
-   - 图形渲染引擎
-   - 音频系统
-   - 基础游戏引擎
-   - UI框架
-
-2. **开发中模块**
-   - 游戏逻辑系统（Game.ts包含1100+行代码）
-   - 用户界面屏幕
-   - 网络系统
-
-3. **测试工具**
-   - 各种Tester类用于验证功能
-   - GLSL着色器测试
-   - 文件格式解析测试
-
-### 核心系统架构
-
-#### 游戏对象系统
-- **GameObject基类** - 所有游戏对象的基础
-- **Trait系统** - 模块化行为组件（30+个trait）
-- **事件系统** - 游戏事件总线（68个事件类型）
-- **AI系统** - 人工智能和机器人
-
-#### 地图系统
-- **MapFile** - 地图文件解析
-- **Theater** - 地形主题系统
-- **触发器** - 90+个触发器类型
-- **叠加层** - 矿物、道路等地形叠加
-
-### 详细项目结构
+```bash
+bun run debug:game-res-init
+bun run debug:viewport
+bun run debug:options
+bun run debug:storage-explorer
+bun run debug:skirmish
+bun run debug:skirmish-lobby-data
+bun run debug:victory-exit
+bun run debug:superweapon
+bun run debug:nuke
+bun run debug:radiation
+bun run debug:minimap-shroud
+bun run debug:anti-air-hit
+bun run debug:terror-drone
+bun run debug:chrono-legionnaire
+bun run debug:test-entries
+bun run debug:tester-panels
 ```
-ra2web-react/
+
+这些脚本的产物默认会写入 `.artifacts/`，便于回看截图和 JSON 结果。
+
+## 测试入口
+
+主菜单中的测试入口目前分为三类：
+
+1. 素材测试
+   - `VXL测试`
+   - `SHP测试`
+   - `音频测试`
+2. 机制测试
+   - `建筑测试`
+   - `载具测试`
+   - `步兵测试`
+   - `飞行器测试`
+3. 场景测试
+   - `大厅测试`
+   - `世界测试`
+   - `移动测试`
+
+这些 tester 页面不是孤立 Demo，而是当前仓库里很重要的调试和回归入口。页面左侧面板状态会同步到调试状态对象，自动化脚本也会直接使用这些入口验证渲染和交互结果。
+
+## 技术架构
+
+### 核心技术栈
+
+- `React 19.2.4`
+- `TypeScript 5.9.3`
+- `Vite 8.0.1`
+- `three 0.183.2`
+- `Bun 1.3.10`
+- `Playwright 1.58.2`
+- `7z-wasm`
+- `file-system-access`
+- `@ffmpeg/ffmpeg`
+- `@ra2web/pcxfile`
+- `@ra2web/wavefile`
+
+### 目录说明
+
+```text
+redalert2/
+├── public/          静态资源、配置、locale、遗留样式
+├── scripts/         Playwright 自动化回归脚本
 ├── src/
-│   ├── engine/          # 游戏引擎 (200+ 文件)
-│   │   ├── gfx/         # WebGL渲染系统 (34 文件)
-│   │   ├── renderable/  # 可渲染对象 (100 文件)
-│   │   ├── sound/       # 音频系统 (15 文件)
-│   │   └── gameRes/     # 资源管理 (16 文件)
-│   ├── gui/             # 用户界面 (250+ 文件)
-│   │   ├── screen/      # 屏幕管理 (190 文件)
-│   │   ├── component/   # React组件 (30 文件)
-│   │   └── jsx/         # JSX渲染器 (4 文件)
-│   ├── data/            # 数据处理 (80+ 文件)
-│   │   ├── vfs/         # 虚拟文件系统 (10 文件)
-│   │   ├── encoding/    # 编码解析 (6 文件)
-│   │   └── map/         # 地图数据 (14 文件)
-│   ├── game/            # 游戏逻辑 (500+ 文件)
-│   │   ├── gameobject/  # 游戏对象 (166 文件)
-│   │   ├── event/       # 事件系统 (68 文件)
-│   │   ├── trigger/     # 触发器 (90 文件)
-│   │   └── trait/       # 特性系统 (30 文件)
-│   ├── network/         # 网络系统 (基础框架)
-│   ├── util/            # 工具函数 (30+ 文件)
-│   └── tools/           # 开发测试工具 (10 文件)
-└── public/              # 静态资源和库文件
+│   ├── data/        原版资源格式、编码、地图、VFS
+│   ├── engine/      渲染、音频、资源加载、底层引擎能力
+│   ├── game/        游戏逻辑、对象系统、触发器、规则、超武
+│   ├── gui/         主菜单、HUD、选项、游戏内 UI
+│   ├── network/     网络和联机相关基础设施
+│   ├── tools/       独立 tester 页面
+│   └── util/        通用工具
+├── docs/            对齐记录与工程说明
+└── vite.config.ts   开发和构建配置
 ```
 
-### 开发命令
+### 主要模块
+
+`src/engine/`
+
+- `gfx/`：three 渲染层、材质、批处理、viewport、lighting
+- `renderable/`：游戏对象到可视对象的桥接层
+- `sound/`：音频混音、音乐、音效播放
+- `gameRes/`：资源导入、CDN 加载、缓存与目录处理
+
+`src/game/`
+
+- `gameobject/`：单位、建筑、抛射体、trait、locomotor
+- `rules/`：INI 规则读取与对象规则构建
+- `trigger/`：地图触发器、条件、执行器
+- `superweapon/`：核弹、闪电风暴、超时空等超武逻辑
+
+`src/gui/`
+
+- `screen/mainMenu/`：主菜单、地图选择、大厅、选项
+- `screen/game/`：游戏内 HUD、世界交互、菜单
+- `component/`：React 组件
+- `jsx/`：自定义 UI 渲染桥接
+
+`src/tools/`
+
+- 提供素材、机制、场景三类 tester 页面
+- 当前是调试结果可视化和自动化断言的重要入口
+
+## 开发命令
 
 ```bash
-# 开发模式
-npm run dev
-
-# 构建生产版本
-npm run build
-
-# 预览生产版本
-npm run preview
+bun run dev
+bun run build
+bun run preview
+bun run typecheck:entry
 ```
 
-### 开发规范
+## 文档与调试约定
 
-- **TypeScript严格模式** - 启用所有类型检查
-- **模块化设计** - 清晰的模块边界和依赖关系
-- **事件驱动** - 使用EventDispatcher进行组件通信
-- **资源懒加载** - LazyResourceCollection按需加载
-- **错误处理** - 完整的错误处理和日志系统
+- 开发端口固定为 `4000`
+- 主要技术对齐记录维护在 `docs/build-alignment-log.md`
+- 自动化产物默认输出到 `.artifacts/`
+- 构建通过并不等于所有行为已完全对齐，功能层面仍应优先参考专项脚本和实际流程验证
 
-### 调试技巧
+## 贡献建议
 
-1. **开发者工具**
-   - 按F12打开浏览器开发者工具
-   - Console面板查看日志
-   - Network面板监控资源加载
+提交改动前，至少建议执行：
 
-2. **调试参数**
-   ```
-   ?debug=true          # 启用调试模式
-   ?test=glsl          # 运行GLSL着色器测试
-   ```
+```bash
+bun run typecheck:entry
+bun run build
+```
 
-3. **测试工具类**
-   - `AircraftTester` - 飞行器测试
-   - `BuildingTester` - 建筑测试
-   - `VehicleTester` - 载具测试
-   - `SoundTester` - 音频测试
-   - `ShpTester` - SHP文件测试
+如果改动涉及大厅、资源加载、进图、HUD、机制或 tester，请补跑相应的 `debug:*` 脚本。
 
-## 🐛 故障排除
-
-### 开发问题
-
-#### TypeScript编译错误
-- **检查类型定义** - 确保所有接口正确实现
-- **导入路径** - 使用相对路径导入模块
-- **严格模式** - 处理null/undefined检查
-
-#### 渲染问题
-- **WebGL支持** - 确保浏览器支持WebGL 2.0
-- **着色器编译** - 使用`?test=glsl`测试着色器
-- **Three.js版本** - 当前使用0.177版本
-
-#### 文件系统访问
-- **CORS策略** - 开发服务器已配置跨域头
-- **文件API** - 需要支持File System Access API的浏览器
-- **权限** - 用户需要授权文件访问
-
-#### 音频系统
-- **Web Audio API** - 确保浏览器支持
-- **用户交互** - 音频播放需要用户手势激活
-- **格式支持** - WAV和MP3文件解析
-
-### 贡献开发
-
-项目正在积极开发中，欢迎贡献：
-- **功能实现** - 实现游戏逻辑和UI
-- **测试编写** - 为各个模块编写测试
-- **性能优化** - 优化渲染和数据处理
-- **文档编写** - 改进代码文档和注释
-
-## 🤝 贡献指南
-
-### 开发流程
-
-1. **Fork项目** - 创建你的项目副本
-2. **创建分支** - `git checkout -b feature/module-name`
-3. **迁移模块** - 将JavaScript模块转换为TypeScript
-4. **添加类型** - 为所有函数和类添加类型注解
-5. **测试功能** - 使用相应的Tester类验证功能
-6. **提交代码** - 提供清晰的提交信息
-7. **创建PR** - 详细描述更改内容
-
-### 迁移优先级
-- 🔥 **核心游戏逻辑** - Game.ts相关功能
-- 🎨 **UI屏幕** - 完善用户界面
-- 🌐 **网络系统** - 实现多人对战
-- 🎮 **游戏对象** - 单位、建筑、武器系统
-- 🗺️ **地图编辑器** - 地图创建和编辑功能
-
-## 📄 许可证
+## 许可证
 
 本项目基于GNU General Public License v3.0（GPL-3.0）许可证开源。详见 [LICENSE](LICENSE) 文件。
 
 ### 重要说明
-- ✅ 可以自由使用、修改和分发
-- ✅ 必须保留版权声明和许可证文本
-- ⚠️ 任何衍生作品必须使用相同的GPL-3.0许可证
-- ⚠️ 必须提供源代码（包括修改后的版本）
-- ⚠️ 不能将GPL代码集成到专有软件中
+- 可以自由使用、修改和分发，除非取得RA2WEB负责人许可，否则严禁用于商业目的
+- 必须保留版权声明和许可证文本
+- 任何衍生作品必须使用相同的 GPL-3.0 许可证
+- 必须提供源代码，包括修改后的版本
+- 不能将 GPL 代码集成到专有软件中
 
-**注意：** 本项目仅用于学习和研究目的。红色警戒2是EA公司的知识产权，请确保拥有合法的游戏副本。
+**注意：** 本项目仅用于学习和研究目的。红色警戒2是EA公司的知识产权，导入美术素材时请确保拥有合法的游戏副本。
 
-## 🙏 致谢
+## 致谢
 
-- **原始项目** - 基于现有的RA2Web实现
-- **Three.js社区** - 提供强大的WebGL渲染引擎
-- **React团队** - 现代用户界面框架
-- **TypeScript团队** - 类型安全的JavaScript超集
-- **开源社区** - 各种依赖库的维护者
-- **红警2玩家社区** - 持续的热情和支持
-- **EA Games** - 原版红色警戒2游戏
-
-## 📞 项目信息
-
-- **开发状态**: 🚧 积极开发中
-- **版本**: 0.0.0 (开发版)
-- **技术栈**: React 18 + TypeScript 5.3 + Three.js 0.177 + Vite
-- **目标**: 完整的红色警戒2网页版实现
+- RA2WEB.COM
+- Three.js 社区
+- React 团队
+- TypeScript 团队
+- 相关开源依赖维护者
+- 红警 2 玩家社区
 
 ---
 
