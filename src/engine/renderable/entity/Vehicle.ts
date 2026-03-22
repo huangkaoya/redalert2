@@ -250,7 +250,7 @@ export class Vehicle {
             .compute(this.objectArt.lightingType, this.gameObject.tile, this.gameObject.tileElevation)
             .addScalar(-1)
             .addScalar(this.rules.audioVisual.extraUnitLight)),
-            (this.baseVxlExtraLight = new THREE.Vector3().setScalar(1 + this.lighting.computeNoAmbient(this.objectArt.lightingType, this.gameObject.tile, this.gameObject.tileElevation) + this.rules.audioVisual.extraUnitLight));
+            (this.baseVxlExtraLight = new THREE.Vector3().setScalar(Math.PI * 1.5 + this.lighting.computeNoAmbient(this.objectArt.lightingType, this.gameObject.tile, this.gameObject.tileElevation) + this.rules.audioVisual.extraUnitLight));
     }
     registerPlugin(e) {
         this.plugins.push(e);
