@@ -31,6 +31,11 @@ import { MapFile } from '@/data/MapFile';
 import { ResourceLoader } from '@/engine/ResourceLoader';
 import { MapDigest } from '@/engine/MapDigest';
 import { ChatHistory } from '@/gui/chat/ChatHistory';
+import { GameResultPopup, GameResultType } from '@/gui/screen/game/component/GameResultPopup';
+import { jsx } from '@/gui/jsx/jsx';
+import { sleep } from '@puzzl/core/lib/async/sleep';
+import { MainMenuScreenType } from '@/gui/screen/ScreenType';
+import { MainMenuRoute } from '@/gui/screen/mainMenu/MainMenuRoute';
 interface Replay {
     gameId: string;
     gameTimestamp: number;
@@ -213,15 +218,18 @@ export class ReplayScreen extends RootScreen {
     private hud?: Hud;
     private minimap?: Minimap;
     private worldView?: WorldView;
+    private activeWorldScene?: any;
     private gameTurnMgr?: ReplayTurnManager;
     private gameAnimationLoop?: GameAnimationLoop;
     private menu?: GameMenuType;
     private playerUi?: PlayerUi;
     private loadingScreenApi?: LoadingScreenApi;
-    constructor(private engineVersion: string, private engineModHash: string, private errorHandler: ErrorHandler, private gameMenuSubScreens: any, private loadingScreenApiFactory: LoadingScreenApiFactory, private config: Config, private strings: Strings, private renderer: Renderer, private uiScene: UiScene, private runtimeVars: RuntimeVars, private messageBoxApi: MessageBoxApi, private uiAnimationLoop: UiAnimationLoop, private viewport: Viewport, private jsxRenderer: JsxRenderer, private pointer: Pointer, private sound: Sound, private music: Music, private keyBinds: KeyBinds, private generalOptions: GeneralOptions, private actionLogger: ActionLogger, private fullScreen: FullScreen, private mapFileLoader: MapFileLoader, private gameLoader: GameLoader, private vxlGeometryPool: VxlGeometryPool, private buildingImageDataCache: BuildingImageDataCache, private leaveAction: () => void, private battleControlApi: any) {
+    private replayEndHandled = false;
+    constructor(private engineVersion: string, private engineModHash: string, private errorHandler: ErrorHandler, private gameMenuSubScreens: any, private loadingScreenApiFactory: LoadingScreenApiFactory, private config: Config, private strings: Strings, private renderer: Renderer, private uiScene: UiScene, private runtimeVars: RuntimeVars, private messageBoxApi: MessageBoxApi, private uiAnimationLoop: UiAnimationLoop, private viewport: Viewport, private jsxRenderer: JsxRenderer, private pointer: Pointer, private sound: Sound, private music: Music, private keyBinds: KeyBinds, private generalOptions: GeneralOptions, private actionLogger: ActionLogger, private fullScreen: FullScreen, private mapFileLoader: MapFileLoader, private gameLoader: GameLoader, private vxlGeometryPool: VxlGeometryPool, private buildingImageDataCache: BuildingImageDataCache, private leaveAction: (params?: any) => void, private battleControlApi: any) {
         super();
     }
     async onEnter(params: ReplayParams): Promise<void> {
+        this.replayEndHandled = false;
         this.params = params;
         this.disposables.add(() => (this.params = undefined));
         this.pointer.lock();
@@ -381,6 +389,7 @@ export class ReplayScreen extends RootScreen {
             this.handleError(error, message);
             return;
         }
+        this.activeWorldScene = worldScene;
         this.renderer.removeScene(this.uiScene);
         this.renderer.addScene(worldScene);
         this.renderer.addScene(this.uiScene);
@@ -396,6 +405,9 @@ export class ReplayScreen extends RootScreen {
         });
         this.uiAnimationLoop.stop();
         this.gameAnimationLoop.start();
+        const handleReplayFinished = () => this.onReplayEnd(game);
+        this.gameTurnMgr!.onFinished.subscribe(handleReplayFinished);
+        this.disposables.add(() => this.gameTurnMgr?.onFinished.unsubscribe(handleReplayFinished));
     }
     private initUi(game: Game, worldScene: any, worldSound: any, eva: Eva, renderableManager: any, minimap: Minimap, messageList: MessageList): void {
         const soundHandler = new SoundHandler(game, worldSound, eva, this.sound, game.events, messageList, this.strings, undefined);
@@ -497,6 +509,10 @@ export class ReplayScreen extends RootScreen {
             this.gameAnimationLoop = undefined;
             this.uiAnimationLoop.start();
         }
+        if (this.activeWorldScene) {
+            this.renderer.removeScene(this.activeWorldScene);
+            this.activeWorldScene = undefined;
+        }
         if (this.hud) {
             this.uiScene.remove(this.hud);
             this.hud.destroy();
@@ -505,6 +521,62 @@ export class ReplayScreen extends RootScreen {
         this.gameTurnMgr?.dispose();
         this.gameTurnMgr = undefined;
         this.disposables.dispose();
+    }
+    private async onReplayEnd(game: Game): Promise<void> {
+        if (this.replayEndHandled) {
+            return;
+        }
+        this.replayEndHandled = true;
+
+        let gameResultPopup: any;
+        try {
+            this.gameAnimationLoop?.stop?.();
+
+            if (this.activeWorldScene) {
+                this.renderer.removeScene(this.activeWorldScene);
+            }
+            if (this.hud) {
+                this.uiScene.remove(this.hud);
+            }
+
+            const combatants = game.getCombatants();
+            const firstPlayer = combatants[0];
+
+            if (this.jsxRenderer && this.viewport) {
+                [gameResultPopup] = this.jsxRenderer.render(jsx(GameResultPopup, {
+                    type: GameResultType.MpVictory,
+                    viewport: this.viewport.value
+                }));
+            }
+
+            if (gameResultPopup) {
+                this.uiScene?.add(gameResultPopup);
+            }
+
+            await sleep(5000);
+
+            if (gameResultPopup) {
+                this.uiScene?.remove(gameResultPopup);
+                gameResultPopup.destroy?.();
+            }
+
+            this.leaveAction({
+                route: new MainMenuRoute(MainMenuScreenType.Score, {
+                    game,
+                    localPlayer: firstPlayer,
+                    singlePlayer: combatants.length <= 2,
+                    tournament: false,
+                    returnTo: new MainMenuRoute(MainMenuScreenType.Home, undefined)
+                })
+            });
+        } catch (error) {
+            console.error('[ReplayScreen] onReplayEnd failed', error);
+            if (gameResultPopup) {
+                this.uiScene?.remove(gameResultPopup);
+                gameResultPopup.destroy?.();
+            }
+            this.leaveAction();
+        }
     }
     private handleError(error: any, message: string, isCritical?: boolean): void {
         if (this.gameTurnMgr) {

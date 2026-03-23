@@ -15,9 +15,10 @@ export class SellObjectAction extends Action {
         this.objectId = new DataStream(data).readUint32();
     }
     serialize(): Uint8Array {
-        return new DataStream(4)
-            .writeUint32(this.objectId)
-            .toUint8Array();
+        const stream = new DataStream(4);
+        stream.dynamicSize = false;
+        stream.writeUint32(this.objectId);
+        return stream.toUint8Array();
     }
     print(): string {
         return `Sell object ${this.objectId}`;

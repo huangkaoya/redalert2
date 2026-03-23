@@ -747,7 +747,7 @@ export class PipOverlay {
         return wrench;
     }
     private objectIsOpaqueToViewer(): boolean {
-        const viewer = this.viewer.value;
+        const viewer = this.viewer?.value;
         return !(!viewer || viewer.isObserver) &&
             !(this.gameObject.owner === viewer ||
                 this.alliances.areAllied(this.gameObject.owner, viewer));

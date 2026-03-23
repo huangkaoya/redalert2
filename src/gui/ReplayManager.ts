@@ -1,5 +1,16 @@
 import { Replay } from "../network/gamestate/Replay";
 import { ReplayExistsError } from "./replay/ReplayExistsError";
+
+function generateId(): string {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
+}
 interface ReplayManifestEntry {
     id: string;
     name: string;
@@ -39,7 +50,7 @@ export class ReplayManager {
         if (!name) {
             throw new Error("Replay is not initialized");
         }
-        const id = THREE.MathUtils.generateUUID();
+        const id = generateId();
         const serializedData = replay.serialize();
         let entry: ReplayManifestEntry = {
             id,

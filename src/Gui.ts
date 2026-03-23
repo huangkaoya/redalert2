@@ -310,7 +310,13 @@ export class Gui {
         subScreens.set(MainMenuScreenType.Options, OptionsScreen);
         subScreens.set(MainMenuScreenType.OptionsSound, SoundOptsScreen);
         subScreens.set(MainMenuScreenType.OptionsKeyboard, KeyboardScreen);
+        const { ReplaySelScreen } = await import('./gui/screen/replay/ReplaySelScreen.js');
+        subScreens.set(MainMenuScreenType.ReplaySelection, ReplaySelScreen);
+        const { ReplayManager } = await import('./gui/ReplayManager.js');
+        const { ReplayStorageMemStorage } = await import('./gui/replay/ReplayStorageMemStorage.js');
+        const replayManager = new ReplayManager(new ReplayStorageMemStorage());
         const mainMenuRootScreen = new MainMenuRootScreen(subScreens, this.uiScene, this.strings, Engine.images, this.jsxRenderer, this.messageBoxApi, this.appVersion, this.config, videoSrc, this.sound, this.music, this.generalOptions, this.localPrefs, this.fullScreen, this.mixer, this.keyBinds, this.rootController);
+        (mainMenuRootScreen as any).replayManager = replayManager;
         this.rootController.addScreen(ScreenType.MainMenuRoot, mainMenuRootScreen);
         const { GameScreen } = await import('./gui/screen/game/GameScreen.js');
         const errorHandler = new ErrorHandler(this.messageBoxApi, this.strings);
@@ -342,9 +348,15 @@ export class Gui {
         gameMenuSubScreens.set((await import('./gui/screen/game/gameMenu/ScreenType.js')).ScreenType.OptionsKeyboard, new (await import('./gui/screen/options/KeyboardScreen.js')).KeyboardScreen(this.strings, this.jsxRenderer!, this.keyBinds!));
         const sharedVxlGeometryPool = new VxlGeometryPool(new VxlGeometryCache(null, Engine.getActiveMod?.() ?? null), this.generalOptions!.graphics.models.value);
         const buildingImageDataCache = new Map();
-        const gameScreen = new GameScreen(undefined, undefined, undefined, undefined, undefined, this.appVersion, '', errorHandler, gameMenuSubScreens, loadingScreenApiFactory, undefined, undefined, this.config, this.strings, this.renderer, this.uiScene, this.runtimeVars || {}, this.messageBoxApi, this.toastApi, this.uiAnimationLoop, this.viewport, this.jsxRenderer, this.pointer, this.sound, this.music, this.mixer, this.keyBinds, this.generalOptions, this.localPrefs, undefined, undefined, undefined, this.fullScreen, mapFileLoader, undefined, Engine.getMapList?.(), new GameLoader(this.appVersion, undefined, gameResLoader, gameResLoader, rules, gameModes, this.sound, (console as any), undefined, speedCheat, this.gameResConfig!, sharedVxlGeometryPool, buildingImageDataCache, (this as any).runtimeVars?.debugBotIndex, this.config.devMode ?? false), sharedVxlGeometryPool, buildingImageDataCache, mutedPlayers, tauntsEnabled, speedCheat, undefined, clientApi.battleControl);
+        const gameScreen = new GameScreen(undefined, undefined, undefined, undefined, undefined, this.appVersion, '', errorHandler, gameMenuSubScreens, loadingScreenApiFactory, undefined, undefined, this.config, this.strings, this.renderer, this.uiScene, this.runtimeVars || {}, this.messageBoxApi, this.toastApi, this.uiAnimationLoop, this.viewport, this.jsxRenderer, this.pointer, this.sound, this.music, this.mixer, this.keyBinds, this.generalOptions, this.localPrefs, undefined, undefined, replayManager, this.fullScreen, mapFileLoader, undefined, Engine.getMapList?.(), new GameLoader(this.appVersion, undefined, gameResLoader, gameResLoader, rules, gameModes, this.sound, (console as any), undefined, speedCheat, this.gameResConfig!, sharedVxlGeometryPool, buildingImageDataCache, (this as any).runtimeVars?.debugBotIndex, this.config.devMode ?? false), sharedVxlGeometryPool, buildingImageDataCache, mutedPlayers, tauntsEnabled, speedCheat, undefined, clientApi.battleControl);
         (gameScreen as any).setController?.(this.rootController);
         this.rootController.addScreen(ScreenType.Game, gameScreen as any);
+        const { ReplayScreen } = await import('./gui/screen/replay/ReplayScreen.js');
+        const replayGameLoader = new GameLoader(this.appVersion, undefined, gameResLoader, gameResLoader, rules, gameModes, this.sound, (console as any), undefined, speedCheat, this.gameResConfig!, sharedVxlGeometryPool, buildingImageDataCache, (this as any).runtimeVars?.debugBotIndex, this.config.devMode ?? false);
+        const replayScreen = new ReplayScreen(this.appVersion, '', errorHandler, gameMenuSubScreens, loadingScreenApiFactory, this.config as any, this.strings, this.renderer as any, this.uiScene as any, this.runtimeVars || {} as any, this.messageBoxApi as any, this.uiAnimationLoop as any, this.viewport as any, this.jsxRenderer as any, this.pointer as any, this.sound as any, this.music as any, this.keyBinds as any, this.generalOptions as any, undefined as any, this.fullScreen as any, mapFileLoader as any, replayGameLoader as any, sharedVxlGeometryPool as any, buildingImageDataCache as any, (params?: any) => {
+            this.rootController!.goToScreen(ScreenType.MainMenuRoot, params);
+        }, clientApi.battleControl);
+        this.rootController.addScreen(ScreenType.Replay, replayScreen as any);
         this.rootController.goToScreen(ScreenType.MainMenuRoot);
     }
     private startAnimationLoop(): void {
