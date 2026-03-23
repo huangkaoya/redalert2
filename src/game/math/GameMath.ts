@@ -505,9 +505,9 @@ export class GameMath {
                 if (Number.isFinite(y) && y !== 0) {
                     return this.atan2FiniteNonZero(y, x);
                 }
-                return this.signIncZero(y) * Math.PI * 0.5;
+                return this.signIncZero(y) * (x < 0 ? Math.PI : 0);
             }
-            return this.signIncZero(y) * (this.signIncZero(x) < 0 ? Math.PI : 0);
+            return this.signIncZero(y) * Math.PI * 0.5;
         }
         return Math.sign(y) * Math.PI * (Math.sign(x) > 0 ? 0.25 : 0.75);
     }

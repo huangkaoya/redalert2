@@ -613,7 +613,7 @@ export class Vehicle {
     updateShapeFrame(t, i, r) {
         if (this.shpRenderable && this.shpAnimRunner) {
             let e;
-            var s = this.objectArt.facings, a = Math.round((((45 - t + 360) % 360) / 360) * s) % s, s = this.shpAnimRunner.animation.getCurrentFrame();
+            var s = this.objectArt.facings, a = Math.round((((t - 45 + 360) % 360) / 360) * s) % s, s = this.shpAnimRunner.animation.getCurrentFrame();
             (e = r
                 ? this.objectArt.startFiringFrame +
                     this.objectArt.firingFrames * a +
