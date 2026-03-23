@@ -276,6 +276,13 @@ export class Infantry {
             this.lastDirection = this.gameObject.direction;
             this.computedDirection = this.gameObject.direction;
         }
+        if (isMoving) {
+            const vel = this.gameObject.moveTrait?.velocity;
+            if (vel && (vel.x * vel.x + vel.z * vel.z > 0)) {
+                const velAngle = Math.atan2(vel.z, vel.x);
+                this.computedDirection = ((-Math.round(velAngle * (180 / Math.PI)) - 90) % 360 + 720) % 360;
+            }
+        }
         const wasIdleActionDue = this.idleActionDue;
         this.idleActionDue = this.gameObject.idleActionTrait.actionDueThisTick();
         let shouldTriggerIdleAction = this.idleActionDue && !wasIdleActionDue;

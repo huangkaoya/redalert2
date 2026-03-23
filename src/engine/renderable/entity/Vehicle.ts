@@ -409,6 +409,17 @@ export class Vehicle {
                 m = t.add(this.gameObject.position.worldPosition);
                 this.setPosition(m);
             }
+            if (y) {
+                const vel = this.gameObject.moveTrait.velocity;
+                if (vel.x * vel.x + vel.z * vel.z > 0) {
+                    const velAngle = Math.atan2(vel.z, vel.x);
+                    const velDir = ((-Math.round(velAngle * (180 / Math.PI)) - 90) % 360 + 720) % 360;
+                    if (velDir !== e) {
+                        e = velDir;
+                        p = true;
+                    }
+                }
+            }
             (g || T) &&
                 ((this.lastMoving = y),
                     (this.lastFiring = d),
@@ -613,7 +624,7 @@ export class Vehicle {
     updateShapeFrame(t, i, r) {
         if (this.shpRenderable && this.shpAnimRunner) {
             let e;
-            var s = this.objectArt.facings, a = Math.round((((45 - t + 360) % 360) / 360) * s) % s, s = this.shpAnimRunner.animation.getCurrentFrame();
+            var s = this.objectArt.facings, a = Math.round((((t - 45 + 360) % 360) / 360) * s) % s, s = this.shpAnimRunner.animation.getCurrentFrame();
             (e = r
                 ? this.objectArt.startFiringFrame +
                     this.objectArt.firingFrames * a +

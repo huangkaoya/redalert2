@@ -55,29 +55,29 @@ export class VehicleDisguisePlugin {
                         !localPlayer?.sharedDetectDisguiseTrait?.has(this.gameObject) &&
                             Math.floor(((time - this.disguisedAt!) * this.gameSpeed.value) / 1000) % 16 <= 3;
                 }
-                if (this.lastRenderDisguised !== isDisguised) {
-                    this.lastRenderDisguised = isDisguised;
-                    this.renderable.mainObj.visible = !isDisguised;
-                    this.renderable.posObj.visible = !isDisguised || this.canSeeThroughDisguise;
-                    if (this.disguiseObj) {
-                        this.disguiseObj.visible = false;
+            }
+            if (this.lastRenderDisguised !== isDisguised) {
+                this.lastRenderDisguised = isDisguised;
+                this.renderable.mainObj.visible = !isDisguised;
+                this.renderable.posObj.visible = !isDisguised || this.canSeeThroughDisguise;
+                if (this.disguiseObj) {
+                    this.disguiseObj.visible = false;
+                }
+                if (isDisguised) {
+                    let disguise = this.disguiseTrait.getDisguise();
+                    if (disguise.rules.type !== ObjectType.Terrain) {
+                        throw new Error("Unsupported disguise type " + ObjectType[disguise.rules.type]);
                     }
-                    if (isDisguised) {
-                        let disguise = this.disguiseTrait.getDisguise();
-                        if (disguise.rules.type !== ObjectType.Terrain) {
-                            throw new Error("Unsupported disguise type " + ObjectType[disguise.rules.type]);
-                        }
-                        disguise = this.art.getObject(disguise.rules.name, ObjectType.Terrain);
-                        if (!this.disguiseObj) {
-                            this.disguiseObj = this.createDisguiseObj(disguise);
-                            this.renderable.get3DObject().add(this.disguiseObj);
-                        }
-                        this.disguiseObj.visible = true;
-                        const extraLight = this.lighting
-                            .compute(disguise.lightingType, this.gameObject.tile, this.gameObject.tileElevation)
-                            .addScalar(-1);
-                        this.disguiseRenderable!.setExtraLight(extraLight);
+                    disguise = this.art.getObject(disguise.rules.name, ObjectType.Terrain);
+                    if (!this.disguiseObj) {
+                        this.disguiseObj = this.createDisguiseObj(disguise);
+                        this.renderable.get3DObject().add(this.disguiseObj);
                     }
+                    this.disguiseObj.visible = true;
+                    const extraLight = this.lighting
+                        .compute(disguise.lightingType, this.gameObject.tile, this.gameObject.tileElevation)
+                        .addScalar(-1);
+                    this.disguiseRenderable!.setExtraLight(extraLight);
                 }
             }
         }
