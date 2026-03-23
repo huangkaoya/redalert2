@@ -605,12 +605,22 @@ export class Projectile extends GameObject {
         this.state = ProjectileState.Detonation;
         const targetObj = this.target.obj;
         let parasiteSuccess = false;
+        // 寄生弹头秒杀步兵的标志（与载具寄生区分，步兵击杀后攻击单位需要返回地图）
+        let parasiteInfantryKill = false;
         if (warhead.rules.parasite &&
             targetObj?.isUnit() &&
             detonationTile === targetObj.tile &&
             warhead.canDamage(targetObj, detonationTile, detonationZone)) {
             if (targetObj.isInfantry()) {
+                // 警犬和恐怖机器人的寄生弹头对步兵造成无限伤害，实现秒杀效果
                 const infiniteDamage = Number.POSITIVE_INFINITY;
+                warhead.inflictDamage(infiniteDamage, targetObj, {
+                    player: this.fromPlayer,
+                    weapon: weapon,
+                    obj: this.fromObject,
+                }, game, true);
+                // 不设置 parasiteSuccess，以便攻击单位能从 limbo 状态返回地图
+                parasiteInfantryKill = true;
             }
             else if (targetObj.parasiteableTrait && this.fromObject?.isUnit()) {
                 if (!(this.fromWeapon instanceof Weapon)) {
@@ -621,7 +631,8 @@ export class Projectile extends GameObject {
             }
         }
         let shouldDetonate = true;
-        if (parasiteSuccess) {
+        // 寄生载具成功或秒杀步兵后，跳过普通弹头爆炸逻辑
+        if (parasiteSuccess || parasiteInfantryKill) {
             shouldDetonate = false;
         }
         if (warhead.rules.sonic) {
