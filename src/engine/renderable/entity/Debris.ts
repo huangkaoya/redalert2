@@ -111,7 +111,7 @@ export class Debris {
         this.baseShpExtraLight = this.lighting
             .compute(this.objectArt.lightingType, this.gameObject.tile, this.gameObject.tileElevation)
             .addScalar(-1);
-        this.baseVxlExtraLight = new THREE.Vector3().setScalar(1 + this.lighting.computeNoAmbient(this.objectArt.lightingType, this.gameObject.tile, this.gameObject.tileElevation));
+        this.baseVxlExtraLight = new THREE.Vector3().setScalar(Math.PI * 1.5 + this.lighting.computeNoAmbient(this.objectArt.lightingType, this.gameObject.tile, this.gameObject.tileElevation));
         this.vxlExtraLight = new THREE.Vector3().copy(this.baseVxlExtraLight);
         this.shpExtraLight = new THREE.Vector3().copy(this.baseShpExtraLight);
         this.withPosition = new WithPosition();
@@ -124,7 +124,7 @@ export class Debris {
         this.baseShpExtraLight = this.lighting
             .compute(this.objectArt.lightingType, this.gameObject.tile, this.gameObject.tileElevation)
             .addScalar(-1);
-        this.baseVxlExtraLight = new THREE.Vector3().setScalar(1 + this.lighting.computeNoAmbient(this.objectArt.lightingType, this.gameObject.tile, this.gameObject.tileElevation));
+        this.baseVxlExtraLight = new THREE.Vector3().setScalar(Math.PI * 1.5 + this.lighting.computeNoAmbient(this.objectArt.lightingType, this.gameObject.tile, this.gameObject.tileElevation));
         this.vxlExtraLight.copy(this.baseVxlExtraLight);
         this.shpExtraLight.copy(this.baseShpExtraLight);
     }
@@ -156,7 +156,7 @@ export class Debris {
         const elevation = this.gameObject.tile.z + this.gameObject.tileElevation;
         if (this.lastElevation === undefined || this.lastElevation !== elevation) {
             this.lastElevation = elevation;
-            this.baseVxlExtraLight = new THREE.Vector3().setScalar(1 + this.lighting.computeNoAmbient(this.objectArt.lightingType, this.gameObject.tile, this.gameObject.tileElevation));
+            this.baseVxlExtraLight = new THREE.Vector3().setScalar(Math.PI * 1.5 + this.lighting.computeNoAmbient(this.objectArt.lightingType, this.gameObject.tile, this.gameObject.tileElevation));
             this.baseShpExtraLight = this.lighting
                 .compute(this.objectArt.lightingType, this.gameObject.tile, this.gameObject.tileElevation)
                 .addScalar(-1);
