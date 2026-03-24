@@ -31,11 +31,6 @@ import { MapFile } from '@/data/MapFile';
 import { ResourceLoader } from '@/engine/ResourceLoader';
 import { MapDigest } from '@/engine/MapDigest';
 import { ChatHistory } from '@/gui/chat/ChatHistory';
-import { GameResultPopup, GameResultType } from '@/gui/screen/game/component/GameResultPopup';
-import { jsx } from '@/gui/jsx/jsx';
-import { sleep } from '@puzzl/core/lib/async/sleep';
-import { MainMenuScreenType } from '@/gui/screen/ScreenType';
-import { MainMenuRoute } from '@/gui/screen/mainMenu/MainMenuRoute';
 interface Replay {
     gameId: string;
     gameTimestamp: number;
@@ -522,61 +517,11 @@ export class ReplayScreen extends RootScreen {
         this.gameTurnMgr = undefined;
         this.disposables.dispose();
     }
-    private async onReplayEnd(game: Game): Promise<void> {
+    private onReplayEnd(): void {
         if (this.replayEndHandled) {
             return;
         }
         this.replayEndHandled = true;
-
-        let gameResultPopup: any;
-        try {
-            this.gameAnimationLoop?.stop?.();
-
-            if (this.activeWorldScene) {
-                this.renderer.removeScene(this.activeWorldScene);
-            }
-            if (this.hud) {
-                this.uiScene.remove(this.hud);
-            }
-
-            const combatants = game.getCombatants();
-            const firstPlayer = combatants[0];
-
-            if (this.jsxRenderer && this.viewport) {
-                [gameResultPopup] = this.jsxRenderer.render(jsx(GameResultPopup, {
-                    type: GameResultType.MpVictory,
-                    viewport: this.viewport.value
-                }));
-            }
-
-            if (gameResultPopup) {
-                this.uiScene?.add(gameResultPopup);
-            }
-
-            await sleep(5000);
-
-            if (gameResultPopup) {
-                this.uiScene?.remove(gameResultPopup);
-                gameResultPopup.destroy?.();
-            }
-
-            this.leaveAction({
-                route: new MainMenuRoute(MainMenuScreenType.Score, {
-                    game,
-                    localPlayer: firstPlayer,
-                    singlePlayer: combatants.length <= 2,
-                    tournament: false,
-                    returnTo: new MainMenuRoute(MainMenuScreenType.Home, undefined)
-                })
-            });
-        } catch (error) {
-            console.error('[ReplayScreen] onReplayEnd failed', error);
-            if (gameResultPopup) {
-                this.uiScene?.remove(gameResultPopup);
-                gameResultPopup.destroy?.();
-            }
-            this.leaveAction();
-        }
     }
     private handleError(error: any, message: string, isCritical?: boolean): void {
         if (this.gameTurnMgr) {
