@@ -27,6 +27,9 @@ export class Target {
             if (tile.landType === LandType.Tiberium) {
                 this.isOre = true;
             }
+            if (tile.onBridgeLandType !== undefined) {
+                this.bridge = tileOccupation.getBridgeOnTile(tile);
+            }
             this.tile = tile;
         }
     }

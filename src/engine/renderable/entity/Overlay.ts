@@ -269,6 +269,22 @@ export class Overlay {
                 const bridgeShadowSurface = this.createBridgeShadowSurface();
                 parent.add(bridgeShadowSurface);
             }
+            if (this.gameObject.isBridge()) {
+                const shapeMesh = mainRenderable.getShapeMesh();
+                if (shapeMesh) {
+                    (shapeMesh as THREE.Mesh).renderOrder = -1;
+                    const mat = (shapeMesh as THREE.Mesh).material as THREE.Material;
+                    mat.depthTest = false;
+                    mat.depthWrite = false;
+                }
+                const shadowMesh = mainRenderable.getShadowMesh();
+                if (shadowMesh) {
+                    (shadowMesh as THREE.Mesh).renderOrder = -1;
+                    const smat = (shadowMesh as THREE.Mesh).material as THREE.Material;
+                    smat.depthTest = false;
+                    smat.depthWrite = false;
+                }
+            }
             container.updateMatrix();
             parent.add(container);
         }
