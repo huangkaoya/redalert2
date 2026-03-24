@@ -313,8 +313,22 @@ export class Gui {
         const { ReplaySelScreen } = await import('./gui/screen/replay/ReplaySelScreen.js');
         subScreens.set(MainMenuScreenType.ReplaySelection, ReplaySelScreen);
         const { ReplayManager } = await import('./gui/ReplayManager.js');
-        const { ReplayStorageMemStorage } = await import('./gui/replay/ReplayStorageMemStorage.js');
-        const replayManager = new ReplayManager(new ReplayStorageMemStorage());
+        let replayManager: any;
+        try {
+            const replayDirHandle = await Engine.getReplayDir();
+            if (replayDirHandle) {
+                const { RealFileSystemDir } = await import('./data/vfs/RealFileSystemDir.js');
+                const { ReplayStorageFileSystem } = await import('./gui/replay/ReplayStorageFileSystem.js');
+                replayManager = new ReplayManager(new ReplayStorageFileSystem(new RealFileSystemDir(replayDirHandle)));
+            }
+        }
+        catch (error) {
+            console.error('[Gui] Failed to initialize persistent replay storage', error);
+        }
+        if (!replayManager) {
+            const { ReplayStorageMemStorage } = await import('./gui/replay/ReplayStorageMemStorage.js');
+            replayManager = new ReplayManager(new ReplayStorageMemStorage());
+        }
         const mainMenuRootScreen = new MainMenuRootScreen(subScreens, this.uiScene, this.strings, Engine.images, this.jsxRenderer, this.messageBoxApi, this.appVersion, this.config, videoSrc, this.sound, this.music, this.generalOptions, this.localPrefs, this.fullScreen, this.mixer, this.keyBinds, this.rootController);
         (mainMenuRootScreen as any).replayManager = replayManager;
         this.rootController.addScreen(ScreenType.MainMenuRoot, mainMenuRootScreen);
