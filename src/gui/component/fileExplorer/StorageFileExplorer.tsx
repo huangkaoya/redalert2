@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import AppLogger from '../../../util/Logger';
+import AppLogger from '../../../util/logger';
 import { Zip } from '../../../data/zip/Zip';
 import './StorageFileExplorer.css';
 

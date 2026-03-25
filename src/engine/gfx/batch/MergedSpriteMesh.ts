@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import * as arrayUtils from '../../../util/Array';
+import * as arrayUtils from '../../../util/array';
 import { PaletteBasicMaterial } from '../material/PaletteBasicMaterial';
 const tempVector3 = new THREE.Vector3();
 const tempVector4 = new THREE.Vector4();

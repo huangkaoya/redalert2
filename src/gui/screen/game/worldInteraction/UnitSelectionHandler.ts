@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { equals } from '@/util/Array';
+import { equals } from '@/util/array';
 import { rectContainsPoint } from '@/util/geometry';
 import { clamp } from '@/util/math';
 import { EventDispatcher } from '@/util/event';

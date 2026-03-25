@@ -1,5 +1,5 @@
 import { formatTimeDuration } from '@/util/format';
-import { AppLogger } from '@/util/Logger';
+import { AppLogger } from '@/util/logger';
 export class LoggerApi {
     private logger: typeof AppLogger;
     private gameTime: {

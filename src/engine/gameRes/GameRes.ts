@@ -5,7 +5,7 @@ import { VirtualFileSystem } from '../../data/vfs/VirtualFileSystem';
 import { Engine, EngineType } from '../Engine';
 import { ResourceLoader, LoaderResult } from '../ResourceLoader';
 import { DownloadError } from '../../network/HttpRequest';
-import { AppLogger } from '../../util/Logger';
+import { AppLogger } from '../../util/logger';
 import { GameResConfig } from './GameResConfig';
 import { ChecksumError } from './importError/ChecksumError';
 import { FileNotFoundError as GameResFileNotFoundError } from './importError/FileNotFoundError';

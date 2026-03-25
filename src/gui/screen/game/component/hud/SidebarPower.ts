@@ -9,7 +9,7 @@ import { clamp } from "@/util/math";
 import { TextureUtils } from "@/engine/gfx/TextureUtils";
 import { HighlightAnimRunner } from "@/engine/renderable/entity/HighlightAnimRunner";
 import { BoxedVar } from "@/util/BoxedVar";
-import { findReverse } from "@/util/Array";
+import { findReverse } from "@/util/array";
 import { PaletteBasicMaterial } from "@/engine/gfx/material/PaletteBasicMaterial";
 type SidebarPowerModel = {
     powerDrained: number;

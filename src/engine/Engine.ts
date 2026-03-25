@@ -20,7 +20,7 @@ import * as stringUtils from '../util/string';
 import { MapList } from './MapList';
 import { HvaFile } from '../data/HvaFile';
 import { MixinRulesType } from '../game/ini/MixinRulesType';
-import { AppLogger } from '../util/Logger';
+import { AppLogger } from '../util/logger';
 type AppLoggerType = typeof AppLogger;
 interface TheaterSettings {
     type: TheaterType;

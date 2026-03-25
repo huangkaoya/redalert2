@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Engine } from '../../engine/Engine';
 import { browserFileSystemAccess } from '../../engine/gameRes/browserFileSystemAccess';
 import { StorageFileExplorer } from './fileExplorer/StorageFileExplorer';
-import AppLogger from '../../util/Logger';
+import AppLogger from '../../util/logger';
 
 const GameResourcesViewer: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
