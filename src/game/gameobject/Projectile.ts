@@ -111,7 +111,8 @@ export class Projectile extends GameObject {
             (!this.isHoming() && this.fromWeapon.speed === Number.POSITIVE_INFINITY) ||
             this.rules.inaccurate ||
             this.rules.arcing ||
-            this.rules.flakScatter) {
+            this.rules.flakScatter ||
+            this.isPrismSupportBeam(game)) {
         }
         else {
             let damage = this.computeBaseDamage(game);
@@ -578,6 +579,14 @@ export class Projectile extends GameObject {
                     !game.alliances.areAllied(this.fromPlayer, owner)),
         });
     }
+    private isPrismSupportBeam(game: any): boolean {
+        const prismType = game.rules.general.prism.type;
+        return !!prismType &&
+            this.fromWeapon.type === WeaponType.Secondary &&
+            !!this.fromObject?.isBuilding() &&
+            this.fromObject.name === prismType;
+    }
+
     private computeBaseDamage(game: any): number {
         const weapon = this.fromWeapon;
         const warhead = weapon.warhead;
@@ -706,6 +715,9 @@ export class Projectile extends GameObject {
                 targetObj.owner === this.fromPlayer) {
                 targetObj.overpoweredTrait.chargeFrom(this.fromObject);
             }
+            shouldDetonate = false;
+        }
+        if (this.isPrismSupportBeam(game)) {
             shouldDetonate = false;
         }
         if (shouldDetonate) {
