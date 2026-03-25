@@ -8,7 +8,7 @@ import { CompositeDisposable } from "@/util/disposable/CompositeDisposable";
 import { jsx } from "@/gui/jsx/jsx";
 import { HtmlView } from "@/gui/jsx/HtmlView";
 import { MapPreviewRenderer } from "@/gui/screen/mainMenu/lobby/MapPreviewRenderer";
-import { findIndexReverse } from "@/util/Array";
+import { findIndexReverse } from "@/util/array";
 import { StorageKey } from "@/LocalPrefs";
 import { isNotNullOrUndefined } from "@/util/typeGuard";
 import { PreferredHostOpts } from "./PreferredHostOpts";

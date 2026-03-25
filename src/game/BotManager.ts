@@ -1,5 +1,5 @@
 import { CompositeDisposable } from '../util/disposable/CompositeDisposable';
-import { AppLogger } from '@/util/Logger';
+import { AppLogger } from '@/util/logger';
 import { ActionQueue } from './action/ActionQueue';
 import { ActionsApi } from './api/ActionsApi';
 import { EventsApi } from './api/EventsApi';

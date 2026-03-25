@@ -1,7 +1,7 @@
 import { Coords } from "@/game/Coords";
 import type { TargetLinesConfig } from "@/game/gameobject/task/system/TargetLinesConfig";
 import { configHasTarget } from "@/game/gameobject/task/system/TargetLinesConfig";
-import { equals } from "@/util/Array";
+import { equals } from "@/util/array";
 import { WaypointLine } from "@/engine/renderable/entity/WaypointLine";
 import * as THREE from "three";
 enum VertexType {

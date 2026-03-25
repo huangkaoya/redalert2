@@ -1,7 +1,7 @@
 import { Task } from "@/game/gameobject/task/system/Task";
 import { Infantry } from "@/game/gameobject/Infantry";
 import { MovementZone } from "@/game/type/MovementZone";
-import { findIndexReverse, findReverse } from "@/util/Array";
+import { findIndexReverse, findReverse } from "@/util/array";
 import { SpeedType } from "@/game/type/SpeedType";
 import { MoveState, CollisionState, MoveResult, MoveTrait } from "@/game/gameobject/trait/MoveTrait";
 import { WaitTicksTask } from "@/game/gameobject/task/system/WaitTicksTask";
@@ -9,7 +9,7 @@ import { MoveAsideTask } from "@/game/gameobject/task/move/MoveAsideTask";
 import { MovePositionHelper } from "@/game/gameobject/unit/MovePositionHelper";
 import { RadialTileFinder } from "@/game/map/tileFinder/RadialTileFinder";
 import { RangeHelper } from "@/game/gameobject/unit/RangeHelper";
-import { AppLogger, Logger } from "@/util/Logger";
+import { AppLogger, Logger } from "@/util/logger";
 import { Coords } from "@/game/Coords";
 import { TaskStatus } from "@/game/gameobject/task/system/TaskStatus";
 import { ZoneType } from "@/game/gameobject/unit/ZoneType";

@@ -1,5 +1,5 @@
 import { CompositeDisposable } from '../util/disposable/CompositeDisposable';
-import { equals } from '../util/Array';
+import { equals } from '../util/array';
 import { clamp } from '../util/math';
 import * as THREE from 'three';
 interface PointerPosition {
