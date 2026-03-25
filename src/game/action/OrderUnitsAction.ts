@@ -273,15 +273,7 @@ export class OrderUnitsAction extends Action {
                 next: undefined
             };
             if (waypointPaths.length === 0) {
-                const pendingLoopOrders = new Map();
-                for (const order of orders) {
-                    const unit = order.sourceObject;
-                    if (!pendingLoopOrders.has(unit)) {
-                        pendingLoopOrders.set(unit, []);
-                    }
-                    pendingLoopOrders.get(unit).push(order);
-                }
-                const waypointPath = { units: units, waypoints: [waypoint], pendingLoopOrders: pendingLoopOrders };
+                const waypointPath = { units: units, waypoints: [waypoint] };
                 units.forEach((unit: any) => {
                     unit.unitOrderTrait.waypointPath = waypointPath;
                 });
@@ -290,26 +282,6 @@ export class OrderUnitsAction extends Action {
                 const existingPath = waypointPaths[0];
                 existingPath.waypoints[existingPath.waypoints.length - 1].next = waypoint;
                 existingPath.waypoints.push(waypoint);
-                if (!existingPath.pendingLoopOrders) {
-                    existingPath.pendingLoopOrders = new Map();
-                }
-                for (const order of orders) {
-                    const unit = order.sourceObject;
-                    if (!existingPath.pendingLoopOrders.has(unit)) {
-                        existingPath.pendingLoopOrders.set(unit, []);
-                    }
-                    existingPath.pendingLoopOrders.get(unit).push(order);
-                }
-                if (existingPath.waypoints.length >= 2 &&
-                    waypoint.target.equals(existingPath.waypoints[0].target)) {
-                    existingPath.loop = true;
-                    existingPath.loopWaypoints = existingPath.waypoints.map((wp: any) => ({
-                        orderType: wp.orderType,
-                        target: wp.target,
-                        terminal: wp.terminal,
-                    }));
-                    existingPath.loopOrders = existingPath.pendingLoopOrders;
-                }
             }
         }
     }
