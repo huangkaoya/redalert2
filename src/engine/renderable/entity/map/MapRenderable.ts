@@ -82,8 +82,12 @@ export class MapRenderable {
         this.addObject(this.terrainLayer);
         this.overlayLayer = new MapSpriteBatchLayer("map_overlay_layer", [...this.rules.overlayRules.values()].filter((rule: any) => this.art.hasObject(rule.name, rule.type) &&
             !BridgeOverlayTypes.isBridge(this.rules.getOverlayId(rule.name))), (rule: any) => rule.rules.wall, this.theater, this.art, this.imageFinder, this.camera, this.lighting, shpAggregator);
+        this.overlayLayer.meshRenderOrder = -1;
+        this.overlayLayer.meshNoDepth = true;
         this.addObject(this.overlayLayer);
         this.smudgeLayer = new MapSpriteBatchLayer("map_smudge_layer", [...this.rules.smudgeRules.values()].filter((rule: any) => this.art.hasObject(rule.name, rule.type)), () => false, this.theater, this.art, this.imageFinder, this.camera, this.lighting, shpAggregator);
+        this.smudgeLayer.meshRenderOrder = -1;
+        this.smudgeLayer.meshNoDepth = true;
         this.addObject(this.smudgeLayer);
         this.mapRadiation.onChange.subscribe(this.handleRadChange);
     }

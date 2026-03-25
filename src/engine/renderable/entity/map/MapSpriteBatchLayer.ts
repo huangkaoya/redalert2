@@ -35,6 +35,8 @@ export class MapSpriteBatchLayer {
     private batchedObjectRules: Set<any>;
     private aggregatedImageData: any;
     private target?: THREE.Object3D;
+    public meshRenderOrder: number = 0;
+    public meshNoDepth: boolean = false;
     constructor(label: string, batchedObjectRules: any[], spriteUseDepth: (obj: any) => number, theater: any, art: any, imageFinder: ImageFinder, camera: any, lighting: any, shpAggregator: ShpAggregator) {
         this.label = label;
         this.spriteUseDepth = spriteUseDepth;
@@ -110,7 +112,14 @@ export class MapSpriteBatchLayer {
             const palette = this.theater.getPalette(obj.art.paletteType, obj.art.customPaletteName);
             const newBuilder = new BatchShpBuilder(this.aggregatedImageData.file, palette, this.camera, this.textureCache, undefined, undefined, undefined, Coords.ISO_WORLD_SCALE);
             builders.push(newBuilder);
-            this.get3DObject()!.add(newBuilder.build());
+            const mesh = newBuilder.build();
+            mesh.renderOrder = this.meshRenderOrder;
+            if (this.meshNoDepth) {
+                const mat = mesh.material as THREE.Material;
+                mat.depthTest = false;
+                mat.depthWrite = false;
+            }
+            this.get3DObject()!.add(mesh);
             availableBuilder = newBuilder;
         }
         const mainSpec = this.buildBatchShpSpec(obj, this.aggregatedImageData);
@@ -123,7 +132,14 @@ export class MapSpriteBatchLayer {
                     throw new Error("Not implemented");
                 const newShadowBuilder = new BatchShpBuilder(this.aggregatedImageData.file, ShadowRenderable.getOrCreateShadowPalette(), this.camera, this.textureCache, 0.5, true, undefined, Coords.ISO_WORLD_SCALE);
                 this.shadowBatchShpBuilders.push(newShadowBuilder);
-                this.get3DObject()!.add(newShadowBuilder.build());
+                const shadowMesh = newShadowBuilder.build();
+                shadowMesh.renderOrder = this.meshRenderOrder;
+                if (this.meshNoDepth) {
+                    const mat = shadowMesh.material as THREE.Material;
+                    mat.depthTest = false;
+                    mat.depthWrite = false;
+                }
+                this.get3DObject()!.add(shadowMesh);
                 shadowBuilder = newShadowBuilder;
             }
             shadowSpec = this.buildShadowBatchShpSpec(mainSpec, this.aggregatedImageData);

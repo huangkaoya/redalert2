@@ -175,6 +175,7 @@ export class MapTileLayer {
         const mesh = new (THREE as any).Mesh(mergedGeometry, material);
         mesh.matrixAutoUpdate = false;
         mesh.frustumCulled = false;
+        mesh.renderOrder = -2;
         try {
             const mapTex: any = (material as any).map;
             const palTex: any = (material as any).uniforms?.palette?.value;
