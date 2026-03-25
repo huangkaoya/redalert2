@@ -23,6 +23,8 @@ import type { Strings } from '../../data/Strings';
 import type { DataStream } from '../../data/DataStream';
 import type { FFmpeg } from '@ffmpeg/ffmpeg';
 import { OriginalMixFile } from '../../test/OriginalMixFile';
+import { createDirectoryImportPlan } from './createDirectoryImportPlan';
+import { SharedAsyncResource } from './SharedAsyncResource';
 interface SevenZipWasmModule {
     FS: any;
     callMain: (args: string[]) => void;
@@ -67,6 +69,9 @@ export class GameResImporter {
     private appConfig: Config;
     private strings: Strings;
     private sentry?: any;
+    private readonly sharedFfmpeg = new SharedAsyncResource<FFmpeg>(() => this.createFFmpeg());
+    private musicConversionUnavailable = false;
+    private backgroundImportTasks = new Set<Promise<void>>();
     constructor(appConfig: Config, strings: Strings, sentry?: any) {
         this.appConfig = appConfig;
         this.strings = strings;
@@ -275,7 +280,8 @@ export class GameResImporter {
         else {
             const sourceDirWrapper = new RealFileSystemDir(source as FileSystemDirectoryHandle, true);
             const sourceEntries = await sourceDirWrapper.listEntries();
-            for (const mixName of essentialMixes) {
+            const importPlan = createDirectoryImportPlan(essentialMixes, tauntsDirName);
+            for (const mixName of importPlan.immediateMixes) {
                 onProgress(S.get("ts:import_importing", mixName));
                 const actualFileName = sourceEntries.find(entry => stringUtils.equalsIgnoreCase(entry, mixName)) || mixName;
                 let virtualFile;
@@ -294,33 +300,75 @@ export class GameResImporter {
                 }
                 await this.importMixArchive(virtualFile, targetRfsRootDir, onProgress, S);
             }
-            const tauntsDirInSource = sourceEntries.find(entry => stringUtils.equalsIgnoreCase(entry, tauntsDirName)) || tauntsDirName;
-            let sourceTauntsDir: RealFileSystemDir | undefined;
-            try {
-                sourceTauntsDir = await sourceDirWrapper.getDirectory(tauntsDirInSource);
-            }
-            catch (e: any) {
-                if (!(e instanceof VfsFileNotFoundError || e instanceof IOError))
-                    throw e;
-                console.warn(`Taunts directory "${tauntsDirInSource}" not found in source (${e.name}). Skipping.`);
-            }
-            if (sourceTauntsDir) {
-                try {
-                    const targetTauntsRfsDir = await targetRfsRootDir.getOrCreateDirectory(tauntsDirName, true);
-                    for await (const rawFile of sourceTauntsDir.getRawFiles()) {
-                        onProgress(S.get("ts:import_importing", `${targetTauntsRfsDir.name}/${rawFile.name}`));
-                        const virtualFile = await VirtualFile.fromRealFile(rawFile);
-                        await targetTauntsRfsDir.writeFile(virtualFile);
-                    }
-                }
-                catch (e: any) {
-                    if (!(e instanceof IOError))
-                        throw e;
-                    console.warn("Failed to copy taunts folder from source. Skipping.", e);
-                }
-            }
+            this.scheduleBackgroundImport('directory-deferred-imports', async () => {
+                await this.importDeferredDirectoryContent(sourceDirWrapper, sourceEntries, importPlan, targetRfsRootDir, tauntsDirName, S);
+            });
         }
         onProgress("Game assets successfully imported.");
+    }
+    private scheduleBackgroundImport(label: string, task: () => Promise<void>): void {
+        const backgroundTask = task()
+            .then(() => {
+                console.info(`[GameResImporter] Background import "${label}" completed`);
+            })
+            .catch((error) => {
+                console.error(`[GameResImporter] Background import "${label}" failed`, error);
+                this.sentry?.captureException(new Error(`Background import failed: ${label}`), { extra: { error } });
+            })
+            .finally(() => {
+                this.backgroundImportTasks.delete(backgroundTask);
+            });
+        this.backgroundImportTasks.add(backgroundTask);
+    }
+    private async importDeferredDirectoryContent(sourceDirWrapper: RealFileSystemDir, sourceEntries: string[], importPlan: ReturnType<typeof createDirectoryImportPlan>, targetRfsRootDir: RealFileSystemDir, tauntsDirName: string, S: Strings): Promise<void> {
+        for (const mixName of importPlan.deferredMixes) {
+            const actualFileName = sourceEntries.find(entry => stringUtils.equalsIgnoreCase(entry, mixName)) || mixName;
+            try {
+                const virtualFile = await sourceDirWrapper.openFile(actualFileName);
+                await this.importMixArchive(virtualFile, targetRfsRootDir, (text) => {
+                    if (text) {
+                        console.info(`[GameResImporter] Background ${text}`);
+                    }
+                }, S);
+            }
+            catch (e: any) {
+                if (!(e instanceof VfsFileNotFoundError)) {
+                    throw e;
+                }
+                console.warn(`Deferred mix "${mixName}" not found in source. Skipping.`);
+            }
+        }
+        if (!importPlan.deferTaunts) {
+            return;
+        }
+        const tauntsDirInSource = sourceEntries.find(entry => stringUtils.equalsIgnoreCase(entry, tauntsDirName)) || tauntsDirName;
+        let sourceTauntsDir: RealFileSystemDir | undefined;
+        try {
+            sourceTauntsDir = await sourceDirWrapper.getDirectory(tauntsDirInSource);
+        }
+        catch (e: any) {
+            if (!(e instanceof VfsFileNotFoundError || e instanceof IOError)) {
+                throw e;
+            }
+            console.warn(`Taunts directory "${tauntsDirInSource}" not found in source (${e.name}). Skipping.`);
+        }
+        if (!sourceTauntsDir) {
+            return;
+        }
+        try {
+            const targetTauntsRfsDir = await targetRfsRootDir.getOrCreateDirectory(tauntsDirName, true);
+            for await (const rawFile of sourceTauntsDir.getRawFiles()) {
+                console.info(`[GameResImporter] Background importing "${targetTauntsRfsDir.name}/${rawFile.name}"`);
+                const virtualFile = await VirtualFile.fromRealFile(rawFile);
+                await targetTauntsRfsDir.writeFile(virtualFile);
+            }
+        }
+        catch (e: any) {
+            if (!(e instanceof IOError)) {
+                throw e;
+            }
+            console.warn("Failed to copy taunts folder from source. Skipping.", e);
+        }
     }
     private readFileFromEmFs(emFs: any, filePath: string): VirtualFile {
         emFs.chmod(filePath, 0o700);
@@ -377,6 +425,10 @@ export class GameResImporter {
         const totalFiles = knownMusicFiles.length;
         let processedFiles = 0;
         for (const wavFileNameInMix of knownMusicFiles) {
+            if (this.musicConversionUnavailable) {
+                console.warn('Music conversion is unavailable. Skipping remaining tracks.');
+                break;
+            }
             processedFiles++;
             onProgressPercent((processedFiles / totalFiles) * 100);
             if (!wavFileNameInMix.toLowerCase().endsWith('.wav')) {
@@ -389,7 +441,7 @@ export class GameResImporter {
                 if (wavFileEntry.stream.byteLength > 0) {
                     let mp3Data: Uint8Array | undefined;
                     try {
-                        const ffmpeg = await this.createFFmpeg();
+                        const ffmpeg = await this.sharedFfmpeg.get();
                         const wavData = new Uint8Array(wavFileEntry.stream.buffer, wavFileEntry.stream.byteOffset, wavFileEntry.stream.byteLength);
                         await ffmpeg.writeFile(wavFileNameInMix, wavData);
                         await ffmpeg.exec(["-i", wavFileNameInMix, "-vn", "-ar", "22050", "-q:a", "5", mp3FileName]);
@@ -398,9 +450,10 @@ export class GameResImporter {
                         await ffmpeg.deleteFile(mp3FileName);
                     }
                     catch (e) {
+                        this.musicConversionUnavailable = true;
                         console.warn(`Failed to convert music file "${wavFileNameInMix}" to MP3. Skipping.`, e);
                         this.sentry?.captureException(new Error(`FFmpeg conversion failed for ${wavFileNameInMix}`), { extra: { error: e } });
-                        continue;
+                        break;
                     }
                     if (mp3Data) {
                         const mp3Blob = new Blob([mp3Data], { type: "audio/mpeg" });
@@ -425,7 +478,7 @@ export class GameResImporter {
     private async importVideo(languageMixVirtualFile: VirtualFile, targetRfsRootDir: RealFileSystemDir): Promise<void> {
         let ffmpeg: FFmpeg;
         try {
-            ffmpeg = await this.createFFmpeg();
+            ffmpeg = await this.sharedFfmpeg.get();
         }
         catch (e: any) {
             if (e.message?.match(/Load failed|Failed to fetch/i)) {

@@ -132,4 +132,11 @@ dist
 # Vite build output
 dist
 
-#शंकर 
+# AI tool files
+.claude/
+.codex/
+/CLAUDE.md
+/claude.md
+/CODEX.md
+/codex.md
+/AGENTS.md
