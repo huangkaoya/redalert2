@@ -262,7 +262,7 @@ export class Warhead {
         if (this.rules.radiation && (!obj.isUnit() || obj.rules.immuneToRadiation)) {
             return false;
         }
-        if (this.rules.psychicDamage && (!obj.isUnit() || obj.rules.immuneToPsionics)) {
+        if (this.rules.psychicDamage && !obj.isInfantry()) {
             return false;
         }
         if (obj.isOverlay() && BridgeOverlayTypes.isLowBridgeHead(obj.overlayId!)) {

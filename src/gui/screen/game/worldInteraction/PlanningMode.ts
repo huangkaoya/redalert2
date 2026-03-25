@@ -98,7 +98,7 @@ export class PlanningMode {
             this.handleInvalidCommand(this.strings.get('MSG:NodeMaximum'));
             return;
         }
-        if (path.waypoints.find((waypoint: any) => waypoint.target.equals(target))) {
+        if (path.waypoints.slice(1).find((waypoint: any) => waypoint.target.equals(target))) {
             this.handleInvalidCommand(this.strings.get('MSG:PlanningModeInvalidNodeX'));
             return;
         }

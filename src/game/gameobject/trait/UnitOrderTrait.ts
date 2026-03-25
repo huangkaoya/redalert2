@@ -32,9 +32,17 @@ interface Order {
 interface Waypoint {
     next?: Waypoint;
 }
+interface WaypointBlueprint {
+    orderType: string;
+    target: any;
+    terminal: boolean;
+}
 interface WaypointPath {
     waypoints: Waypoint[];
     units: GameObject[];
+    loop?: boolean;
+    loopOrders?: Map<GameObject, any[]>;
+    loopWaypoints?: WaypointBlueprint[];
 }
 export class UnitOrderTrait implements NotifyTick, NotifyOwnerChange, NotifyTeleport {
     private gameObject: GameObject;
@@ -93,7 +101,11 @@ export class UnitOrderTrait implements NotifyTick, NotifyOwnerChange, NotifyTele
                         this.currentWaypoint = this.waypointPath.waypoints[0];
                     }
                     if (!this.currentWaypoint) {
-                        this.cleanupWaypointPath();
+                        if (this.waypointPath.loop) {
+                            this.restartLoopPath();
+                        } else {
+                            this.cleanupWaypointPath();
+                        }
                     }
                 }
                 if (processedOrder)
@@ -102,7 +114,11 @@ export class UnitOrderTrait implements NotifyTick, NotifyOwnerChange, NotifyTele
         }
         if (!orderCount && !hasTasks && this.waypointPath && this.currentWaypoint) {
             this.cleanupWaypoint(this.currentWaypoint, this.waypointPath);
-            this.cleanupWaypointPath();
+            if (this.waypointPath.loop) {
+                this.restartLoopPath();
+            } else {
+                this.cleanupWaypointPath();
+            }
         }
         let targetTask = currentTask;
         while (targetTask?.useChildTargetLines) {
@@ -167,6 +183,9 @@ export class UnitOrderTrait implements NotifyTick, NotifyOwnerChange, NotifyTele
     isIdle(): boolean {
         return this.orders.length === 0 && this.tasks.length === 0;
     }
+    getOrders(): Order[] {
+        return [...this.orders];
+    }
     getCurrentTask(): Task | undefined {
         return this.tasks[0];
     }
@@ -193,6 +212,36 @@ export class UnitOrderTrait implements NotifyTick, NotifyOwnerChange, NotifyTele
         this.tasks.length = 0;
         this.gameObject = undefined as any;
     }
+    private restartLoopPath(): void {
+        if (!this.waypointPath?.loop || !this.waypointPath.loopOrders || !this.waypointPath.loopWaypoints)
+            return;
+        const orders = this.waypointPath.loopOrders.get(this.gameObject);
+        if (!orders?.length) {
+            this.cleanupWaypointPath();
+            return;
+        }
+        const blueprints = this.waypointPath.loopWaypoints;
+        const newWaypoints: any[] = [];
+        for (const bp of blueprints) {
+            const wp = {
+                orderType: bp.orderType,
+                target: bp.target,
+                terminal: bp.terminal,
+                next: undefined,
+            };
+            if (newWaypoints.length) {
+                newWaypoints[newWaypoints.length - 1].next = wp;
+            }
+            newWaypoints.push(wp);
+        }
+        this.waypointPath.waypoints = newWaypoints;
+        this.currentWaypoint = undefined;
+        for (const order of orders) {
+            this.orders.push(order);
+            this.queuedOrders.add(order);
+        }
+    }
+
     private cleanupWaypointPath(): void {
         if (!this.waypointPath)
             return;

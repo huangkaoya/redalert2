@@ -15,7 +15,7 @@ export class EnterBuildingTask extends Task {
         this.target = target;
     }
     onTick(gameObject: any): boolean {
-        if ((this.isCancelling() && !this.movePerformed) ||
+        if ((this.isCancelling() && (!this.movePerformed || this.children.length === 0)) ||
             this.aborted ||
             gameObject.moveTrait.isDisabled()) {
             return true;
