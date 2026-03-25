@@ -23,6 +23,7 @@ import { SideType } from '@/game/SideType';
 import { HudFactory } from '@/gui/screen/game/HudFactory';
 import { Minimap } from '@/gui/screen/game/component/Minimap';
 import { Replay } from '@/network/gamestate/Replay';
+import { ReplayRecorder } from '@/network/gamestate/ReplayRecorder';
 import { SoloPlayTurnManager } from '@/network/gamestate/SoloPlayTurnManager';
 import { CombatantSidebarModel } from '@/gui/screen/game/component/hud/viewmodel/CombatantSidebarModel';
 import { ActionFactoryReg } from '@/game/action/ActionFactoryReg';
@@ -64,6 +65,7 @@ export class GameScreen extends RootScreen {
     protected controller?: any;
     private game?: any;
     private replay?: any;
+    private replayRecorderInstance?: ReplayRecorder;
     private gameTurnMgr?: any;
     private gameAnimationLoop?: any;
     private hud?: any;
@@ -84,6 +86,7 @@ export class GameScreen extends RootScreen {
     private returnTo?: any;
     private debugMapFile?: any;
     private pausedAtSpeed?: number;
+    private gameEndHandled = false;
     constructor(private workerHostApi: any, private gservCon: any, private wgameresService: any, private wolService: any, private mapTransferService: any, private engineVersion: string, private engineModHash: string, private errorHandler: any, private gameMenuSubScreens: any, private loadingScreenApiFactory: any, private gameOptsParser: any, private gameOptsSerializer: any, private config: any, private strings: any, private renderer: any, private uiScene: any, private runtimeVars: any, private messageBoxApi: any, private toastApi: any, private uiAnimationLoop: any, private viewport: any, private jsxRenderer: any, private pointer: any, private sound: any, private music: any, private mixer: any, private keyBinds: any, private generalOptions: any, private localPrefs: any, private actionLogger: any, private lockstepLogger: any, private replayManager: any, private fullScreen: any, private mapFileLoader: any, private mapDir: any, private mapList: any, private gameLoader: any, private vxlGeometryPool: any, private buildingImageDataCache: any, private mutedPlayers: any, private tauntsEnabled: any, private speedCheat: any, private sentry: any, private battleControlApi: any) {
         super();
         this.onGservClose = (error: any) => {
@@ -106,6 +109,7 @@ export class GameScreen extends RootScreen {
         this.controller = controller;
     }
     async onEnter(params: any): Promise<void> {
+        this.gameEndHandled = false;
         this.pointer.lock();
         this.pointer.setVisible(false);
         await this.music?.play(MusicType.Loading);
@@ -206,11 +210,18 @@ export class GameScreen extends RootScreen {
         new ActionFactoryReg().register(actionFactory, game, playerName);
         const actionQueue = new ActionQueue();
         const replay = this.replay = new Replay();
+        replay.gameId = params.gameId;
+        replay.gameTimestamp = params.timestamp;
+        replay.gameOpts = gameOpts;
+        replay.engineVersion = this.engineVersion;
+        replay.modHash = this.engineModHash;
+        replay.timestamp = Date.now();
+        const playerNames = (gameOpts.humanPlayers ?? []).map((p: any) => p.name).join(' vs ');
+        const mapTitle = gameOpts.mapTitle ?? gameOpts.mapName ?? 'Unknown';
+        replay.name = Replay.sanitizeFileName(`${playerNames} - ${mapTitle}`);
         this.disposables.add(() => this.replay = undefined);
-        const replayRecorder = {
-            recordActions: (_tick: number, _actions: any[]) => {
-            }
-        };
+        const replayRecorder = this.replayRecorderInstance = new ReplayRecorder(game, replay);
+        this.disposables.add(() => this.replayRecorderInstance = undefined);
         if (this.isSinglePlayer) {
             this.gameTurnMgr = new SoloPlayTurnManager(game, localPlayer, actionQueue, this.actionLogger, replayRecorder);
         }
@@ -414,7 +425,12 @@ export class GameScreen extends RootScreen {
             }
             catch (error) {
                 console.error(error);
-                this.toastApi.push(this.strings.get('GUI:SaveReplayError'));
+                try {
+                    this.toastApi?.push?.(this.strings.get('GUI:SaveReplayError'));
+                }
+                catch (toastError) {
+                    console.error('[GameScreen.saveReplay] failed to report replay save error', toastError);
+                }
             }
         })();
     }
@@ -1024,7 +1040,7 @@ export class GameScreen extends RootScreen {
         this.playerUi.init?.(hud);
         this.disposables.add(this.playerUi, () => this.playerUi = undefined);
         if (!this.isSinglePlayer) {
-            const chatNetHandler = new ChatNetHandler(this.gservCon, this.wolService, messageList, chatHistory, new ChatMessageFormat(this.strings, localPlayer.name), localPlayer, game, this.replay, this.mutedPlayers ?? new Set<string>());
+            const chatNetHandler = new ChatNetHandler(this.gservCon, this.wolService, messageList, chatHistory, new ChatMessageFormat(this.strings, localPlayer.name), localPlayer, game, this.replayRecorderInstance, this.mutedPlayers ?? new Set<string>());
             chatNetHandler.init();
             const worldInteraction = this.playerUi.worldInteraction;
             const chatTypingHandler = new ChatTypingHandler(worldInteraction.keyboardHandler, worldInteraction.arrowScrollHandler, messageList, chatHistory);
@@ -1103,7 +1119,7 @@ export class GameScreen extends RootScreen {
                     localPlayer,
                     singlePlayer: this.isSinglePlayer,
                     tournament: this.isTournament,
-                    returnTo: this.returnTo ?? new MainMenuRoute(MainMenuScreenType.Home)
+                    returnTo: this.returnTo ?? new MainMenuRoute(MainMenuScreenType.Home, undefined)
                 })
             });
         });
@@ -1126,56 +1142,99 @@ export class GameScreen extends RootScreen {
         });
     }
     private async onGameEnd(game: any, localPlayer: any, eva: any, replay: any): Promise<void> {
-        const isVictory = !localPlayer.defeated ||
-            game.alliances.getAllies(localPlayer).some((ally: any) => !ally.defeated);
-        console.log('[GameScreen] onGameEnd', {
-            singlePlayer: this.isSinglePlayer,
-            isVictory,
-            localPlayer: localPlayer?.name,
-            status: game?.status,
-            gservConAvailable: Boolean(this.gservCon)
-        });
-        const [gameResultPopup] = this.jsxRenderer.render(jsx(GameResultPopup, {
-            type: isVictory && !localPlayer.isObserver
-                ? GameResultType.MpVictory
-                : GameResultType.MpDefeat,
-            viewport: this.viewport.value
-        }));
-        this.pointer.setVisible(false);
-        this.playerUi.dispose();
-        if (!this.isSinglePlayer && this.gservCon) {
-            this.gservCon.onClose.unsubscribe(this.onGservClose);
-            this.gservCon.close();
+        if (this.gameEndHandled) {
+            return;
         }
-        this.uiScene.add(gameResultPopup);
-        if (!localPlayer.isObserver) {
-            eva.play(isVictory ? 'EVA_YouAreVictorious' : 'EVA_YouHaveLost', true);
+        this.gameEndHandled = true;
+
+        let gameResultPopup: any;
+
+        try {
+            const isObserver = Boolean(localPlayer?.isObserver);
+            const isVictory = !localPlayer?.defeated ||
+                game?.alliances?.getAllies(localPlayer)?.some((ally: any) => !ally.defeated);
+
+            console.log('[GameScreen] onGameEnd', {
+                singlePlayer: this.isSinglePlayer,
+                isVictory,
+                localPlayer: localPlayer?.name,
+                status: game?.status,
+                gservConAvailable: Boolean(this.gservCon)
+            });
+
+            if (this.jsxRenderer && this.viewport) {
+                [gameResultPopup] = this.jsxRenderer.render(jsx(GameResultPopup, {
+                    type: isVictory && !isObserver
+                        ? GameResultType.MpVictory
+                        : GameResultType.MpDefeat,
+                    viewport: this.viewport.value
+                }));
+            }
+
+            this.pointer?.setVisible(false);
+            this.gameTurnMgr?.setErrorState?.();
+            this.gameAnimationLoop?.stop?.();
+
+            if (!this.isSinglePlayer && this.gservCon) {
+                this.gservCon.onClose.unsubscribe(this.onGservClose);
+                this.gservCon.close();
+            }
+
+            if (gameResultPopup) {
+                this.uiScene?.add(gameResultPopup);
+            }
+
+            if (!isObserver) {
+                eva?.play?.(isVictory ? 'EVA_YouAreVictorious' : 'EVA_YouHaveLost', true);
+            }
+
+            if (replay) {
+                replay.finish(game?.currentTick ?? 0);
+                this.saveReplay(replay);
+            }
+
+            if (!this.isSinglePlayer && game) {
+                this.sendGameRes(game, {
+                    disconnect: false,
+                    desync: false,
+                    quit: false,
+                    finished: !game.alliances.getHostilePlayers().length
+                });
+            }
+
+            if (!isObserver && game) {
+                this.logGame(game, Boolean(isVictory));
+            }
+
+            await sleep(5000);
+
+            if (gameResultPopup) {
+                this.uiScene?.remove(gameResultPopup);
+                gameResultPopup.destroy?.();
+            }
+
+            const route = localPlayer
+                ? new MainMenuRoute(MainMenuScreenType.Score, {
+                    game,
+                    localPlayer,
+                    singlePlayer: this.isSinglePlayer,
+                    tournament: this.isTournament,
+                    returnTo: this.returnTo ?? new MainMenuRoute(MainMenuScreenType.Home, undefined)
+                })
+                : new MainMenuRoute(MainMenuScreenType.Home, undefined);
+
+            this.controller?.goToScreen(ScreenType.MainMenuRoot, { route });
         }
-        replay.finish(game.currentTick);
-        this.saveReplay(replay);
-        if (!this.isSinglePlayer) {
-            this.sendGameRes(game, {
-                disconnect: false,
-                desync: false,
-                quit: false,
-                finished: !game.alliances.getHostilePlayers().length
+        catch (error) {
+            console.error('[GameScreen] onGameEnd failed', error);
+            if (gameResultPopup) {
+                this.uiScene?.remove(gameResultPopup);
+                gameResultPopup.destroy?.();
+            }
+            this.controller?.goToScreen(ScreenType.MainMenuRoot, {
+                route: new MainMenuRoute(MainMenuScreenType.Home, undefined)
             });
         }
-        if (!localPlayer.isObserver) {
-            this.logGame(game, isVictory);
-        }
-        await sleep(5000);
-        this.uiScene.remove(gameResultPopup);
-        gameResultPopup.destroy();
-        this.controller?.goToScreen(ScreenType.MainMenuRoot, {
-            route: new MainMenuRoute(MainMenuScreenType.Score, {
-                game,
-                localPlayer,
-                singlePlayer: this.isSinglePlayer,
-                tournament: this.isTournament,
-                returnTo: this.returnTo ?? new MainMenuRoute(MainMenuScreenType.Home)
-            })
-        });
     }
     private logGame(game: any, won: boolean): void {
         (window as any).gtag?.('event', 'game_finish', {

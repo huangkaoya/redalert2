@@ -213,15 +213,18 @@ export class ReplayScreen extends RootScreen {
     private hud?: Hud;
     private minimap?: Minimap;
     private worldView?: WorldView;
+    private activeWorldScene?: any;
     private gameTurnMgr?: ReplayTurnManager;
     private gameAnimationLoop?: GameAnimationLoop;
     private menu?: GameMenuType;
     private playerUi?: PlayerUi;
     private loadingScreenApi?: LoadingScreenApi;
-    constructor(private engineVersion: string, private engineModHash: string, private errorHandler: ErrorHandler, private gameMenuSubScreens: any, private loadingScreenApiFactory: LoadingScreenApiFactory, private config: Config, private strings: Strings, private renderer: Renderer, private uiScene: UiScene, private runtimeVars: RuntimeVars, private messageBoxApi: MessageBoxApi, private uiAnimationLoop: UiAnimationLoop, private viewport: Viewport, private jsxRenderer: JsxRenderer, private pointer: Pointer, private sound: Sound, private music: Music, private keyBinds: KeyBinds, private generalOptions: GeneralOptions, private actionLogger: ActionLogger, private fullScreen: FullScreen, private mapFileLoader: MapFileLoader, private gameLoader: GameLoader, private vxlGeometryPool: VxlGeometryPool, private buildingImageDataCache: BuildingImageDataCache, private leaveAction: () => void, private battleControlApi: any) {
+    private replayEndHandled = false;
+    constructor(private engineVersion: string, private engineModHash: string, private errorHandler: ErrorHandler, private gameMenuSubScreens: any, private loadingScreenApiFactory: LoadingScreenApiFactory, private config: Config, private strings: Strings, private renderer: Renderer, private uiScene: UiScene, private runtimeVars: RuntimeVars, private messageBoxApi: MessageBoxApi, private uiAnimationLoop: UiAnimationLoop, private viewport: Viewport, private jsxRenderer: JsxRenderer, private pointer: Pointer, private sound: Sound, private music: Music, private keyBinds: KeyBinds, private generalOptions: GeneralOptions, private actionLogger: ActionLogger, private fullScreen: FullScreen, private mapFileLoader: MapFileLoader, private gameLoader: GameLoader, private vxlGeometryPool: VxlGeometryPool, private buildingImageDataCache: BuildingImageDataCache, private leaveAction: (params?: any) => void, private battleControlApi: any) {
         super();
     }
     async onEnter(params: ReplayParams): Promise<void> {
+        this.replayEndHandled = false;
         this.params = params;
         this.disposables.add(() => (this.params = undefined));
         this.pointer.lock();
@@ -381,6 +384,7 @@ export class ReplayScreen extends RootScreen {
             this.handleError(error, message);
             return;
         }
+        this.activeWorldScene = worldScene;
         this.renderer.removeScene(this.uiScene);
         this.renderer.addScene(worldScene);
         this.renderer.addScene(this.uiScene);
@@ -396,6 +400,9 @@ export class ReplayScreen extends RootScreen {
         });
         this.uiAnimationLoop.stop();
         this.gameAnimationLoop.start();
+        const handleReplayFinished = () => this.onReplayEnd(game);
+        this.gameTurnMgr!.onFinished.subscribe(handleReplayFinished);
+        this.disposables.add(() => this.gameTurnMgr?.onFinished.unsubscribe(handleReplayFinished));
     }
     private initUi(game: Game, worldScene: any, worldSound: any, eva: Eva, renderableManager: any, minimap: Minimap, messageList: MessageList): void {
         const soundHandler = new SoundHandler(game, worldSound, eva, this.sound, game.events, messageList, this.strings, undefined);
@@ -497,6 +504,10 @@ export class ReplayScreen extends RootScreen {
             this.gameAnimationLoop = undefined;
             this.uiAnimationLoop.start();
         }
+        if (this.activeWorldScene) {
+            this.renderer.removeScene(this.activeWorldScene);
+            this.activeWorldScene = undefined;
+        }
         if (this.hud) {
             this.uiScene.remove(this.hud);
             this.hud.destroy();
@@ -505,6 +516,12 @@ export class ReplayScreen extends RootScreen {
         this.gameTurnMgr?.dispose();
         this.gameTurnMgr = undefined;
         this.disposables.dispose();
+    }
+    private onReplayEnd(): void {
+        if (this.replayEndHandled) {
+            return;
+        }
+        this.replayEndHandled = true;
     }
     private handleError(error: any, message: string, isCritical?: boolean): void {
         if (this.gameTurnMgr) {

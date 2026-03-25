@@ -187,6 +187,17 @@ export class MainMenuRootScreen extends RootScreen {
         else if (screenType === MainMenuScreenType.Score) {
             screen = new screenClass(this.strings, this.jsxRenderer, (this as any).wolService);
         }
+        else if (screenType === MainMenuScreenType.ReplaySelection) {
+            const { ErrorHandler } = await import('../../../ErrorHandler.js');
+            const { Rules } = await import('../../../game/rules/Rules.js');
+            const { Engine } = await import('../../../engine/Engine.js');
+            const errorHandler = new ErrorHandler(this.messageBoxApi, this.strings);
+            const rules = new Rules(Engine.getRules());
+            const replayManager = (this as any).replayManager;
+            const engineVersion = this.appVersion;
+            const engineModHash = Engine.getActiveMod?.() ?? '';
+            screen = new screenClass(engineVersion, engineModHash, undefined, undefined, this.rootController, this.strings, this.jsxRenderer, errorHandler, this.messageBoxApi, replayManager, undefined, rules);
+        }
         else if (screenType === MainMenuScreenType.Home) {
             screen = new screenClass(this.strings, this.messageBoxApi, this.appVersion, false, false, this.fullScreen);
         }

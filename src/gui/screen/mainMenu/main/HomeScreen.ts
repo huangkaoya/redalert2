@@ -54,6 +54,16 @@ export class HomeScreen implements Screen {
                     }
                 }
             },
+            {
+                label: '录像回放',
+                tooltip: '查看和回放游戏录像',
+                onClick: () => {
+                    console.log('[HomeScreen] Replays clicked');
+                    if (this.controller) {
+                        this.controller.pushScreen(MainMenuScreenType.ReplaySelection);
+                    }
+                }
+            },
         ];
         if (this.storageEnabled) {
             buttons.push({
