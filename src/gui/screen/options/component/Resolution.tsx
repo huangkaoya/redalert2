@@ -2,6 +2,7 @@ import { Select } from "@/gui/component/Select";
 import { Option } from "@/gui/component/Option";
 import React, { useEffect, useMemo, useState } from "react";
 import { BoxedVar } from "@/util/BoxedVar";
+import { detectMobileLayout, getCurrentLayoutEnvironment } from "@/gui/viewportLayout";
 interface Resolution {
     width: number;
     height: number;
@@ -36,9 +37,6 @@ const mobileResolutions: Resolution[] = [
     { width: 960, height: 720 },
     { width: 800, height: 600 },
 ];
-const isCoarsePointer = () => !!window.matchMedia?.("(pointer: coarse)")?.matches ||
-    (navigator.maxTouchPoints ?? 0) > 0 ||
-    "ontouchstart" in window;
 const getCurrentScreenSize = (): Resolution => ({
     width: Math.max(320, Math.floor(window.visualViewport?.width ?? window.innerWidth)),
     height: Math.max(240, Math.floor(window.visualViewport?.height ?? window.innerHeight)),
@@ -52,11 +50,11 @@ export const ResolutionSelect: React.FC<ResolutionSelectProps> = ({ resolution, 
     const [screenSize, setScreenSize] = useState<Resolution>(() => getCurrentScreenSize());
     const [currentResolution, setCurrentResolution] = useState<Resolution | undefined>(resolution.value);
     const [fullScreenMode, setFullScreenMode] = useState(() => fullScreen.isFullScreen());
-    const [mobileLayout, setMobileLayout] = useState(() => isCoarsePointer());
+    const [mobileLayout, setMobileLayout] = useState(() => detectMobileLayout(getCurrentLayoutEnvironment()));
     useEffect(() => {
         const handleResize = () => {
             setScreenSize(getCurrentScreenSize());
-            setMobileLayout(isCoarsePointer());
+            setMobileLayout(detectMobileLayout(getCurrentLayoutEnvironment()));
             setFullScreenMode(fullScreen.isFullScreen());
         };
         const handleFullScreenChange = (value: boolean) => {

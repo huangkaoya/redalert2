@@ -27,6 +27,7 @@ import { GeneralOptions } from './gui/screen/options/GeneralOptions';
 import { FullScreen } from './gui/FullScreen';
 import { browserFileSystemAccess } from './engine/gameRes/browserFileSystemAccess';
 import type { TestToolRuntimeContext } from './tools/TestToolSupport';
+import { detectMobileLayout, getCurrentLayoutEnvironment, resolveInitialPreferredViewportSize } from './gui/viewportLayout';
 export type SplashScreenUpdateCallback = (props: ComponentProps<typeof SplashScreenComponent> | null) => void;
 class MockLocalPrefs extends LocalPrefs {
     constructor(storage: Storage) {
@@ -230,19 +231,21 @@ export class Application {
         }
     }
     private initializePreferredViewportSize(): void {
-        if (!this.hasLoadedGeneralOptionsFromStorage && this.generalOptions.graphics.resolution.value === undefined) {
-            const defaultViewportSize = {
-                width: this.config?.viewport?.width ?? 1024,
-                height: this.config?.viewport?.height ?? 768,
-            };
-            this.generalOptions.graphics.resolution.value = defaultViewportSize;
-            this.preferredViewportSize = defaultViewportSize;
-            console.log('[Application] Initialized preferred viewport size from config defaults', defaultViewportSize);
+        const defaultViewportSize = {
+            width: this.config?.viewport?.width ?? 1024,
+            height: this.config?.viewport?.height ?? 768,
+        };
+        this.preferredViewportSize = resolveInitialPreferredViewportSize({
+            hasLoadedGeneralOptionsFromStorage: this.hasLoadedGeneralOptionsFromStorage,
+            savedResolution: this.generalOptions.graphics.resolution.value,
+            defaultViewportSize,
+            isMobileLayout: this.isMobileLayout(),
+        });
+        if (!this.hasLoadedGeneralOptionsFromStorage && this.generalOptions.graphics.resolution.value === undefined && this.preferredViewportSize) {
+            this.generalOptions.graphics.resolution.value = { ...this.preferredViewportSize };
+            console.log('[Application] Initialized preferred viewport size from config defaults', this.preferredViewportSize);
             return;
         }
-        this.preferredViewportSize = this.generalOptions.graphics.resolution.value
-            ? { ...this.generalOptions.graphics.resolution.value }
-            : null;
         console.log('[Application] Initialized preferred viewport size from options', this.preferredViewportSize);
     }
     private setPreferredViewportSize(resolution?: {
@@ -260,9 +263,7 @@ export class Application {
         return this.preferredViewportSize ?? undefined;
     }
     private isMobileLayout(): boolean {
-        return !!window.matchMedia?.('(pointer: coarse)')?.matches ||
-            (navigator.maxTouchPoints ?? 0) > 0 ||
-            'ontouchstart' in window;
+        return detectMobileLayout(getCurrentLayoutEnvironment());
     }
     private getAvailableDisplaySize(): { width: number; height: number; } {
         const viewport = window.visualViewport;

@@ -8,6 +8,7 @@ import { ModelQuality } from "@/engine/renderable/entity/unit/ModelQuality";
 import { ShadowQuality } from "@/engine/renderable/entity/unit/ShadowQuality";
 import { Image } from "@/gui/component/Image";
 import { ResolutionSelect } from "@/gui/screen/options/component/Resolution";
+import { detectMobileLayout, getCurrentLayoutEnvironment } from "@/gui/viewportLayout";
 interface Strings {
     get(key: string): string;
 }
@@ -40,9 +41,6 @@ const speedLabels = new Map([
     [6, "TXT_FASTER"],
     [7, "TXT_FASTEST"],
 ]);
-const isCoarsePointer = () => !!window.matchMedia?.("(pointer: coarse)")?.matches ||
-    (navigator.maxTouchPoints ?? 0) > 0 ||
-    "ontouchstart" in window;
 const getJoystickPreference = (localPrefs?: LocalPrefs) => {
     const storedValue = localPrefs?.getItem?.("ra2web.mobileJoystickLite.enabled");
     if (storedValue === "0") {
@@ -51,14 +49,14 @@ const getJoystickPreference = (localPrefs?: LocalPrefs) => {
     if (storedValue === "1") {
         return true;
     }
-    return isCoarsePointer();
+    return detectMobileLayout(getCurrentLayoutEnvironment());
 };
 export const GeneralOpts: React.FC<GeneralOptsProps> = ({ strings, options, fullScreen, inGame, localPrefs, }) => {
-    const [mobileLayout, setMobileLayout] = useState(() => isCoarsePointer());
+    const [mobileLayout, setMobileLayout] = useState(() => detectMobileLayout(getCurrentLayoutEnvironment()));
     const [mobileJoystickEnabled, setMobileJoystickEnabled] = useState(() => getJoystickPreference(localPrefs));
     useEffect(() => {
         const handleEnvironmentChange = () => {
-            setMobileLayout(isCoarsePointer());
+            setMobileLayout(detectMobileLayout(getCurrentLayoutEnvironment()));
         };
         window.addEventListener("resize", handleEnvironmentChange);
         window.visualViewport?.addEventListener("resize", handleEnvironmentChange);
