@@ -5,6 +5,7 @@ import { Strings } from '../../../../data/Strings';
 import { MusicType } from '../../../../engine/sound/Music';
 import { MessageBoxApi } from '../../../component/MessageBoxApi';
 import { FullScreen } from '../../../FullScreen';
+import { getHumanReadableKey } from '../../options/component/getHumanReadableKey';
 interface SidebarButton {
     label: string;
     tooltip?: string;
@@ -103,7 +104,7 @@ export class HomeScreen implements Screen {
                 }
             }
         }, {
-            label: this.strings.get('GUI:Fullscreen') || 'Fullscreen',
+            label: this.strings.get('GUI:Fullscreen', getHumanReadableKey(FullScreen.hotKey)) || 'Fullscreen',
             tooltip: this.strings.get('STT:Fullscreen') || 'Toggle full screen mode',
             isBottom: true,
             disabled: this.fullScreen ? !this.fullScreen.isAvailable() : false,
