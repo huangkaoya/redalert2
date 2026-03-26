@@ -18,6 +18,7 @@ import { SuperWeaponFxHandler } from '@/engine/renderable/fx/handler/SuperWeapon
 import { CrateFxHandler } from '@/engine/renderable/fx/handler/CrateFxHandler';
 import { BeaconFxHandler } from '@/engine/renderable/fx/handler/BeaconFxHandler';
 import { VxlBuilderFactory } from '@/engine/renderable/builder/VxlBuilderFactory';
+import { computeWorldViewportBounds } from '@/gui/viewportLayout';
 export class WorldView {
     private disposables = new CompositeDisposable();
     private worldScene?: WorldScene;
@@ -30,7 +31,7 @@ export class WorldView {
     }, private game: any, private sound: any, private renderer: any, private runtimeVars: any, private minimap: any, private strings: any, private generalOptions: any, private vxlGeometryPool: any, private buildingImageDataCache: any) { }
     init(localPlayer: any, viewport: any, theater: any): any {
         const mapScreenBounds = this.computeMapScreenBounds(this.game.map.mapBounds.getLocalSize());
-        const worldViewport = this.computeWorldViewport(viewport, mapScreenBounds);
+        const worldViewport = this.computeWorldViewport(viewport);
         try {
             console.log('[WorldView.init]', {
                 hud: this.hudDimensions,
@@ -144,27 +145,12 @@ export class WorldView {
     private handleMapBoundsOrViewportChange(viewport: any): void {
         if (!this.worldScene)
             return;
-        const mapScreenBounds = this.computeMapScreenBounds(this.game.map.mapBounds.getLocalSize());
-        const newViewport = this.computeWorldViewport(viewport, mapScreenBounds);
+        const newViewport = this.computeWorldViewport(viewport);
         this.worldScene.updateViewport(newViewport);
         this.updatePanLimits(this.game.map, this.worldScene.cameraPan, newViewport);
     }
-    private computeWorldViewport(viewport: any, mapScreenBounds: {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    }) {
-        const availWidth = Math.max(1, viewport.width - this.hudDimensions.width);
-        const availHeight = Math.max(1, viewport.height - this.hudDimensions.height);
-        const width = Math.max(1, Math.min(mapScreenBounds.width, availWidth));
-        const height = Math.max(1, Math.min(mapScreenBounds.height, availHeight));
-        return {
-            x: viewport.x,
-            y: viewport.y,
-            width,
-            height,
-        };
+    private computeWorldViewport(viewport: any) {
+        return computeWorldViewportBounds(viewport, this.hudDimensions);
     }
     private updatePanLimits(map: any, cameraPan: any, worldViewport: any): void {
         const p = new MapPanningHelper(map);

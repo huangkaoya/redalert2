@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { UiObject } from './UiObject';
 import { HtmlContainer } from './HtmlContainer';
 import { MeshBatchManager } from '../engine/gfx/batch/MeshBatchManager';
+import { computeScaledMenuViewport } from './viewportLayout';
 export class UiScene extends UiObject {
     private scene: THREE.Scene;
     private camera: THREE.Camera;
@@ -82,14 +83,7 @@ export class UiScene extends UiObject {
         width: number;
         height: number;
     } {
-        const menuWidth = 800;
-        const menuHeight = 600;
-        return {
-            x: Math.max(0, (this.viewport.width - menuWidth) / 2),
-            y: Math.max(0, (this.viewport.height - menuHeight) / 2),
-            width: menuWidth,
-            height: menuHeight,
-        };
+        return computeScaledMenuViewport(this.viewport);
     }
     getScene(): THREE.Scene {
         return this.scene;
