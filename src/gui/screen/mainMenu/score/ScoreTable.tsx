@@ -4,6 +4,7 @@ import { aiUiNames } from "@/game/gameopts/constants";
 import { CountryIcon } from "@/gui/component/CountryIcon";
 import { RankIndicator } from "@/gui/screen/mainMenu/lobby/component/RankIndicator";
 import { WolGameReportResult } from "@/network/WolGameReport";
+import { formatTimeDuration } from "@/util/format";
 interface ScoreTableProps {
     game: any;
     singlePlayer: boolean;
@@ -47,7 +48,11 @@ export const ScoreTable: React.FC<ScoreTableProps> = ({ game, singlePlayer, tour
             !singlePlayer &&
             (tournament || resultType === undefined) &&
             React.createElement("div", { className: "pending-results" }, strings.get("gui:gameresultwaiting")), localPlayerReport?.points &&
-            React.createElement("div", { className: "points-gain" }, (localPlayerReport.points > 0 ? "+" : "") + localPlayerReport.points)), React.createElement("div", { className: "score-table-wrapper" }, React.createElement("table", { className: "score-table" }, React.createElement("thead", null, React.createElement("tr", null, React.createElement("th", { className: "player-col" }, strings.get("GUI:Player")), React.createElement("th", { className: "country-col" }, strings.get("GUI:Country")), React.createElement("th", { className: "color-col" }, strings.get("GUI:Color")), React.createElement("th", { className: "score-col" }, strings.get("GUI:Score")), React.createElement("th", { className: "units-col" }, strings.get("GUI:Kills")), React.createElement("th", { className: "buildings-col" }, strings.get("GUI:Losses")), showReport && React.createElement("th", { className: "rank-col" }, "Rank"))), React.createElement("tbody", null, players.map((player: any) => {
+            React.createElement("div", { className: "points-gain" }, (localPlayerReport.points > 0 ? "+" : "") + localPlayerReport.points)),
+        React.createElement("div", { className: "score-header" },
+            React.createElement("span", null, strings.get("GUI:Map") + ": " + (game.gameOpts?.mapTitle ?? "")),
+            React.createElement("span", null, strings.get("GUI:Time") + ": " + formatTimeDuration(Math.floor(game.currentTime / 1000 / (game.speed?.value ?? 1))))),
+        React.createElement("div", { className: "score-table-wrapper" }, React.createElement("table", { className: "score-table" }, React.createElement("thead", null, React.createElement("tr", null, React.createElement("th", { className: "player-col" }, strings.get("GUI:Player")), React.createElement("th", { className: "country-col" }, strings.get("GUI:Country")), React.createElement("th", { className: "color-col" }, strings.get("GUI:Color")), React.createElement("th", { className: "score-col" }, strings.get("GUI:Score")), React.createElement("th", { className: "units-col" }, strings.get("GUI:Kills")), React.createElement("th", { className: "buildings-col" }, strings.get("GUI:Losses")), showReport && React.createElement("th", { className: "rank-col" }, "Rank"))), React.createElement("tbody", null, players.map((player: any) => {
         const isLocalPlayer = player === localPlayer;
         const playerReport = gameReport?.players.find((p: any) => p.name.toLowerCase() === player.name.toLowerCase());
         const rowColor = (typeof player.color === "string" ? player.color : player.color?.asHexString?.());
