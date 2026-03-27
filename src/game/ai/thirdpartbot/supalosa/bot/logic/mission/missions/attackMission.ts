@@ -23,13 +23,13 @@ enum AttackMissionState {
     Retreating = 2,
 }
 
-const NO_TARGET_RETARGET_TICKS = 450;
-const NO_TARGET_IDLE_TIMEOUT_TICKS = 900;
+const NO_TARGET_RETARGET_TICKS = 300;
+const NO_TARGET_IDLE_TIMEOUT_TICKS = 600;
 
 const ATTACK_MISSION_PRIORITY_RAMP = 1.01;
 const ATTACK_MISSION_MAX_PRIORITY = 50;
 // While preparing the squad, how many ticks to wait before dropping one unit from the desired squad size. If the squad size drops below the minimum, the attack mission is aborted.
-const REQUESTED_UNIT_COUNT_DECAY_TICKS = 240;
+const REQUESTED_UNIT_COUNT_DECAY_TICKS = 120;
 
 /**
  * A mission that tries to attack a certain area.
@@ -249,10 +249,10 @@ function generateTarget(
 }
 
 // Number of ticks between attacking visible targets.
-const VISIBLE_TARGET_ATTACK_COOLDOWN_TICKS = 120;
+const VISIBLE_TARGET_ATTACK_COOLDOWN_TICKS = 60;
 
 // Number of ticks between attacking "bases" (enemy starting locations).
-const BASE_ATTACK_COOLDOWN_TICKS = 1800;
+const BASE_ATTACK_COOLDOWN_TICKS = 600;
 
 const ATTACK_MISSION_INITIAL_PRIORITY = 1;
 
@@ -279,15 +279,14 @@ export class AttackMissionFactory {
             return;
         }
 
-        // can only have one attack 'preparing' at once.
-        if (
-            missionController
-                .getMissions()
-                .some(
-                    (mission): mission is AttackMission =>
-                        mission instanceof AttackMission && mission.getState() === AttackMissionState.Preparing,
-                )
-        ) {
+        // Limit concurrent preparing attacks to 2.
+        const preparingCount = missionController
+            .getMissions()
+            .filter(
+                (mission): mission is AttackMission =>
+                    mission instanceof AttackMission && mission.getState() === AttackMissionState.Preparing,
+            ).length;
+        if (preparingCount >= 2) {
             return;
         }
 

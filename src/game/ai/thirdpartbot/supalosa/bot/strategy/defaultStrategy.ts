@@ -15,14 +15,14 @@ const DEFAULT_COMPOSITIONS: Compositions = {
         composition: {
             E2: 1,
         },
-        minimumUnits: 5,
+        minimumUnits: 3,
         maximumUnits: 10,
     },
     gis: {
         composition: {
             E1: 1,
         },
-        minimumUnits: 5,
+        minimumUnits: 3,
         maximumUnits: 10,
     },
     sovietTanks: {
@@ -30,7 +30,7 @@ const DEFAULT_COMPOSITIONS: Compositions = {
             HTNK: 5,
             HTK: 1,
         },
-        minimumUnits: 4,
+        minimumUnits: 2,
         maximumUnits: 20,
     },
     alliedTanks: {
@@ -38,7 +38,7 @@ const DEFAULT_COMPOSITIONS: Compositions = {
             MTNK: 5,
             FV: 1,
         },
-        minimumUnits: 4,
+        minimumUnits: 2,
         maximumUnits: 20,
     },
     kirovs: {
@@ -52,7 +52,7 @@ const DEFAULT_COMPOSITIONS: Compositions = {
         composition: {
             JUMPJET: 1,
         },
-        minimumUnits: 3,
+        minimumUnits: 2,
         maximumUnits: 6,
     },
     heavySovietTanks: {
@@ -60,7 +60,7 @@ const DEFAULT_COMPOSITIONS: Compositions = {
             APOC: 2,
             HTNK: 1,
         },
-        minimumUnits: 3,
+        minimumUnits: 2,
         maximumUnits: 10,
     },
     heavyAlliedTanks: {
@@ -68,7 +68,7 @@ const DEFAULT_COMPOSITIONS: Compositions = {
             MTNK: 2,
             MGTK: 1,
         },
-        minimumUnits: 3,
+        minimumUnits: 2,
         maximumUnits: 10,
     },
     sovietArtillery: {
@@ -76,7 +76,7 @@ const DEFAULT_COMPOSITIONS: Compositions = {
             V3: 2,
             HTNK: 1,
         },
-        minimumUnits: 4,
+        minimumUnits: 3,
         maximumUnits: 10,
     },
     alliedArtillery: {
@@ -84,7 +84,7 @@ const DEFAULT_COMPOSITIONS: Compositions = {
             SREF: 2,
             MTNK: 1,
         },
-        minimumUnits: 4,
+        minimumUnits: 3,
         maximumUnits: 10,
     },
 };

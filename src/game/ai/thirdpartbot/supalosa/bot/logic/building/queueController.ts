@@ -6,9 +6,10 @@ import {
     QueueStatus,
     QueueType,
     TechnoRules,
+    Vector2,
 } from "../../../game-api";
 import { GlobalThreat } from "../threat/threat";
-import { TechnoRulesWithPriority } from "./buildingRules";
+import { TechnoRulesWithPriority, getDefaultPlacementLocation } from "./buildingRules";
 import { SupabotContext } from "../common/context";
 import { UnitRequest } from "../mission/missionController";
 
@@ -52,10 +53,13 @@ type QueueState = {
 };
 
 const REPAIR_CHECK_INTERVAL = 30;
+const PLACEMENT_FAILURE_RETRY_THRESHOLD = 3;
+const PLACEMENT_FAILURE_CANCEL_THRESHOLD = 10;
 
 export class QueueController {
     private queueStates: QueueState[] = [];
     private lastRepairCheckAt = 0;
+    private placementFailures: Map<string, number> = new Map();
 
     constructor() {}
 
@@ -147,19 +151,64 @@ export class QueueController {
                     // No one is requesting this anymore, cancel
                     logger(`Cancelling ready ${readyUnit.name} because no one is requesting anymore`);
                     actionsApi.unqueueFromProduction(queueType, readyUnit.name, readyUnit.type, 1);
+                    this.placementFailures.delete(readyUnit.name);
                     return;
                 }
                 if (!currentRequest.specificLocation) {
                     // No one is requesting this anymore, cancel
                     logger(`Cancelling ready ${readyUnit.name} because location is unspecified`);
                     actionsApi.unqueueFromProduction(queueType, readyUnit.name, readyUnit.type, 1);
+                    this.placementFailures.delete(readyUnit.name);
                     return;
                 }
-                actionsApi.placeBuilding(
-                    readyUnit.name,
-                    currentRequest.specificLocation.x,
-                    currentRequest.specificLocation.y,
-                );
+
+                const failures = this.placementFailures.get(readyUnit.name) ?? 0;
+
+                // If too many failures, cancel the building to unblock the queue
+                if (failures >= PLACEMENT_FAILURE_CANCEL_THRESHOLD) {
+                    logger(`Cancelling ready ${readyUnit.name} after ${failures} placement failures`);
+                    actionsApi.unqueueFromProduction(queueType, readyUnit.name, readyUnit.type, 1);
+                    this.placementFailures.delete(readyUnit.name);
+                    return;
+                }
+
+                let placeX = currentRequest.specificLocation.x;
+                let placeY = currentRequest.specificLocation.y;
+
+                // Check if the suggested location is valid
+                const canPlace = game.canPlaceBuilding(playerData.name, readyUnit.name, { rx: placeX, ry: placeY });
+
+                if (!canPlace) {
+                    this.placementFailures.set(readyUnit.name, failures + 1);
+
+                    // After threshold, try to find an alternative placement location
+                    if (failures >= PLACEMENT_FAILURE_RETRY_THRESHOLD) {
+                        const conYards = game.getVisibleUnits(playerData.name, "self", (r: TechnoRules) => r.constructionYard);
+                        if (conYards.length > 0) {
+                            const conYardData = game.getUnitData(conYards[0]);
+                            if (conYardData?.tile) {
+                                const altLocation = getDefaultPlacementLocation(
+                                    game,
+                                    playerData,
+                                    new Vector2(conYardData.tile.rx, conYardData.tile.ry),
+                                    readyUnit,
+                                );
+                                if (altLocation) {
+                                    logger(`Retrying ${readyUnit.name} at alternative location (${altLocation.rx},${altLocation.ry}) after ${failures} failures`);
+                                    actionsApi.placeBuilding(readyUnit.name, altLocation.rx, altLocation.ry);
+                                    this.placementFailures.delete(readyUnit.name);
+                                    return;
+                                }
+                            }
+                        }
+                        logger(`Cannot find alternative location for ${readyUnit.name} (failure #${failures + 1})`);
+                    }
+                    return;
+                }
+
+                // Location is valid, place the building
+                actionsApi.placeBuilding(readyUnit.name, placeX, placeY);
+                this.placementFailures.delete(readyUnit.name);
             }
         } else if (queueData.status == QueueStatus.Active && queueData.items.length > 0 && decision != null) {
             // Consider cancelling if something else is significantly higher priority than what is currently being produced.
