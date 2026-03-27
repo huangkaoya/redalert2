@@ -2506,3 +2506,198 @@ input[type="range"]:focus {
     height: 20px;
     font-size: 13px;
 }
+
+/* Bot Upload Dialog */
+#ra2web-root .bot-upload-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+#ra2web-root .bot-upload-dialog {
+    background: #1a1a2e;
+    border: 1px solid #444;
+    border-radius: 4px;
+    width: 460px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    color: #e0e0e0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+#ra2web-root .bot-upload-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #333;
+}
+
+#ra2web-root .bot-upload-header h3 {
+    margin: 0;
+    font-size: 15px;
+    color: #ffd700;
+}
+
+#ra2web-root .bot-upload-close {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 4px;
+}
+
+#ra2web-root .bot-upload-close:hover {
+    color: #fff;
+}
+
+#ra2web-root .bot-upload-body {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+#ra2web-root .bot-upload-section {
+    margin-bottom: 16px;
+}
+
+#ra2web-root .bot-upload-section h4 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: #aaa;
+}
+
+#ra2web-root .bot-upload-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+#ra2web-root .bot-upload-input {
+    width: 100%;
+    font-size: 12px;
+    padding: 6px;
+    box-sizing: border-box;
+}
+
+#ra2web-root .bot-upload-hint {
+    margin-top: 4px;
+    font-size: 11px;
+    color: #777;
+}
+
+#ra2web-root .bot-upload-status {
+    padding: 8px;
+    text-align: center;
+    color: #ccc;
+    font-size: 13px;
+}
+
+#ra2web-root .bot-upload-message {
+    padding: 8px 12px;
+    border-radius: 3px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    white-space: pre-wrap;
+}
+
+#ra2web-root .bot-upload-message-success {
+    background: rgba(0, 180, 0, 0.15);
+    border: 1px solid rgba(0, 180, 0, 0.3);
+    color: #4caf50;
+}
+
+#ra2web-root .bot-upload-message-error {
+    background: rgba(180, 0, 0, 0.15);
+    border: 1px solid rgba(180, 0, 0, 0.3);
+    color: #ef5350;
+}
+
+#ra2web-root .bot-upload-empty {
+    color: #666;
+    font-size: 12px;
+    text-align: center;
+    padding: 12px;
+}
+
+#ra2web-root .bot-upload-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+#ra2web-root .bot-upload-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    border-bottom: 1px solid #2a2a3e;
+    font-size: 12px;
+}
+
+#ra2web-root .bot-upload-item:last-child {
+    border-bottom: none;
+}
+
+#ra2web-root .bot-upload-item-info {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+#ra2web-root .bot-upload-item-name {
+    color: #e0e0e0;
+    font-weight: bold;
+}
+
+#ra2web-root .bot-upload-item-version {
+    color: #888;
+}
+
+#ra2web-root .bot-upload-item-author {
+    color: #666;
+}
+
+#ra2web-root .bot-upload-item-remove {
+    background: rgba(180, 0, 0, 0.3);
+    border: 1px solid rgba(180, 0, 0, 0.5);
+    color: #ef5350;
+    padding: 2px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    border-radius: 2px;
+}
+
+#ra2web-root .bot-upload-item-remove:hover {
+    background: rgba(180, 0, 0, 0.5);
+}
+
+#ra2web-root .bot-upload-footer {
+    padding: 12px 16px;
+    border-top: 1px solid #333;
+    text-align: right;
+}
+
+#ra2web-root .bot-upload-btn {
+    background: rgba(100, 100, 200, 0.2);
+    border: 1px solid rgba(100, 100, 200, 0.5);
+    color: #99f;
+    padding: 4px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    margin-left: 8px;
+}
+
+#ra2web-root .bot-upload-btn:hover {
+    background: rgba(100, 100, 200, 0.4);
+}

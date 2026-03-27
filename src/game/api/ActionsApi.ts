@@ -97,8 +97,31 @@ export class ActionsApi {
             action.updateType = UpdateType.Resume;
         });
     }
+
+    private normalizeObjectArgs(objectType: any, subType: any): {
+        objectType: any;
+        subType: any;
+    } {
+        // Compatibility: some third-party bots call queue APIs as (name, type)
+        // while the game API expects (type, name).
+        if (typeof objectType === 'string' && (typeof subType === 'number' || /^\d+$/.test(String(subType)))) {
+            return {
+                objectType: subType,
+                subType: objectType,
+            };
+        }
+        return { objectType, subType };
+    }
+
     queueForProduction(queueType: any, objectType: any, subType: any, quantity: number): void {
-        const item = this.game.rules.getObject(objectType, subType);
+        const normalized = this.normalizeObjectArgs(objectType, subType);
+        let item: any;
+        try {
+            item = this.game.rules.getObject(normalized.subType, normalized.objectType);
+        } catch (e) {
+            console.error(`[ActionsApi] queueForProduction failed: getObject("${normalized.subType}", ${normalized.objectType}) threw:`, e);
+            return;
+        }
         this.createAndPushAction(ActionType.UpdateQueue, (action) => {
             action.queueType = queueType;
             action.updateType = UpdateType.Add;
@@ -107,7 +130,14 @@ export class ActionsApi {
         });
     }
     unqueueFromProduction(queueType: any, objectType: any, subType: any, quantity: number): void {
-        const item = this.game.rules.getObject(objectType, subType);
+        const normalized = this.normalizeObjectArgs(objectType, subType);
+        let item: any;
+        try {
+            item = this.game.rules.getObject(normalized.subType, normalized.objectType);
+        } catch (e) {
+            console.error(`[ActionsApi] unqueueFromProduction failed: getObject("${normalized.subType}", ${normalized.objectType}) threw:`, e);
+            return;
+        }
         this.createAndPushAction(ActionType.UpdateQueue, (action) => {
             action.queueType = queueType;
             action.updateType = UpdateType.Cancel;

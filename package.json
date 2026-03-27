@@ -29,12 +29,14 @@
     "debug:anti-air-hit": "bun scripts/anti-air-hit-flow.mjs"
   },
   "dependencies": {
+    "7z-wasm": "^1.1.0",
     "@brakebein/threeoctree": "^2.0.1",
+    "@datastructures-js/priority-queue": "^6.3.5",
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@puzzl/core": "^1.0.0-beta.1",
     "@ra2web/pcxfile": "^1.0.1",
     "@ra2web/wavefile": "^1.0.2",
-    "7z-wasm": "^1.1.0",
+    "@timohausmann/quadtree-ts": "2.2.2",
     "classnames": "^2.5.1",
     "file-system-access": "^1.0.4",
     "js-logger": "^1.6.1",

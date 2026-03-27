@@ -132,4 +132,8 @@ dist
 # Vite build output
 dist
 
+# Temporary test files
+__test_strip.mjs
+__stripped_output.js
+
 #शंकर 

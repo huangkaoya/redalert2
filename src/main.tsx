@@ -27,6 +27,11 @@ else {
     console.error("Crc32.calculateCrc MISMATCH against known standard!");
 }
 console.log("--- Hashing Test End ---");
+import { registerSupalosaBot } from './game/ai/thirdpartbot/supalosa/SupalosaBotAdapter';
+
+// Register built-in third-party bots
+registerSupalosaBot();
+
 createRoot(document.getElementById('root')!).render(<React.StrictMode>
     <App />
   </React.StrictMode>);
