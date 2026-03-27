@@ -138,7 +138,7 @@ export function getDefaultPlacementLocation(
     idealPoint: Vector2,
     technoRules: TechnoRules,
     onWater: boolean = false,
-    minSpace: number = 1,
+    minSpace: number = 2,
 ): { rx: number; ry: number } | undefined {
     // Closest possible location near `startPoint`.
     const size: BuildingPlacementData = game.getBuildingPlacementData(technoRules.name);
@@ -146,11 +146,32 @@ export function getDefaultPlacementLocation(
         return undefined;
     }
     const tiles = getAdjacencyTiles(game, playerData, technoRules, onWater, minSpace);
-    const tileDistances = getTileDistances(idealPoint, tiles);
 
-    for (let tileDistance of tileDistances) {
-        if (tileDistance.tile && game.canPlaceBuilding(playerData.name, technoRules.name, tileDistance.tile)) {
-            return tileDistance.tile;
+    // Score tiles: prefer close to ideal point but penalize crowding near many buildings.
+    // This encourages a more spread-out base layout with room for unit movement.
+    const buildings = game.getVisibleUnits(playerData.name, "self", (r: TechnoRules) => r.type === ObjectType.Building);
+    const buildingPositions: Vector2[] = [];
+    for (const bid of buildings) {
+        const bd = game.getGameObjectData(bid);
+        if (bd?.tile) buildingPositions.push(new Vector2(bd.tile.rx, bd.tile.ry));
+    }
+
+    const scored = tiles.map((tile) => {
+        const distToIdeal = distance(tile.rx, tile.ry, idealPoint.x, idealPoint.y);
+        // Count nearby buildings within 3 tiles — more neighbors = higher crowding penalty
+        let crowding = 0;
+        for (const bp of buildingPositions) {
+            const d = distance(tile.rx, tile.ry, bp.x, bp.y);
+            if (d < 4) crowding += (4 - d);
+        }
+        // Combined score: distance matters most, but crowding adds a penalty
+        const score = distToIdeal + crowding * 0.8;
+        return { tile, score };
+    }).sort((a, b) => a.score - b.score);
+
+    for (const entry of scored) {
+        if (entry.tile && game.canPlaceBuilding(playerData.name, technoRules.name, entry.tile)) {
+            return entry.tile;
         }
     }
     return undefined;

@@ -24,7 +24,7 @@ export class BasicBuilding implements AiBuildingRules {
         if (conyardVectors.length === 0) {
             return undefined;
         }
-        return getDefaultPlacementLocation(game, playerData, conyardVectors[0], technoRules);
+        return getDefaultPlacementLocation(game, playerData, conyardVectors[0], technoRules, false, 2);
     }
 
     getPriority(

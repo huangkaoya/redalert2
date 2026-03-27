@@ -101,7 +101,8 @@ function createExampleBot(playerName, country) {
         var placementData = gameApi.getBuildingPlacementData(buildingName);
         if (!placementData) return null;
 
-        for (var radius = 0; radius < 15; radius++) {
+        // Start from radius 2 to leave room around conyard for unit movement
+        for (var radius = 2; radius < 18; radius++) {
             for (var dx = -radius; dx <= radius; dx++) {
                 for (var dy = -radius; dy <= radius; dy++) {
                     if (Math.abs(dx) !== radius && Math.abs(dy) !== radius) continue;

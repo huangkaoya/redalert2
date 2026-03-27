@@ -8,7 +8,7 @@ export class PowerPlant implements AiBuildingRules {
         playerData: PlayerData,
         technoRules: TechnoRules
     ): { rx: number; ry: number } | undefined {
-        return getDefaultPlacementLocation(game, playerData, playerData.startLocation, technoRules);
+        return getDefaultPlacementLocation(game, playerData, playerData.startLocation, technoRules, false, 2);
     }
 
     getPriority(game: GameApi, playerData: PlayerData, technoRules: TechnoRules): number {

@@ -199,7 +199,7 @@ export class SupalosaBotAdapter extends Bot {
         const cx = conYardData.tile.rx;
         const cy = conYardData.tile.ry;
 
-        for (let radius = 2; radius <= 12; radius++) {
+        for (let radius = 3; radius <= 15; radius++) {
             for (let dx = -radius; dx <= radius; dx++) {
                 for (let dy = -radius; dy <= radius; dy++) {
                     if (Math.abs(dx) !== radius && Math.abs(dy) !== radius) {
