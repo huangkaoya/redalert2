@@ -89,7 +89,7 @@ function createExampleBot(playerName, country) {
     function getMyCombatUnits(gameApi) {
         return gameApi.getVisibleUnits(playerName, "self", function (r) {
             return (r.type === ObjectType.Vehicle || r.type === ObjectType.Infantry)
-                && r.weapons && r.weapons.length > 0;
+                && !!r.primary;
         });
     }
 
@@ -129,7 +129,7 @@ function createExampleBot(playerName, country) {
 
     function handleDeployMCV(ctx) {
         var gameApi = ctx.gameApi, actionsApi = ctx.actionsApi, logger = ctx.logger;
-        var mcvs = gameApi.getVisibleUnits(playerName, "self", function (r) { return r.name === "MCV"; });
+        var mcvs = gameApi.getVisibleUnits(playerName, "self", function (r) { return !!r.deploysInto; });
         for (var i = 0; i < mcvs.length; i++) {
             var data = gameApi.getUnitData(mcvs[i]);
             if (data && data.isIdle) {
@@ -213,7 +213,7 @@ function createExampleBot(playerName, country) {
     function handleHarvesters(ctx) {
         var gameApi = ctx.gameApi, actionsApi = ctx.actionsApi;
         var harvesters = gameApi.getVisibleUnits(playerName, "self", function (r) {
-            return r.name === "HARV" || r.name === "CMIN";
+            return !!r.harvester;
         });
         for (var i = 0; i < harvesters.length; i++) {
             var data = gameApi.getUnitData(harvesters[i]);
