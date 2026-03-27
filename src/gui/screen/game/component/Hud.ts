@@ -21,6 +21,7 @@ import { CommandBarButtonType } from "@/gui/screen/game/component/hud/commandBar
 import { commandButtonConfigs } from "@/gui/screen/game/component/hud/commandBar/commandButtonConfigs";
 import { isNotNullOrUndefined } from "@/util/typeGuard";
 import { DebugText } from "@/gui/screen/game/component/hud/DebugText";
+import { ReplayStatsOverlay } from "@/gui/screen/game/component/hud/ReplayStatsOverlay";
 declare const THREE: any;
 interface Viewport {
     x: number;
@@ -87,6 +88,7 @@ export class Hud extends UiObject {
     private messages?: any;
     private debugText?: any;
     private superWeaponTimers?: any;
+    private replayStatsOverlay?: any;
     private menuContentContainer?: any;
     private menuContentContainerInner?: any;
     private menuContent?: any;
@@ -457,7 +459,16 @@ export class Hud extends UiObject {
             x: sidebarBounds.x - 200,
             y: actionBarY - 500,
             ref: (ref: any) => (this.superWeaponTimers = ref),
-        }), jsx.jsx(GameMenuContentArea, {
+        }), !this.localPlayer ? jsx.jsx(ReplayStatsOverlay, {
+            players: this.players,
+            strings: this.strings,
+            width: Math.min(sidebarBounds.x - 10, 920),
+            height: 400,
+            x: 5,
+            y: 5,
+            zIndex: 5,
+            ref: (ref: any) => (this.replayStatsOverlay = ref),
+        }) : [], jsx.jsx(GameMenuContentArea, {
             hidden: true,
             screenSize: this.viewport,
             viewport: {
@@ -498,6 +509,7 @@ export class Hud extends UiObject {
         this.messages.getUiObject().setVisible(false);
         this.debugText.getUiObject().setVisible(false);
         this.superWeaponTimers.getUiObject().setVisible(false);
+        this.replayStatsOverlay?.getUiObject().setVisible(false);
     }
     hideSidebarMenu(): void {
         this.sideCameoRepeaters.setVisible(true);
@@ -511,6 +523,7 @@ export class Hud extends UiObject {
         this.messages.getUiObject().setVisible(true);
         this.debugText.getUiObject().setVisible(true);
         this.superWeaponTimers.getUiObject().setVisible(true);
+        this.replayStatsOverlay?.getUiObject().setVisible(true);
     }
     setMenuContentComponent(component: any): void {
         const container = this.menuContentContainerInner;
