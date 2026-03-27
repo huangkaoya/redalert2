@@ -303,6 +303,26 @@ export class Application {
         height: number;
     } {
         if (isFullScreen) {
+            if (mobileLayout) {
+                const requestedResolution = this.getRequestedResolution();
+                const mobileWidth = requestedResolution?.width ?? Application.MOBILE_BASE_VIEWPORT.width;
+                const mobileHeight = requestedResolution?.height ?? Application.MOBILE_BASE_VIEWPORT.height;
+                const availableAspect = availableSize.width / availableSize.height;
+                const mobileAspect = mobileWidth / mobileHeight;
+                let width: number;
+                let height: number;
+                if (availableAspect > mobileAspect) {
+                    height = Math.max(mobileHeight, availableSize.height);
+                    width = Math.round(height * availableAspect);
+                } else {
+                    width = Math.max(mobileWidth, availableSize.width);
+                    height = Math.round(width / availableAspect);
+                }
+                return {
+                    width: this.normalizeViewportDimension(width, Application.MOBILE_BASE_VIEWPORT.width),
+                    height: this.normalizeViewportDimension(height, Application.MOBILE_BASE_VIEWPORT.height),
+                };
+            }
             return {
                 width: this.normalizeViewportDimension(availableSize.width, 2),
                 height: this.normalizeViewportDimension(availableSize.height, 2),

@@ -54,8 +54,9 @@
     "@playwright/test": "1.58.2",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "@types/three": "0.183.1",
     "@types/sprintf-js": "^1.1.4",
+    "@types/three": "0.183.1",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@vitejs/plugin-react": "6.0.1",
     "typescript": "5.9.3",
     "vite": "8.0.1"

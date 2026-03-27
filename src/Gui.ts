@@ -28,6 +28,7 @@ import { GeneralOptions } from './gui/screen/options/GeneralOptions.js';
 import { FullScreen } from './gui/FullScreen.js';
 import { Pointer } from './gui/Pointer.js';
 import { CanvasMetrics } from './gui/CanvasMetrics.js';
+import { createMobileTouchControls } from './gui/MobileTouchControls.js';
 import { ErrorHandler } from './ErrorHandler.js';
 import { ResourceLoader } from './engine/ResourceLoader.js';
 import { MapFileLoader } from './gui/screen/game/MapFileLoader.js';
@@ -95,6 +96,7 @@ export class Gui {
         this.initRootController();
         this.startAnimationLoop();
         await this.routeToInitialScreen();
+        createMobileTouchControls(this.rootEl);
     }
     private initRenderer(): void {
         console.log('[Gui] Initializing renderer');

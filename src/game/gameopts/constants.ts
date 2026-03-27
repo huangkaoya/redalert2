@@ -3,6 +3,7 @@ export const RANDOM_COUNTRY_ID = -2;
 export const RANDOM_COLOR_ID = -2;
 export const RANDOM_START_POS = -2;
 export const NO_TEAM_ID = -2;
+export const OBS_TEAM_ID = -3;
 export const OBS_COUNTRY_ID = -3;
 export const OBS_COLOR_ID = -2;
 export const RANDOM_COUNTRY_NAME = "Random";

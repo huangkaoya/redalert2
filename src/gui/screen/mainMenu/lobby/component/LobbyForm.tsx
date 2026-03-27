@@ -10,7 +10,7 @@ import { AiDifficulty } from "@/game/gameopts/GameOpts";
 import { Image } from "@/gui/component/Image";
 import { StartPosSelect } from "@/gui/component/StartPosSelect";
 import { TeamSelect } from "@/gui/component/TeamSelect";
-import { NO_TEAM_ID, aiUiTooltips } from "@/game/gameopts/constants";
+import { NO_TEAM_ID, OBS_TEAM_ID, OBS_COUNTRY_NAME, aiUiTooltips } from "@/game/gameopts/constants";
 import { Select } from "@/gui/component/Select";
 import { Option } from "@/gui/component/Option";
 import { isNotNullOrUndefined } from "@/util/typeGuard";
@@ -241,14 +241,14 @@ export class LobbyForm extends React.Component<LobbyFormProps> {
                         (!isHost || slot.type !== SlotType.Ai)) ||
                         (slot.status === PlayerStatus.Ready &&
                             slot.type !== SlotType.Ai)} startPos={slot.startPos} availableStartPositions={props.availableStartPositions} onSelect={(pos) => this.props.onStartPosSelect(pos, index)} strings={props.strings}/>
+          </>) : null}
             <TeamSelect disabled={!props.teamsAllowed ||
                     (props.hostTeams
                         ? !isHost || slot.occupation !== SlotOccupation.Occupied
                         : (index !== props.activeSlotIndex &&
                             (!isHost || slot.type !== SlotType.Ai)) ||
                             (slot.status === PlayerStatus.Ready &&
-                                slot.type !== SlotType.Ai))} teamId={props.teamsAllowed ? slot.team : NO_TEAM_ID} required={props.teamsRequired} maxTeams={props.maxTeams} onSelect={(team) => this.props.onTeamSelect(team, index)} strings={props.strings}/>
-          </>) : null}
+                                slot.type !== SlotType.Ai))} teamId={slot.type === SlotType.Observer || slot.country === OBS_COUNTRY_NAME ? OBS_TEAM_ID : (props.teamsAllowed ? slot.team : NO_TEAM_ID)} required={props.teamsRequired} maxTeams={props.maxTeams} showObserver={index === props.activeSlotIndex} onSelect={(team) => this.props.onTeamSelect(team, index)} strings={props.strings}/>
       </div>) : (<div className="player-slot" key={"playerslot" + index}/>);
     }
     renderPlayerStatus(status: any) {

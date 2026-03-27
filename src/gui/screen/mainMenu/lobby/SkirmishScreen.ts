@@ -1,6 +1,6 @@
 import { SlotType as NetSlotType, SlotInfo } from "@/network/gameopt/SlotInfo";
 import { GameOpts, AiDifficulty } from "@/game/gameopts/GameOpts";
-import { RANDOM_COUNTRY_ID, RANDOM_COLOR_ID, RANDOM_START_POS, NO_TEAM_ID, aiUiNames, OBS_COUNTRY_ID, RANDOM_COUNTRY_NAME, OBS_COUNTRY_NAME, RANDOM_COUNTRY_UI_NAME, RANDOM_COUNTRY_UI_TOOLTIP, OBS_COUNTRY_UI_NAME, OBS_COUNTRY_UI_TOOLTIP, RANDOM_COLOR_NAME, } from "@/game/gameopts/constants";
+import { RANDOM_COUNTRY_ID, RANDOM_COLOR_ID, RANDOM_START_POS, NO_TEAM_ID, OBS_TEAM_ID, aiUiNames, OBS_COUNTRY_ID, RANDOM_COUNTRY_NAME, OBS_COUNTRY_NAME, RANDOM_COUNTRY_UI_NAME, RANDOM_COUNTRY_UI_TOOLTIP, OBS_COUNTRY_UI_NAME, OBS_COUNTRY_UI_TOOLTIP, RANDOM_COLOR_NAME, } from "@/game/gameopts/constants";
 import { LobbyForm } from "@/gui/screen/mainMenu/lobby/component/LobbyForm";
 import { LobbyType, SlotOccupation, PlayerStatus, SlotType as UiSlotType } from "@/gui/screen/mainMenu/lobby/component/viewmodel/lobby";
 import { MainMenuScreenType } from "../../ScreenType";
@@ -449,6 +449,28 @@ export class SkirmishScreen extends MainMenuScreen {
         this.updatePlayerInfo(this.getCountryIdByName(this.formModel.playerSlots[slotIndex].country), this.getColorIdByName(this.formModel.playerSlots[slotIndex].color), startPos, this.formModel.playerSlots[slotIndex].team, slotIndex);
     }
     private handleTeamSelect(teamId: number, slotIndex: number): void {
+        if (teamId === OBS_TEAM_ID) {
+            if (slotIndex === 0 && !this.isHumanObserver()) {
+                this.handleCountrySelect(OBS_COUNTRY_NAME, slotIndex);
+            }
+            return;
+        }
+        if (slotIndex === 0 && this.isHumanObserver()) {
+            this.updatePlayerInfo(
+                RANDOM_COUNTRY_ID,
+                this.getColorIdByName(this.formModel.playerSlots[slotIndex].color),
+                this.formModel.playerSlots[slotIndex].startPos,
+                teamId,
+                slotIndex
+            );
+            const extraSlotIdx = this.gameOpts.maxSlots;
+            if (extraSlotIdx < 8) {
+                this.slotsInfo[extraSlotIdx].type = NetSlotType.Closed;
+                this.gameOpts.aiPlayers[extraSlotIdx] = undefined as any;
+            }
+            this.updateFormModel();
+            return;
+        }
         this.updatePlayerInfo(this.getCountryIdByName(this.formModel.playerSlots[slotIndex].country), this.getColorIdByName(this.formModel.playerSlots[slotIndex].color), this.formModel.playerSlots[slotIndex].startPos, teamId, slotIndex);
     }
     private handleSlotChange(occupation: SlotOccupation, slotIndex: number, aiDifficulty?: any): void {
