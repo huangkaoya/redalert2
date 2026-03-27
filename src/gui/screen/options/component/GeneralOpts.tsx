@@ -40,9 +40,7 @@ const speedLabels = new Map([
     [6, "TXT_FASTER"],
     [7, "TXT_FASTEST"],
 ]);
-const isCoarsePointer = () => !!window.matchMedia?.("(pointer: coarse)")?.matches ||
-    (navigator.maxTouchPoints ?? 0) > 0 ||
-    "ontouchstart" in window;
+const isCoarsePointer = () => !!window.matchMedia?.("(pointer: coarse)")?.matches;
 const getJoystickPreference = (localPrefs?: LocalPrefs) => {
     const storedValue = localPrefs?.getItem?.("ra2web.mobileJoystickLite.enabled");
     if (storedValue === "0") {

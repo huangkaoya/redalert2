@@ -1,6 +1,6 @@
 import { SlotType as NetSlotType, SlotInfo } from "@/network/gameopt/SlotInfo";
 import { GameOpts, AiDifficulty } from "@/game/gameopts/GameOpts";
-import { RANDOM_COUNTRY_ID, RANDOM_COLOR_ID, RANDOM_START_POS, NO_TEAM_ID, aiUiNames, OBS_COUNTRY_ID, RANDOM_COUNTRY_NAME, OBS_COUNTRY_NAME, RANDOM_COUNTRY_UI_NAME, RANDOM_COUNTRY_UI_TOOLTIP, OBS_COUNTRY_UI_NAME, OBS_COUNTRY_UI_TOOLTIP, RANDOM_COLOR_NAME, } from "@/game/gameopts/constants";
+import { RANDOM_COUNTRY_ID, RANDOM_COLOR_ID, RANDOM_START_POS, NO_TEAM_ID, OBS_TEAM_ID, aiUiNames, OBS_COUNTRY_ID, RANDOM_COUNTRY_NAME, OBS_COUNTRY_NAME, RANDOM_COUNTRY_UI_NAME, RANDOM_COUNTRY_UI_TOOLTIP, OBS_COUNTRY_UI_NAME, OBS_COUNTRY_UI_TOOLTIP, RANDOM_COLOR_NAME, } from "@/game/gameopts/constants";
 import { LobbyForm } from "@/gui/screen/mainMenu/lobby/component/LobbyForm";
 import { LobbyType, SlotOccupation, PlayerStatus, SlotType as UiSlotType } from "@/gui/screen/mainMenu/lobby/component/viewmodel/lobby";
 import { MainMenuScreenType } from "../../ScreenType";
@@ -66,7 +66,7 @@ interface SkirmishUnstackParams {
     changedMapFile?: any;
 }
 export class SkirmishScreen extends MainMenuScreen {
-    public musicType: MusicType;
+    declare public musicType: MusicType;
     private rootController: RootController;
     private errorHandler: ErrorHandler;
     private messageBoxApi: MessageBoxApi;
@@ -136,7 +136,8 @@ export class SkirmishScreen extends MainMenuScreen {
             const lastUsedSlotIndex = findIndexReverse(this.slotsInfo, (slot) => slot.type === NetSlotType.Ai ||
                 slot.type === NetSlotType.Player ||
                 slot.type === NetSlotType.Open);
-            const slotsToClose = Math.max(0, lastUsedSlotIndex + 1 - mapEntry.maxSlots);
+            const observerBonus = this.isHumanObserver() ? 1 : 0;
+            const slotsToClose = Math.max(0, lastUsedSlotIndex + 1 - (mapEntry.maxSlots + observerBonus));
             for (let i = 0; i < slotsToClose; i++) {
                 this.slotsInfo[lastUsedSlotIndex - i].type = NetSlotType.Closed;
                 this.gameOpts.aiPlayers[lastUsedSlotIndex - i] = undefined;
@@ -167,12 +168,16 @@ export class SkirmishScreen extends MainMenuScreen {
         this.updateMapPreview();
         this.initView();
     }
-    private sanitizeLastBotSettings(aiPlayers: (any | undefined)[], savedColor: string | undefined, savedStartPos: string | undefined, maxSlots: number, mpDialogSettings: any): void {
+    private isHumanObserver(): boolean {
+        return this.gameOpts?.humanPlayers?.[0]?.countryId === OBS_COUNTRY_ID;
+    }
+    private sanitizeLastBotSettings(aiPlayers: (any | undefined)[], savedColor: string | undefined, savedStartPos: string | undefined, maxSlots: number, mpDialogSettings: any, humanIsObserver: boolean = false): void {
+        const maxAi = humanIsObserver ? maxSlots : maxSlots - 1;
         let aiCount = 0;
         for (let index = 0; index < aiPlayers.length; ++index) {
             if (aiPlayers[index]) {
                 aiCount += 1;
-                if (aiCount > maxSlots - 1) {
+                if (aiCount > maxAi) {
                     aiPlayers[index] = undefined;
                 }
             }
@@ -183,7 +188,7 @@ export class SkirmishScreen extends MainMenuScreen {
             if (!ai) {
                 continue;
             }
-            if (ai.difficulty !== AiDifficulty.Easy) {
+            if (ai.difficulty !== AiDifficulty.Easy && ai.difficulty !== AiDifficulty.Normal && ai.difficulty !== AiDifficulty.Custom) {
                 ai.difficulty = AiDifficulty.Easy;
             }
             if (ai.countryId !== undefined && ai.countryId >= this.getAvailablePlayerCountries().length) {
@@ -245,8 +250,14 @@ export class SkirmishScreen extends MainMenuScreen {
         const mpDialogSettings = this.gameModes.getById(selectedModeId).mpDialogSettings;
         const lastBots = savedBots ? new Parser().parseAiOpts(savedBots) : undefined;
         const defaultAiDifficulty = AiDifficulty.Easy;
+        const humanCountryId = savedCountry !== undefined &&
+            Number(savedCountry) < this.getAvailablePlayerCountries().length
+            ? Number(savedCountry)
+            : RANDOM_COUNTRY_ID;
+        const humanIsObserver = humanCountryId === OBS_COUNTRY_ID;
+        const effectiveMaxSlots = humanIsObserver ? selectedMap!.maxSlots + 1 : selectedMap!.maxSlots;
         if (lastBots) {
-            this.sanitizeLastBotSettings(lastBots, savedColor, savedStartPos, selectedMap!.maxSlots, mpDialogSettings);
+            this.sanitizeLastBotSettings(lastBots, savedColor, savedStartPos, selectedMap!.maxSlots, mpDialogSettings, humanIsObserver);
         }
         this.gameOpts = {
             gameMode: selectedModeId,
@@ -283,7 +294,7 @@ export class SkirmishScreen extends MainMenuScreen {
                 },
             ],
             aiPlayers: new Array(8).fill(undefined).map((_, index) => {
-                if (index && !(index > selectedMap!.maxSlots - 1)) {
+                if (index && !(index > effectiveMaxSlots - 1)) {
                     const difficulty = index > 1 || lastBots ? lastBots?.[index]?.difficulty : defaultAiDifficulty;
                     if (difficulty !== undefined) {
                         return {
@@ -306,11 +317,11 @@ export class SkirmishScreen extends MainMenuScreen {
         };
         this.slotsInfo = [{ type: NetSlotType.Player, name: this.playerName }];
         for (let i = 1; i < 8; ++i) {
-            if (i < selectedMap!.maxSlots && this.gameOpts.aiPlayers[i]) {
+            if (i < effectiveMaxSlots && this.gameOpts.aiPlayers[i]) {
                 this.slotsInfo.push({ type: NetSlotType.Ai, difficulty: (this.gameOpts.aiPlayers[i] as any).difficulty });
             }
             else {
-                const type = i < selectedMap!.maxSlots
+                const type = i < effectiveMaxSlots
                     ? (preferredOpts.slotsClosed.has(i) ? NetSlotType.Closed : NetSlotType.Open)
                     : NetSlotType.Closed;
                 this.slotsInfo.push({ type });
@@ -348,7 +359,7 @@ export class SkirmishScreen extends MainMenuScreen {
             strings: this.strings,
             countryUiNames: new Map<string, string>(countryUiNameEntries),
             countryUiTooltips: new Map<string, string>(countryUiTooltipEntries),
-            availablePlayerCountries: [RANDOM_COUNTRY_NAME].concat(this.getAvailablePlayerCountries()),
+            availablePlayerCountries: [RANDOM_COUNTRY_NAME, OBS_COUNTRY_NAME].concat(this.getAvailablePlayerCountries()),
             availablePlayerColors: [],
             availableAiNames: new Map([...aiUiNames.entries()]),
             availableStartPositions: [],
@@ -411,7 +422,23 @@ export class SkirmishScreen extends MainMenuScreen {
         this.savePreferences();
     }
     private handleCountrySelect(countryName: string, slotIndex: number): void {
+        const wasObserver = this.isHumanObserver();
         this.updatePlayerInfo(this.getCountryIdByName(countryName), this.getColorIdByName(this.formModel.playerSlots[slotIndex].color), this.formModel.playerSlots[slotIndex].startPos, this.formModel.playerSlots[slotIndex].team, slotIndex);
+        const isNowObserver = this.isHumanObserver();
+        if (!wasObserver && isNowObserver) {
+            // Switching to observer: open the extra slot so all map positions can be AI
+            const extraSlotIdx = this.gameOpts.maxSlots;
+            if (extraSlotIdx < 8 && this.slotsInfo[extraSlotIdx]?.type === NetSlotType.Closed) {
+                this.slotsInfo[extraSlotIdx].type = NetSlotType.Open;
+            }
+        } else if (wasObserver && !isNowObserver) {
+            // Switching from observer: close the extra slot
+            const extraSlotIdx = this.gameOpts.maxSlots;
+            if (extraSlotIdx < 8) {
+                this.slotsInfo[extraSlotIdx].type = NetSlotType.Closed;
+                this.gameOpts.aiPlayers[extraSlotIdx] = undefined as any;
+            }
+        }
         this.updateFormModel();
     }
     private handleColorSelect(colorName: string, slotIndex: number): void {
@@ -422,6 +449,28 @@ export class SkirmishScreen extends MainMenuScreen {
         this.updatePlayerInfo(this.getCountryIdByName(this.formModel.playerSlots[slotIndex].country), this.getColorIdByName(this.formModel.playerSlots[slotIndex].color), startPos, this.formModel.playerSlots[slotIndex].team, slotIndex);
     }
     private handleTeamSelect(teamId: number, slotIndex: number): void {
+        if (teamId === OBS_TEAM_ID) {
+            if (slotIndex === 0 && !this.isHumanObserver()) {
+                this.handleCountrySelect(OBS_COUNTRY_NAME, slotIndex);
+            }
+            return;
+        }
+        if (slotIndex === 0 && this.isHumanObserver()) {
+            this.updatePlayerInfo(
+                RANDOM_COUNTRY_ID,
+                this.getColorIdByName(this.formModel.playerSlots[slotIndex].color),
+                this.formModel.playerSlots[slotIndex].startPos,
+                teamId,
+                slotIndex
+            );
+            const extraSlotIdx = this.gameOpts.maxSlots;
+            if (extraSlotIdx < 8) {
+                this.slotsInfo[extraSlotIdx].type = NetSlotType.Closed;
+                this.gameOpts.aiPlayers[extraSlotIdx] = undefined as any;
+            }
+            this.updateFormModel();
+            return;
+        }
         this.updatePlayerInfo(this.getCountryIdByName(this.formModel.playerSlots[slotIndex].country), this.getColorIdByName(this.formModel.playerSlots[slotIndex].color), this.formModel.playerSlots[slotIndex].startPos, teamId, slotIndex);
     }
     private handleSlotChange(occupation: SlotOccupation, slotIndex: number, aiDifficulty?: any): void {
@@ -561,7 +610,8 @@ export class SkirmishScreen extends MainMenuScreen {
         this.formModel.destroyableBridges = e.destroyableBridges;
         this.formModel.multiEngineer = e.multiEngineer;
         this.formModel.noDogEngiKills = e.noDogEngiKills;
-        let remaining = e.maxSlots;
+        const observerActive = this.isHumanObserver();
+        let remaining = observerActive ? e.maxSlots + 1 : e.maxSlots;
         this.slotsInfo.forEach((_, t) => {
             if (remaining) {
                 remaining--;
@@ -691,6 +741,13 @@ export class SkirmishScreen extends MainMenuScreen {
                 },
             },
             {
+                label: this.strings.get("GUI:BotUpload") || "Upload AI Bot",
+                tooltip: this.strings.get("STT:SkirmishButtonUploadBot") || "Upload a custom AI bot script package",
+                onClick: () => {
+                    this.showBotUploadDialog();
+                },
+            },
+            {
                 label: this.strings.get("GUI:Back"),
                 tooltip: this.strings.get("STT:SkirmishButtonBack"),
                 isBottom: true,
@@ -728,7 +785,11 @@ export class SkirmishScreen extends MainMenuScreen {
         }
     }
     private handleStartGame(): void {
-        if (this.gameOpts.aiPlayers.filter(isNotNullOrUndefined).length < 1) {
+        const aiCount = this.gameOpts.aiPlayers.filter(isNotNullOrUndefined).length;
+        const humanIsObserver = this.gameOpts.humanPlayers.length > 0
+            && this.gameOpts.humanPlayers[0].countryId === OBS_COUNTRY_ID;
+        const minAiRequired = humanIsObserver ? 2 : 1;
+        if (aiCount < minAiRequired) {
             this.messageBoxApi.show(this.strings.get("TXT_NEED_AT_LEAST_TWO_PLAYERS"), this.strings.get("GUI:Ok"));
             return;
         }
@@ -754,6 +815,110 @@ export class SkirmishScreen extends MainMenuScreen {
     private handleError(error: any, message: string): void {
         this.errorHandler.handle(error, message, () => {
             this.controller?.goToScreen(MainMenuScreenType.Home);
+        });
+    }
+    private showBotUploadDialog(): void {
+        const overlay = document.createElement('div');
+        overlay.className = 'bot-upload-dialog-overlay';
+        overlay.innerHTML = `
+            <div class="bot-upload-dialog" onclick="event.stopPropagation()">
+                <div class="bot-upload-header">
+                    <h3>${this.strings.get("GUI:BotUpload:Title") || "Upload AI Bot Script"}</h3>
+                    <button class="bot-upload-close" id="bot-upload-close-btn">×</button>
+                </div>
+                <div class="bot-upload-body">
+                    <div class="bot-upload-section">
+                        <label class="bot-upload-label">${this.strings.get("GUI:BotUpload:Select") || "Select Bot Zip File"}</label>
+                        <input type="file" accept=".zip" class="bot-upload-input" id="bot-upload-file" />
+                        <div class="bot-upload-hint">${this.strings.get("GUI:BotUpload:Hint") || "Upload a .zip file containing bot.ts or index.ts"}</div>
+                    </div>
+                    <div id="bot-upload-message"></div>
+                    <div class="bot-upload-section">
+                        <h4>${this.strings.get("GUI:BotUpload:Manage") || "Manage Bots"}</h4>
+                        <div id="bot-upload-list"></div>
+                    </div>
+                </div>
+                <div class="bot-upload-footer">
+                    <button class="dialog-button" id="bot-upload-ok-btn">${this.strings.get("GUI:Ok") || "OK"}</button>
+                </div>
+            </div>
+        `;
+
+        const closeDialog = () => {
+            overlay.remove();
+        };
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeDialog();
+        });
+
+        document.getElementById('ra2web-root')?.appendChild(overlay);
+
+        document.getElementById('bot-upload-close-btn')?.addEventListener('click', closeDialog);
+        document.getElementById('bot-upload-ok-btn')?.addEventListener('click', closeDialog);
+
+        const fileInput = document.getElementById('bot-upload-file') as HTMLInputElement;
+        fileInput?.addEventListener('change', async () => {
+            const file = fileInput.files?.[0];
+            if (!file) return;
+
+            const msgDiv = document.getElementById('bot-upload-message');
+            if (msgDiv) {
+                msgDiv.innerHTML = '<div class="bot-upload-status">Loading...</div>';
+            }
+
+            try {
+                const { BotUploader } = await import('@/game/ai/thirdpartbot/BotUploader');
+                const result = await BotUploader.processUpload(file);
+
+                if (result.success && result.meta && msgDiv) {
+                    msgDiv.innerHTML = `<div class="bot-upload-message bot-upload-message-success">${this.strings.get("GUI:BotUpload:Success") || "Bot uploaded successfully!"}</div>`;
+                    this.refreshBotList();
+                } else if (msgDiv) {
+                    msgDiv.innerHTML = `<div class="bot-upload-message bot-upload-message-error">${(result.errors || ["Upload failed"]).join("\\n")}</div>`;
+                }
+            } catch (e) {
+                if (msgDiv) {
+                    msgDiv.innerHTML = `<div class="bot-upload-message bot-upload-message-error">Error: ${(e as Error).message}</div>`;
+                }
+            }
+            fileInput.value = '';
+        });
+
+        this.refreshBotList();
+    }
+
+    private refreshBotList(): void {
+        const listDiv = document.getElementById('bot-upload-list');
+        if (!listDiv) return;
+
+        import('@/game/ai/thirdpartbot/BotRegistry').then(({ BotRegistry }) => {
+            const bots = BotRegistry.getInstance().getUploadedBots();
+            if (bots.length === 0) {
+                listDiv.innerHTML = `<div class="bot-upload-empty">${this.strings.get("GUI:BotUpload:NoBot") || "No custom bots uploaded"}</div>`;
+                return;
+            }
+
+            listDiv.innerHTML = bots.map(bot => `
+                <div class="bot-upload-item">
+                    <div class="bot-upload-item-info">
+                        <span class="bot-upload-item-name">${bot.displayName}</span>
+                        <span class="bot-upload-item-version">v${bot.version}</span>
+                        <span class="bot-upload-item-author">by ${bot.author}</span>
+                    </div>
+                    <button class="bot-upload-item-remove" data-bot-id="${bot.id}">${this.strings.get("GUI:BotUpload:Remove") || "Remove"}</button>
+                </div>
+            `).join('');
+
+            listDiv.querySelectorAll('.bot-upload-item-remove').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const botId = (btn as HTMLElement).dataset.botId;
+                    if (botId) {
+                        BotRegistry.getInstance().unregister(botId);
+                        this.refreshBotList();
+                    }
+                });
+            });
         });
     }
     async onLeave(): Promise<void> {

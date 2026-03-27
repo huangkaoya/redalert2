@@ -36,9 +36,7 @@ const mobileResolutions: Resolution[] = [
     { width: 960, height: 720 },
     { width: 800, height: 600 },
 ];
-const isCoarsePointer = () => !!window.matchMedia?.("(pointer: coarse)")?.matches ||
-    (navigator.maxTouchPoints ?? 0) > 0 ||
-    "ontouchstart" in window;
+const isCoarsePointer = () => !!window.matchMedia?.("(pointer: coarse)")?.matches;
 const getCurrentScreenSize = (): Resolution => ({
     width: Math.max(320, Math.floor(window.visualViewport?.width ?? window.innerWidth)),
     height: Math.max(240, Math.floor(window.visualViewport?.height ?? window.innerHeight)),

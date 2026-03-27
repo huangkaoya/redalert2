@@ -3,6 +3,9 @@ import { MapApi } from "@/game/api/MapApi";
 import { ObjectType } from "@/engine/type/ObjectType";
 import { GameSpeed } from "@/game/GameSpeed";
 import { RulesApi } from "@/game/api/RulesApi";
+import { PlayerData } from "@/game/api/interface/PlayerData";
+import type { GameObjectData } from "@/game/api/interface/GameObjectData";
+import type { UnitData } from "@/game/api/interface/UnitData";
 interface WeaponData {
     type: string;
     rules: any;
@@ -12,72 +15,6 @@ interface WeaponData {
     maxRange: number;
     speed: number;
     cooldownTicks: number;
-}
-interface PlayerData {
-    name: string;
-    country: string;
-    startLocation: any;
-    isObserver: boolean;
-    isAi: boolean;
-    isCombatant: boolean;
-    credits: number;
-    power: {
-        total: number;
-        drain: number;
-        isLowPower: boolean;
-    };
-    radarDisabled: boolean;
-}
-interface GameObjectData {
-    id: string;
-    type: string;
-    name: string;
-    rules: any;
-    tile: any;
-    tileElevation: number;
-    worldPosition: any;
-    foundation: any;
-    hitPoints?: number;
-    maxHitPoints?: number;
-    owner?: string;
-}
-interface UnitData extends GameObjectData {
-    owner: string;
-    sight: number;
-    veteranLevel: number;
-    guardMode: boolean;
-    purchaseValue: number;
-    primaryWeapon?: WeaponData;
-    secondaryWeapon?: WeaponData;
-    deathWeapon?: WeaponData;
-    attackState?: string;
-    direction: number;
-    onBridge?: boolean;
-    zone?: any;
-    buildStatus?: string;
-    factory?: {
-        deliveringUnit?: string;
-        status: string;
-    };
-    rallyPoint?: any;
-    isPoweredOn?: boolean;
-    hasWrenchRepair?: boolean;
-    turretFacing?: number;
-    turretNo?: number;
-    garrisonUnitCount?: number;
-    garrisonUnitsMax?: number;
-    passengerSlotCount?: number;
-    passengerSlotMax?: number;
-    isIdle: boolean;
-    canMove?: boolean;
-    velocity?: any;
-    stance?: string;
-    harvestedOre?: number;
-    harvestedGems?: number;
-    ammo?: number;
-    isWarpedOut: boolean;
-    mindControlledBy?: string;
-    tntTimer?: number;
 }
 interface SuperWeaponData {
     playerName: string;
@@ -100,6 +37,10 @@ export class GameApi {
         this.mapApi = new MapApi(game);
         this.rulesApi = new RulesApi(game.rules);
     }
+    /** Alias for mapApi — backward compatibility with builtIn bot. */
+    get map(): MapApi {
+        return this.mapApi;
+    }
     isPlayerDefeated(playerName: string): boolean {
         return this.game.getPlayerByName(playerName).defeated;
     }
@@ -112,13 +53,18 @@ export class GameApi {
             throw new Error(`Player "${playerName2}" doesn't exist`);
         return this.game.alliances.areAllied(player1, player2);
     }
-    canPlaceBuilding(playerName: string, position: any, buildingType: string): boolean {
+    canPlaceBuilding(playerName: string, arg2: any, arg3: any): boolean {
         const player = this.game.getPlayerByName(playerName);
         if (!player)
             throw new Error(`Player "${playerName}" doesn't exist`);
+        // Backward/forward compatible with both signatures:
+        // canPlaceBuilding(playerName, position, buildingType)
+        // canPlaceBuilding(playerName, buildingType, position)
+        const buildingType = typeof arg2 === 'string' ? arg2 : arg3;
+        const position = typeof arg2 === 'string' ? arg3 : arg2;
         return this.game
             .getConstructionWorker(player)
-            .canPlaceAt(position, buildingType, { normalizedTile: true });
+            .canPlaceAt(buildingType, position, { normalizedTile: true });
     }
     getBuildingPlacementData(buildingType: string): BuildingPlacementData {
         const buildingData = this.game.art.getObject(buildingType, ObjectType.Building);

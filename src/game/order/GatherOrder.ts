@@ -15,6 +15,9 @@ export class GatherOrder extends Order {
         return isMini ? PointerType.AttackMini : PointerType.AttackNoRange;
     }
     isValid(): boolean {
+        if (!this.target) {
+            return false;
+        }
         return (!(!this.sourceObject.isVehicle() ||
             !this.sourceObject.harvesterTrait ||
             this.sourceObject.moveTrait.isDisabled() ||

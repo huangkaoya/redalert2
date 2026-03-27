@@ -10,6 +10,16 @@ export class Bot {
         this.name = name;
         this.country = country;
     }
+    get context() {
+        return {
+            game: this.gameApi,
+            player: {
+                name: this.name,
+                actions: this.actionsApi,
+                production: this.productionApi,
+            },
+        };
+    }
     setGameApi(api: any): void {
         this.gameApi = api;
     }
@@ -31,7 +41,7 @@ export class Bot {
     getDebugMode(): boolean {
         return this.debugMode;
     }
-    onGameStart(event: any): void { }
-    onGameTick(event: any): void { }
-    onGameEvent(event: any, data: any): void { }
+    onGameStart(_event: any): void { }
+    onGameTick(_event: any): void { }
+    onGameEvent(_event: any, _data: any): void { }
 }

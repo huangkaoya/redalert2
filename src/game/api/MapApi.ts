@@ -36,6 +36,9 @@ interface Map {
     terrain: {
         getPassableSpeed(tile: any, speedType: SpeedType, isFoot: boolean, options: any): number;
         computePath(tile: any, isFoot: boolean, startTile: any, startOnBridge: boolean, endTile: any, endOnBridge: boolean, options: any): any[];
+        getIslandIdMap?(speedType: SpeedType, onBridge: boolean): {
+            get(tile: any, onBridge: boolean): number | undefined;
+        };
     };
 }
 interface Player {
@@ -161,5 +164,16 @@ export class MapApi {
             }
         }
         return data;
+    }
+    getReachabilityMap(speedType: SpeedType, onBridge: boolean) {
+        const terrain = this.map.terrain as any;
+        const islandIdMap = terrain.getIslandIdMap(speedType, onBridge);
+        return {
+            isReachable(from: { tile: any; onBridge?: boolean }, to: { tile: any; onBridge?: boolean }): boolean {
+                const fromId = islandIdMap.get(from.tile, !!from.onBridge);
+                const toId = islandIdMap.get(to.tile, !!to.onBridge);
+                return fromId !== undefined && fromId === toId;
+            },
+        };
     }
 }

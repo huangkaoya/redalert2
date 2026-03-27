@@ -27,6 +27,11 @@ else {
     console.error("Crc32.calculateCrc MISMATCH against known standard!");
 }
 console.log("--- Hashing Test End ---");
+import { registerBuiltInBot } from './game/ai/thirdpartbot/builtIn/BuiltInBotAdapter';
+
+// Register built-in third-party bots
+registerBuiltInBot();
+
 createRoot(document.getElementById('root')!).render(<React.StrictMode>
     <App />
   </React.StrictMode>);

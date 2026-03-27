@@ -1,6 +1,7 @@
 import { CompositeDisposable } from '../util/disposable/CompositeDisposable';
 import { equals } from '../util/array';
 import { clamp } from '../util/math';
+import { getMobileTouchButton } from './MobileTouchControls';
 import * as THREE from 'three';
 interface PointerPosition {
     x: number;
@@ -241,7 +242,7 @@ export class PointerEvents {
                     this.touchStartBuffer.cb();
                     this.touchStartBuffer = undefined;
                 }
-                const button = this.touchFingers === 2 ? 2 : 0;
+                const button = this.touchFingers === 2 ? 2 : -1;
                 const fakeEvent = this.fakeMouseEventFromTouch(endTouch, event, button);
                 fakeEvent.touchDuration = event.timeStamp - this.initialTouchEvent.timeStamp;
                 this.touchFingers = 0;
@@ -291,12 +292,12 @@ export class PointerEvents {
         }
         return context;
     }
-    private fakeMouseEventFromTouch(touch: Touch, event: TouchEvent, button: number = 0): FakeMouseEvent {
+    private fakeMouseEventFromTouch(touch: Touch, event: TouchEvent, button: number = -1): FakeMouseEvent {
         const position = this.computeTouchPosition(touch);
         return {
             offsetX: position.x,
             offsetY: position.y,
-            button,
+            button: button >= 0 ? button : getMobileTouchButton(),
             isTouch: true,
             detail: 1,
             altKey: event.altKey,
@@ -357,9 +358,13 @@ export class PointerEvents {
         }
     }
     private getPointerPosition(event: MouseEvent | WheelEvent): PointerPosition {
-        return this.document.pointerLockElement
-            ? this.lockModePointer
-            : this.canvasMetrics.toCanvasOffset((event as MouseEvent).offsetX, (event as MouseEvent).offsetY);
+        if (this.document.pointerLockElement) {
+            return this.lockModePointer;
+        }
+        if ((event as unknown as FakeMouseEvent).isTouch) {
+            return { x: (event as MouseEvent).offsetX, y: (event as MouseEvent).offsetY };
+        }
+        return this.canvasMetrics.toCanvasOffset((event as MouseEvent).offsetX, (event as MouseEvent).offsetY);
     }
     private findObjectUnderPointer(pointerPos: PointerPosition): THREE.Intersection | undefined {
         const scenes = this.renderer.getScenes();

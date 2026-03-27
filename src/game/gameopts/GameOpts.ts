@@ -5,7 +5,9 @@ export enum AiDifficulty {
     Brutal = 0,
     Medium = 1,
     Easy = 2,
-    MediumSea = 3
+    MediumSea = 3,
+    Normal = 4,
+    Custom = 5,
 }
 export interface HumanPlayerInfo {
     name: string;

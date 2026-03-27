@@ -5,6 +5,9 @@ export class HudFactory {
     setSidebarModel(sidebarModel: any): void {
         this.sidebarModel = sidebarModel;
     }
+    setViewport(viewport: any): void {
+        this.viewport = viewport;
+    }
     create(): Hud {
         return new Hud(this.sideType, this.viewport, Engine.getImages(), Engine.getPalettes(), this.cameoFilenames, this.sidebarModel, this.messageList, this.chatHistory, this.debugText, this.debugTextEnabled, this.localPlayer, this.players, this.stalemateDetectTrait, this.countdownTimer, this.jsxRenderer, this.strings, this.commandBarButtons, this.persistentHoverTags);
     }

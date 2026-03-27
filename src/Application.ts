@@ -260,9 +260,7 @@ export class Application {
         return this.preferredViewportSize ?? undefined;
     }
     private isMobileLayout(): boolean {
-        return !!window.matchMedia?.('(pointer: coarse)')?.matches ||
-            (navigator.maxTouchPoints ?? 0) > 0 ||
-            'ontouchstart' in window;
+        return !!window.matchMedia?.('(pointer: coarse)')?.matches;
     }
     private getAvailableDisplaySize(): { width: number; height: number; } {
         const viewport = window.visualViewport;
@@ -304,7 +302,27 @@ export class Application {
         width: number;
         height: number;
     } {
-        if (isFullScreen && !mobileLayout) {
+        if (isFullScreen) {
+            if (mobileLayout) {
+                const requestedResolution = this.getRequestedResolution();
+                const mobileWidth = requestedResolution?.width ?? Application.MOBILE_BASE_VIEWPORT.width;
+                const mobileHeight = requestedResolution?.height ?? Application.MOBILE_BASE_VIEWPORT.height;
+                const availableAspect = availableSize.width / availableSize.height;
+                const mobileAspect = mobileWidth / mobileHeight;
+                let width: number;
+                let height: number;
+                if (availableAspect > mobileAspect) {
+                    height = Math.max(mobileHeight, availableSize.height);
+                    width = Math.round(height * availableAspect);
+                } else {
+                    width = Math.max(mobileWidth, availableSize.width);
+                    height = Math.round(width / availableAspect);
+                }
+                return {
+                    width: this.normalizeViewportDimension(width, Application.MOBILE_BASE_VIEWPORT.width),
+                    height: this.normalizeViewportDimension(height, Application.MOBILE_BASE_VIEWPORT.height),
+                };
+            }
             return {
                 width: this.normalizeViewportDimension(availableSize.width, 2),
                 height: this.normalizeViewportDimension(availableSize.height, 2),
@@ -351,7 +369,12 @@ export class Application {
         this.rootEl.dataset.orientation = viewport.isPortrait ? 'portrait' : 'landscape';
         this.rootEl.dataset.compactLayout = String(viewport.height <= 640 || viewport.width <= 800);
     }
-    private updateViewportSize(isFullScreen: boolean = this.fullScreen.isFullScreen()): void {
+    private isNativeFullScreen(): boolean {
+        const width = window.innerWidth ?? 0;
+        const height = window.innerHeight ?? 0;
+        return width >= screen.width && height >= screen.height;
+    }
+    private updateViewportSize(isFullScreen: boolean = this.fullScreen.isFullScreen() || this.isNativeFullScreen()): void {
         const nextViewport = this.computeViewportLayout(isFullScreen);
         this.viewport.value = nextViewport;
         this.applyRootLayout(nextViewport);
