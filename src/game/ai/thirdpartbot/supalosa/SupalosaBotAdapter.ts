@@ -16,6 +16,7 @@ export class SupalosaBotAdapter extends Bot {
     private innerBot: SupalosaBot;
     private failSafePendingBuildingType: string | null = null;
     private lastFailSafeDeployTick: number = -9999;
+    private failSafeDeployAttempts: number = 0;
 
     private static readonly ALLIED_COUNTRIES = [
         'Americans', 'British', 'French', 'Germans', 'Koreans', 'Alliance',
@@ -112,11 +113,45 @@ export class SupalosaBotAdapter extends Bot {
                 (r: any) => !!r.deploysInto && gameApi.getGeneralRules().baseUnit.includes(r.name),
             );
             if (mcvs.length > 0) {
-                this.actionsApi.orderUnits([mcvs[0]], OrderType.DeploySelected);
+                this.failSafeDeployAttempts++;
+                if (this.failSafeDeployAttempts > 5) {
+                    // Deploy keeps failing — find a clear spot nearby and move there
+                    const mcvData = gameApi.getUnitData(mcvs[0]);
+                    if (mcvData?.tile && mcvData.rules?.deploysInto) {
+                        const cx = mcvData.tile.rx;
+                        const cy = mcvData.tile.ry;
+                        let found = false;
+                        for (let radius = 2; radius <= 10 && !found; radius++) {
+                            for (let dx = -radius; dx <= radius && !found; dx++) {
+                                for (let dy = -radius; dy <= radius && !found; dy++) {
+                                    if (Math.abs(dx) !== radius && Math.abs(dy) !== radius) continue;
+                                    const tx = cx + dx;
+                                    const ty = cy + dy;
+                                    try {
+                                        if (gameApi.canPlaceBuilding(this.name, mcvData.rules.deploysInto, { rx: tx, ry: ty })) {
+                                            this.actionsApi.orderUnits([mcvs[0]], OrderType.Move, tx, ty);
+                                            this.failSafeDeployAttempts = 0;
+                                            found = true;
+                                        }
+                                    } catch (_e) { /* skip */ }
+                                }
+                            }
+                        }
+                        if (!found) {
+                            // No valid spot, scatter and reset
+                            this.actionsApi.orderUnits([mcvs[0]], OrderType.Scatter);
+                            this.failSafeDeployAttempts = 0;
+                        }
+                    }
+                } else {
+                    this.actionsApi.orderUnits([mcvs[0]], OrderType.DeploySelected);
+                }
                 this.lastFailSafeDeployTick = gameApi.getCurrentTick();
             }
             return;
         }
+        // Conyard exists, reset deploy attempts
+        this.failSafeDeployAttempts = 0;
 
         const queueData = this.productionApi.getQueueData(QueueType.Structures);
 

@@ -46,6 +46,8 @@ export class ExpansionMission extends Mission {
     private lastOrderAt: number | null = null;
 
     private lastOrderDeploy = false;
+    private deployAttempts = 0;
+    private static readonly MAX_DEPLOY_ATTEMPTS = 8;
 
     constructor(
         uniqueName: string,
@@ -152,11 +154,41 @@ export class ExpansionMission extends Mission {
             return noop();
         }
         if (isClose) {
+            this.deployAttempts++;
+            // If too many failed attempts at this location, find a new deployable spot
+            if (this.deployAttempts > ExpansionMission.MAX_DEPLOY_ATTEMPTS) {
+                const deployableLocations = findDeployableLocations(
+                    playerData.name,
+                    gameApi,
+                    {
+                        x: mcv.tile.rx - CONYARD_DEPLOY_SCAN_DISTANCE,
+                        y: mcv.tile.ry - CONYARD_DEPLOY_SCAN_DISTANCE,
+                        width: CONYARD_DEPLOY_SCAN_DISTANCE * 2,
+                        height: CONYARD_DEPLOY_SCAN_DISTANCE * 2,
+                    },
+                    mcv.rules.deploysInto,
+                );
+                const bestLocation = minBy(deployableLocations, (d) => toVector2(mcv.tile).distanceToSquared(d));
+                if (bestLocation) {
+                    // Update destination to the new deployable location
+                    this.destination = bestLocation.clone();
+                    this.deployAttempts = 0;
+                    this.lastOrderDeploy = false;
+                    actionsApi.orderUnits([mcv.id], OrderType.Move, bestLocation.x, bestLocation.y);
+                } else {
+                    // No deployable location found at all, scatter and retry
+                    actionsApi.orderUnits([mcv.id], OrderType.Scatter);
+                    this.deployAttempts = 0;
+                }
+                this.lastOrderAt = gameApi.getCurrentTick();
+                return noop();
+            }
+
             if (!this.lastOrderDeploy) {
                 actionsApi.orderUnits([mcv.id], OrderType.DeploySelected);
                 this.lastOrderDeploy = true;
             } else {
-                // find a 4x4 area near the mcv that is clear
+                // Deploy failed, find a nearby clear spot and move there
                 const deployableLocations = findDeployableLocations(
                     playerData.name,
                     gameApi,
@@ -171,6 +203,8 @@ export class ExpansionMission extends Mission {
                 const bestLocation = minBy(deployableLocations, (d) => toVector2(mcv.tile).distanceToSquared(d));
 
                 if (bestLocation) {
+                    // Update destination so next cycle we move toward this new spot
+                    this.destination = bestLocation.clone();
                     actionsApi.orderUnits([mcv.id], OrderType.Move, bestLocation.x, bestLocation.y);
                 } else {
                     actionsApi.orderUnits([mcv.id], OrderType.Scatter);

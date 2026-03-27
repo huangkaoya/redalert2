@@ -22,6 +22,7 @@ export class SupalosaBot extends Bot {
     private queueController: QueueController;
     private tickOfLastAttackOrder: number = 0;
     private lastDeployAttemptTick: number = -9999;
+    private deployAttemptCount: number = 0;
 
     private missionController: MissionController | null = null;
     private matchAwareness: MatchAwareness | null = null;
@@ -159,6 +160,7 @@ export class SupalosaBot extends Bot {
     private tryInitialMcvDeploy(game: GameApi): void {
         const hasConyard = game.getVisibleUnits(this.name, "self", (r) => r.constructionYard).length > 0;
         if (hasConyard) {
+            this.deployAttemptCount = 0;
             return;
         }
 
@@ -176,7 +178,36 @@ export class SupalosaBot extends Bot {
             return;
         }
 
-        this.actionsApi.orderUnits([mcvUnits[0]], OrderType.DeploySelected);
+        this.deployAttemptCount++;
+
+        if (this.deployAttemptCount > 5) {
+            // Deploy keeps failing — current position is blocked, find a clear spot
+            const mcvData = game.getUnitData(mcvUnits[0]);
+            if (mcvData?.tile && mcvData.rules?.deploysInto) {
+                const cx = mcvData.tile.rx;
+                const cy = mcvData.tile.ry;
+                for (let radius = 2; radius <= 10; radius++) {
+                    for (let dx = -radius; dx <= radius; dx++) {
+                        for (let dy = -radius; dy <= radius; dy++) {
+                            if (Math.abs(dx) !== radius && Math.abs(dy) !== radius) continue;
+                            try {
+                                if (game.canPlaceBuilding(this.name, mcvData.rules.deploysInto, { rx: cx + dx, ry: cy + dy })) {
+                                    this.actionsApi.orderUnits([mcvUnits[0]], OrderType.Move, cx + dx, cy + dy);
+                                    this.deployAttemptCount = 0;
+                                    this.lastDeployAttemptTick = game.getCurrentTick();
+                                    return;
+                                }
+                            } catch (_e) { /* skip */ }
+                        }
+                    }
+                }
+            }
+            // Nothing found, scatter
+            this.actionsApi.orderUnits([mcvUnits[0]], OrderType.Scatter);
+            this.deployAttemptCount = 0;
+        } else {
+            this.actionsApi.orderUnits([mcvUnits[0]], OrderType.DeploySelected);
+        }
         this.lastDeployAttemptTick = game.getCurrentTick();
     }
 
