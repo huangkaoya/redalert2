@@ -133,7 +133,7 @@ function createExampleBot(playerName, country) {
         for (var i = 0; i < mcvs.length; i++) {
             var data = gameApi.getUnitData(mcvs[i]);
             if (data && data.isIdle) {
-                actionsApi.orderUnits([mcvs[i]], OrderType.Deploy);
+                actionsApi.orderUnits([mcvs[i]], OrderType.DeploySelected);
                 logger.info("Deploying MCV");
                 break;
             }
