@@ -17,7 +17,7 @@ const DEBUG_MESSAGES_BUFFER_LENGTH = 20;
 // Number of ticks per second at the base speed.
 const NATURAL_TICK_RATE = 15;
 
-export class SupalosaBot extends Bot {
+export class BuiltInBot extends Bot {
     private tickRatio?: number;
     private queueController: QueueController;
     private tickOfLastAttackOrder: number = 0;
@@ -89,7 +89,7 @@ export class SupalosaBot extends Bot {
     override onGameTick(game: GameApi) {
         if (!this.matchAwareness || !this.missionController || !this.strategy) {
             if (game.getCurrentTick() % 150 === 0) {
-                console.warn(`[SupalosaBot] "${this.name}" tick skipped: awareness=${!!this.matchAwareness} missions=${!!this.missionController} strategy=${!!this.strategy}`);
+                console.warn(`[BuiltInBot] "${this.name}" tick skipped: awareness=${!!this.matchAwareness} missions=${!!this.missionController} strategy=${!!this.strategy}`);
             }
             return;
         }
@@ -99,7 +99,7 @@ export class SupalosaBot extends Bot {
             const myPlayer = game.getPlayerData(this.name);
             const conYards = game.getVisibleUnits(this.name, 'self', (r) => r.constructionYard);
             const allUnits = game.getVisibleUnits(this.name, 'self');
-            console.log(`[SupalosaBot] "${this.name}" tick=${game.getCurrentTick()} credits=${myPlayer.credits} units=${allUnits.length} conyards=${conYards.length}`);
+            console.log(`[BuiltInBot] "${this.name}" tick=${game.getCurrentTick()} credits=${myPlayer.credits} units=${allUnits.length} conyards=${conYards.length}`);
         }
 
         let threatCache = this.matchAwareness.getThreatCache();
@@ -115,7 +115,7 @@ export class SupalosaBot extends Bot {
                 this.matchAwareness.onAiUpdate(this.context);
                 threatCache = this.matchAwareness.getThreatCache();
             } catch (err) {
-                this.logger?.error?.("Supalosa awareness update failed", err);
+                this.logger?.error?.("BuiltIn awareness update failed", err);
             }
 
             const fullContext: SupabotContext = {

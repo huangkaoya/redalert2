@@ -1,6 +1,6 @@
 /**
  * Local shim for @chronodivide/game-api.
- * Re-exports all game API types needed by the supalosa bot from local sources.
+ * Re-exports all game API types needed by the builtIn bot from local sources.
  */
 
 export { ActionsApi } from '@/game/api/ActionsApi';
@@ -53,7 +53,7 @@ export type ApiEvent = {
 
 /**
  * BotContext - provides structured access to game, player, and APIs.
- * Used by the supalosa bot's mission/strategy system.
+ * Used by the builtIn bot's mission/strategy system.
  */
 export interface BotContext {
     readonly game: import('@/game/api/GameApi').GameApi;

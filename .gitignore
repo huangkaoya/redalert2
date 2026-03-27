@@ -135,6 +135,6 @@ dist
 # Temporary test files
 __test_strip.mjs
 __stripped_output.js
-_temp_supalosa/
+_temp_builtIn/
 
 #शंकर 

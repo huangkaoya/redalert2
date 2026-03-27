@@ -37,7 +37,7 @@ export class GameApi {
         this.mapApi = new MapApi(game);
         this.rulesApi = new RulesApi(game.rules);
     }
-    /** Alias for mapApi — backward compatibility with supalosa bot. */
+    /** Alias for mapApi — backward compatibility with builtIn bot. */
     get map(): MapApi {
         return this.mapApi;
     }

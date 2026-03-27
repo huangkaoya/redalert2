@@ -1,7 +1,7 @@
 import { AiDifficulty } from '../gameopts/GameOpts';
 import { Bot } from './Bot';
 import { DummyBot } from './DummyBot';
-import { SupalosaBotAdapter } from '../ai/thirdpartbot/supalosa/SupalosaBotAdapter';
+import { BuiltInBotAdapter } from '../ai/thirdpartbot/builtIn/BuiltInBotAdapter';
 import { BotRegistry } from '../ai/thirdpartbot/BotRegistry';
 import { ThirdPartyBotAdapter } from '../ai/thirdpartbot/ThirdPartyBotAdapter';
 export class BotFactory {
@@ -29,11 +29,11 @@ export class BotFactory {
                 console.info(`[BotFactory] Using uploaded bot "${meta.displayName}" for "${player.name}"`);
                 return new ThirdPartyBotAdapter(player.name, player.country.name, meta);
             }
-            console.warn(`[BotFactory] Custom AI selected but no uploaded bot found, falling back to SupalosaBotAdapter`);
-            return new SupalosaBotAdapter(player.name, player.country.name);
+            console.warn(`[BotFactory] Custom AI selected but no uploaded bot found, falling back to BuiltInBotAdapter`);
+            return new BuiltInBotAdapter(player.name, player.country.name);
         }
         if (player.aiDifficulty === AiDifficulty.Normal) {
-            return new SupalosaBotAdapter(player.name, player.country.name);
+            return new BuiltInBotAdapter(player.name, player.country.name);
         }
         if (player.aiDifficulty === AiDifficulty.Easy ||
             player.aiDifficulty === AiDifficulty.Medium ||
