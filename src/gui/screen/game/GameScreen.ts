@@ -367,13 +367,14 @@ export class GameScreen extends RootScreen {
             this.uiScene.remove(this.hud);
             this.hud.destroy();
             this.hudFactory.setSidebarModel(this.sidebarModel);
+            this.hudFactory.setViewport(this.viewport.value);
             const newHud = this.hudFactory.create();
             this.hud = newHud;
             newHud.setMinimap(this.minimap);
+            this.worldView?.handleViewportChange(this.viewport.value);
             if (this.playerUi) {
                 this.uiScene.add(newHud);
                 this.menu?.handleHudChange(newHud);
-                this.worldView?.handleViewportChange(this.viewport.value);
                 this.playerUi.handleHudChange(newHud);
                 if (this.chatTypingHandler) {
                     this.initHudChatTypingEvents(this.chatTypingHandler, this.chatNetHandler, newHud);

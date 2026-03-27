@@ -356,13 +356,14 @@ export class ReplayScreen extends RootScreen {
         this.uiScene.remove(this.hud);
         this.hud.destroy();
         this.hudFactory!.setSidebarModel(this.sidebarModel!);
+        this.hudFactory!.setViewport(this.viewport.value);
         const hud = this.hudFactory!.create();
         this.hud = hud;
         hud.setMinimap(this.minimap!);
+        this.worldView?.handleViewportChange(this.viewport.value);
         if (this.worldView) {
             this.uiScene.add(hud);
             this.menu?.handleHudChange(hud);
-            this.worldView.handleViewportChange(this.viewport.value);
             this.playerUi?.handleHudChange(hud);
             this.initHudEvents(hud, this.messageList!);
         }
