@@ -39,13 +39,13 @@ type Player = {
             status: QueueStatus;
             getFirst: () =>
                 | {
-                      rules: { name: string };
+                      rules: { name: string; uiName?: string };
                       quantity: number;
                       progress: number;
                   }
                 | undefined;
             getAll: () => Array<{
-                rules: { name: string };
+                rules: { name: string; uiName?: string };
                 quantity: number;
                 progress: number;
             }>;
@@ -249,7 +249,7 @@ export class ReplayStatsOverlay extends UiComponent<ReplayStatsOverlayProps> {
 
                 const label =
                     QUEUE_TYPE_LABELS[queue.type] || "?";
-                const itemName = first.rules.name;
+                const itemName = this.resolveUiName(first.rules);
                 const progress = Math.floor(first.progress * 100);
                 const statusStr =
                     queue.status === QueueStatus.OnHold
@@ -386,6 +386,21 @@ export class ReplayStatsOverlay extends UiComponent<ReplayStatsOverlayProps> {
                 y += LINE_HEIGHT;
             }
         }
+    }
+
+    /**
+     * Resolve a rules object's uiName to a localized display string.
+     * Falls back to the internal code name if no localized string is found.
+     */
+    private resolveUiName(rules: { name: string; uiName?: string }): string {
+        const uiName = (rules as any).uiName;
+        if (uiName && uiName !== "") {
+            const resolved = this.props.strings.get(uiName);
+            if (resolved && resolved !== uiName) {
+                return resolved;
+            }
+        }
+        return rules.name;
     }
 
     onDispose() {
