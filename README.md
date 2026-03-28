@@ -75,7 +75,7 @@ bun run preview
 如果游戏页面本身是 `HTTPS`，浏览器会拒绝 `ws://` 局域网连接，此时局域网服务器也必须通过 `wss://` 提供服务。
 
 Windows 下可以直接执行：
-
+需要先在server目录执行 bun install
 ```bash
 bun run server:cert:lan
 bun run server:cert:trust
