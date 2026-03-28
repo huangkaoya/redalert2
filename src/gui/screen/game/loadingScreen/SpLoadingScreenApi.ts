@@ -89,9 +89,9 @@ export class SpLoadingScreenApi implements LoadingScreenApi {
                 status: PlayerConnectionStatus.Connected,
                 loadPercent,
                 country: countries[localPlayer.countryId],
-                color: localPlayer.countryId === OBS_COUNTRY_ID
+                color: localPlayer.countryId === OBS_COUNTRY_ID || localPlayer.colorId < 0
                     ? "#fff"
-                    : colors[localPlayer.colorId].asHexString(),
+                    : (colors[localPlayer.colorId]?.asHexString() ?? "#fff"),
                 team: localPlayer.teamId,
             },
         ];

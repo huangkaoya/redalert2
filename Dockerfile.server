@@ -1,0 +1,17 @@
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Install dependencies
+COPY server/package.json server/
+RUN cd server && npm install
+
+# Copy source
+COPY src/network/multiplayer/ src/network/multiplayer/
+COPY server/ server/
+
+EXPOSE 8443
+
+ENV NODE_ENV=production
+
+CMD ["npx", "tsx", "server/index.ts", "--mode=public", "--port=8443"]

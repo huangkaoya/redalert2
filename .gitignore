@@ -132,6 +132,11 @@ dist
 # Vite build output
 dist
 
+# Local LAN TLS certificates
+server/certs/*.pem
+server/certs/*.cer
+server/certs/*.pfx
+
 # Temporary test files
 __test_strip.mjs
 __stripped_output.js

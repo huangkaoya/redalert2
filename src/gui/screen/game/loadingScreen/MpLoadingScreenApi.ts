@@ -119,9 +119,9 @@ export class MpLoadingScreenApi implements LoadingScreenApi {
                 status: loadInfo.status,
                 loadPercent: loadInfo.loadPercent,
                 country: countries[player.countryId],
-                color: player.countryId === OBS_COUNTRY_ID
+                color: player.countryId === OBS_COUNTRY_ID || player.colorId < 0
                     ? "#fff"
-                    : colors[player.colorId].asHexString(),
+                    : (colors[player.colorId]?.asHexString() ?? "#fff"),
                 team: player.teamId,
             };
         });

@@ -661,7 +661,7 @@ input[type="range"]:focus {
 }
 
 #ra2web-root .lobby-form .player-slots {
-    height: 263px; /* 27px * 9 slots + 20px header */
+    height: 290px; /* 27px * 10 slots + 20px header */
 }
 
 #ra2web-root .lobby-form .player-slot-header .player-header-players {
@@ -2742,4 +2742,525 @@ input[type="range"]:focus {
 
 #ra2web-root .bot-upload-btn:hover {
     background: rgba(178, 34, 34, 0.7);
+}
+
+/* ============================================================
+   Multiplayer (联机) screens – style consistent with lobby-form
+   ============================================================ */
+
+#ra2web-root .mp-form {
+    width: 632px;
+    padding: 30px;
+    box-sizing: border-box;
+}
+
+#ra2web-root .mp-connect-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#ra2web-root .mp-section-title {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 4px;
+    color: #FFD700;
+}
+
+#ra2web-root .mp-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#ra2web-root .mp-label {
+    width: 90px;
+    flex-shrink: 0;
+    text-align: right;
+}
+
+#ra2web-root .mp-field input[type="text"],
+#ra2web-root .mp-field input[type="url"],
+#ra2web-root .mp-field input[type="password"],
+#ra2web-root .mp-field select {
+    flex: 1;
+    min-width: 0;
+    height: 24px;
+    box-sizing: border-box;
+    background: rgba(60, 0, 0, 0.9);
+    color: #fff;
+    border: 1px solid red;
+    box-shadow: inset 0 0 6px #000;
+    padding: 0 6px;
+}
+
+#ra2web-root .mp-input-short {
+    width: 90px !important;
+    flex: none !important;
+}
+
+#ra2web-root .mp-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+#ra2web-root .mp-error {
+    color: #ff6666;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+/* ---------- browser / room list ---------- */
+
+#ra2web-root .mp-browser-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#ra2web-root .mp-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+#ra2web-root .mp-status-label {
+    font-size: 12px;
+    color: #aaa;
+}
+
+#ra2web-root .mp-toolbar-buttons {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+#ra2web-root .mp-room-list {
+    border: 1px red solid;
+    min-height: 160px;
+}
+
+#ra2web-root .mp-room-header {
+    display: flex;
+    padding: 4px 6px;
+    border-bottom: 1px red solid;
+    font-weight: bold;
+    font-size: 12px;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#ra2web-root .mp-room-list-body {
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+#ra2web-root .mp-room-row {
+    display: flex;
+    padding: 3px 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+#ra2web-root .mp-room-row:hover {
+    background: rgba(255, 0, 0, 0.12);
+}
+
+#ra2web-root .mp-room-row.selected {
+    background: rgba(255, 0, 0, 0.28);
+}
+
+#ra2web-root .mp-room-row.mp-room-inactive {
+    opacity: 0.55;
+}
+
+#ra2web-root .mp-room-separator {
+    font-size: 11px;
+    color: #aaa;
+    padding: 4px 6px;
+    border-top: 1px solid rgba(255, 0, 0, 0.3);
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* column widths */
+#ra2web-root .mp-col { display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+#ra2web-root .mp-col-name   { width: 30%; }
+#ra2web-root .mp-col-host   { width: 18%; }
+#ra2web-root .mp-col-map    { width: 22%; }
+#ra2web-root .mp-col-count  { width: 10%; text-align: center; }
+#ra2web-root .mp-col-ping   { width: 10%; text-align: center; }
+#ra2web-root .mp-col-status { width: 10%; text-align: center; }
+
+#ra2web-root .mp-empty {
+    text-align: center;
+    padding: 30px 10px;
+    color: #aaa;
+    font-size: 13px;
+}
+
+/* ---------- room info bar ---------- */
+
+#ra2web-root .mp-room-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+#ra2web-root .mp-stats {
+    font-size: 11px;
+    color: #888;
+    text-align: right;
+}
+
+/* ---------- modal overlay ---------- */
+
+#ra2web-root .mp-overlay {
+    position: fixed;
+    left: 0; top: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+#ra2web-root .mp-dialog {
+    width: 380px;
+    padding: 20px 24px;
+    border: 1px red solid;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#ra2web-root .mp-dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+#ra2web-root .mp-create-room-hint {
+    font-size: 12px;
+    color: #ccc;
+}
+
+/* ---------- ping indicators ---------- */
+
+#ra2web-root .mp-ping-good  { color: #00ff00; }
+#ra2web-root .mp-ping-ok    { color: #aaff00; }
+#ra2web-root .mp-ping-warn  { color: #ffaa00; }
+#ra2web-root .mp-ping-bad   { color: #ff4444; }
+
+/* ---------- placeholder (auto-match) ---------- */
+
+#ra2web-root .mp-placeholder-content {
+    text-align: center;
+    padding: 20px 10px;
+}
+
+#ra2web-root .mp-placeholder-icon {
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+#ra2web-root .mp-placeholder-message {
+    font-size: 18px;
+    font-weight: bold;
+    color: #FFD700;
+    margin-bottom: 8px;
+}
+
+#ra2web-root .mp-placeholder-desc {
+    font-size: 13px;
+    color: #ccc;
+    margin-bottom: 16px;
+}
+
+#ra2web-root .mp-placeholder-features {
+    text-align: left;
+    display: inline-block;
+}
+
+#ra2web-root .mp-placeholder-features ul {
+    margin: 6px 0 0 18px;
+    padding: 0;
+    font-size: 12px;
+    color: #ccc;
+}
+
+#ra2web-root .mp-placeholder-features li {
+    margin-bottom: 4px;
+}
+
+/* ---------- Room lobby chat ---------- */
+
+#ra2web-root .mp-chat {
+    border: 1px solid rgba(255, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.45);
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 98px;
+    min-height: 98px;
+    height: auto;
+    min-width: 0;
+}
+
+#ra2web-root .mp-chat-messages {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 4px 6px;
+    font-size: 12px;
+    color: #ccc;
+}
+
+#ra2web-root .mp-chat-line {
+    padding: 1px 0;
+    word-break: break-all;
+}
+
+#ra2web-root .mp-chat-name {
+    color: #FFD700;
+    font-weight: bold;
+}
+
+#ra2web-root .mp-chat-input {
+    border-top: 1px solid rgba(255, 0, 0, 0.3);
+    padding: 0;
+    flex: 0 0 auto;
+}
+
+#ra2web-root .mp-chat-input input {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    color: #fff;
+    padding: 5px 6px;
+    font-size: 12px;
+    outline: none;
+}
+
+/* ---------- Room lobby actions ---------- */
+
+#ra2web-root .mp-lobby-actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 10px;
+}
+
+#ra2web-root .mp-lobby-actions .dialog-button {
+    width: 188px;
+    margin-top: 0;
+}
+
+/* ---------- Room lobby native select overrides ---------- */
+/* The Skirmish lobby uses custom Select components; the MP room lobby uses native <select> elements.
+   These rules style the native selects to fit the same layout. */
+
+#ra2web-root .lobby-form.lobby-form-mp .player-slots {
+    height: auto;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+#ra2web-root .lobby-form.lobby-form-mp {
+    padding: 18px 20px 16px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    box-sizing: border-box;
+}
+
+#ra2web-root .mp-lobby-layout {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+#ra2web-root .mp-player-slots-panel {
+    flex: 0 1 auto;
+    min-height: 0;
+}
+
+#ra2web-root .mp-lobby-controls {
+    margin-top: 10px;
+    flex: 0 0 auto;
+}
+
+/* ---------- MP lobby grid layout ---------- */
+
+#ra2web-root .mp-slot-row {
+    display: grid;
+    grid-template-columns: 28px 1fr 96px 82px 82px 82px;
+    gap: 6px;
+    align-items: center;
+    height: 26px;
+}
+
+#ra2web-root .mp-slot-row.mp-slot-header {
+    height: 20px;
+    font-size: 12px;
+    color: #ccc;
+    margin-bottom: 4px;
+}
+
+#ra2web-root .mp-slot-row + .mp-slot-row {
+    margin-top: 1px;
+}
+
+#ra2web-root .mp-col-status {
+    text-align: center;
+    color: #FFD700;
+    font-size: 18px;
+    line-height: 1;
+}
+
+#ra2web-root .mp-host-icon {
+    color: #FFD700;
+    font-size: 18px;
+}
+
+#ra2web-root .mp-ready-icon {
+    color: #66ff66;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 0 0 4px rgba(102, 255, 102, 0.45);
+}
+
+#ra2web-root .mp-col-name,
+#ra2web-root .mp-col-country,
+#ra2web-root .mp-col-color,
+#ra2web-root .mp-col-pos,
+#ra2web-root .mp-col-team {
+    overflow: hidden;
+}
+
+#ra2web-root .mp-slot-select,
+#ra2web-root .mp-slot-input {
+    width: 100%;
+    box-sizing: border-box;
+    height: 26px;
+    font-size: 12px;
+    background: #5a0000;
+    color: #fff;
+    border: 1px solid red;
+    box-shadow: inset 0 0 6px #000;
+    outline: none;
+    padding: 0 6px;
+}
+
+#ra2web-root .mp-slot-select:disabled {
+    opacity: 0.6;
+}
+
+/* game options native selects */
+#ra2web-root .lobby-form .game-options .slider-item select {
+    height: 26px;
+    font-size: 12px;
+    background: #5a0000;
+    color: yellow;
+    border: 1px solid red;
+    box-shadow: inset 0 0 6px #000;
+    outline: none;
+    padding: 0 6px;
+    width: 100%;
+    vertical-align: middle;
+}
+
+#ra2web-root .lobby-form.lobby-form-mp .game-options {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 270px;
+    gap: 28px;
+    margin-top: 0;
+}
+
+#ra2web-root .lobby-form.lobby-form-mp .game-options-left,
+#ra2web-root .lobby-form.lobby-form-mp .game-options-right {
+    float: none;
+}
+
+#ra2web-root .lobby-form.lobby-form-mp .game-options-left {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, max-content));
+    column-gap: 22px;
+    row-gap: 8px;
+    align-content: start;
+    height: auto;
+}
+
+#ra2web-root .lobby-form.lobby-form-mp .game-options-left > div {
+    margin-bottom: 0;
+}
+
+#ra2web-root .mp-option-item label,
+#ra2web-root .mp-right-checkbox label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+#ra2web-root .lobby-form.lobby-form-mp .game-options-right {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+}
+
+#ra2web-root .lobby-form.lobby-form-mp .game-options-right > div {
+    margin: 0;
+}
+
+#ra2web-root .lobby-form.lobby-form-mp .slider-item {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+}
+
+#ra2web-root .lobby-form.lobby-form-mp .slider-item span.label {
+    width: auto;
+    text-align: right;
+    margin-right: 0;
+}
+
+#ra2web-root .lobby-form.lobby-form-mp .game-options-right .checkbox-item {
+    margin-top: 2px;
+}
+
+#ra2web-root .mp-right-checkbox {
+    padding-left: 2px;
+}
+
+#ra2web-root .mp-chat-messages,
+#ra2web-root .mp-chat-input input,
+#ra2web-root .mp-col-name,
+#ra2web-root .mp-col-country,
+#ra2web-root .mp-col-color,
+#ra2web-root .mp-col-pos,
+#ra2web-root .mp-col-team {
+    text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.75);
+}
+
+#ra2web-root .lobby-form.lobby-form-mp .mp-col-name {
+    justify-self: stretch;
+}
+
+#ra2web-root .lobby-form.lobby-form-mp .mp-slot-row.mp-slot-header .mp-col-name,
+#ra2web-root .lobby-form.lobby-form-mp .mp-slot-row.mp-slot-header .mp-col-country,
+#ra2web-root .lobby-form.lobby-form-mp .mp-slot-row.mp-slot-header .mp-col-color,
+#ra2web-root .lobby-form.lobby-form-mp .mp-slot-row.mp-slot-header .mp-col-pos,
+#ra2web-root .lobby-form.lobby-form-mp .mp-slot-row.mp-slot-header .mp-col-team {
+    align-self: end;
 }

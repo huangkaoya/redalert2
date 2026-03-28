@@ -28,7 +28,7 @@ export class ReplayRecorder {
             }
             this.replay.actionRecords.push({
                 tick,
-                playerId: action.player?.index ?? 0,
+                playerId: this.resolvePlayerIndex(action.player),
                 actionType: action.actionType,
                 data: serialized,
             });
@@ -68,7 +68,16 @@ export class ReplayRecorder {
     private resolvePlayerId(playerName: string): number {
         try {
             const player = this.game.getPlayerByName(playerName);
-            return player?.index ?? 0;
+            return this.resolvePlayerIndex(player);
+        } catch {
+            return 0;
+        }
+    }
+
+    private resolvePlayerIndex(player: any): number {
+        if (!player) return 0;
+        try {
+            return this.game.getPlayerNumber(player) ?? 0;
         } catch {
             return 0;
         }

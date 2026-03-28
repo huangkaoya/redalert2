@@ -302,6 +302,18 @@ export class Gui {
         subScreens.set(MainMenuScreenType.MapSelection, MapSelScreen);
         const { TestEntryScreen } = await import('./gui/screen/mainMenu/main/TestEntryScreen.js');
         subScreens.set(MainMenuScreenType.TestEntry, TestEntryScreen);
+
+        const { MultiplayerMenuScreen } = await import('./gui/screen/mainMenu/multiplayer/MultiplayerMenuScreen.js');
+        subScreens.set(MainMenuScreenType.MultiplayerMenu, MultiplayerMenuScreen);
+        const { LanGameScreen } = await import('./gui/screen/mainMenu/multiplayer/LanGameScreen.js');
+        subScreens.set(MainMenuScreenType.LanGame, LanGameScreen);
+        const { PublicLobbyScreen } = await import('./gui/screen/mainMenu/multiplayer/PublicLobbyScreen.js');
+        subScreens.set(MainMenuScreenType.PublicLobby, PublicLobbyScreen);
+        const { AutoMatchScreen } = await import('./gui/screen/mainMenu/multiplayer/AutoMatchScreen.js');
+        subScreens.set(MainMenuScreenType.AutoMatch, AutoMatchScreen);
+        const { RoomLobbyScreen } = await import('./gui/screen/mainMenu/multiplayer/RoomLobbyScreen.js');
+        subScreens.set(MainMenuScreenType.RoomLobby, RoomLobbyScreen);
+
         const { InfoAndCreditsScreen } = await import('./gui/screen/mainMenu/infoAndCredits/InfoAndCreditsScreen.js');
         const { CreditsScreen } = await import('./gui/screen/mainMenu/credits/CreditsScreen.js');
         subScreens.set(MainMenuScreenType.InfoAndCredits, InfoAndCreditsScreen);

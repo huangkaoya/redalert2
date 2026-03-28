@@ -24,5 +24,10 @@ export enum MainMenuScreenType {
     OptionsSound = 17,
     OptionsKeyboard = 18,
     OptionsStorage = 19,
-    TestEntry = 20
+    TestEntry = 20,
+    MultiplayerMenu = 21,
+    LanGame = 22,
+    PublicLobby = 23,
+    AutoMatch = 24,
+    RoomLobby = 25,
 }

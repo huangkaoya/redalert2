@@ -24,7 +24,7 @@ export const ReplayDetailsPane: React.FC<ReplayDetailsPaneProps> = ({ replayDeta
         {gameTimestamp ? (<tr>
             <td>{strings.get("GUI:ReplayTime")}:</td>
             <td dir="auto">
-              {new Date(gameTimestamp * (String(gameTimestamp).length < 13 ? 1000 : 1)).toLocaleString()}
+              {new Date(gameTimestamp).toLocaleString()}
             </td>
           </tr>) : null}
         <tr>

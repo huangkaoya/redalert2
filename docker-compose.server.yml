@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  game-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    ports:
+      - "8443:8443"
+    environment:
+      - NODE_ENV=production
+    command: >
+      npx tsx server/index.ts
+      --mode=public
+      --port=8443
+      --host=0.0.0.0
+      --secret=${AUTH_SECRET:-change-me-in-production}
+      --cors=${CORS_ORIGIN:-*}
+      --maxrooms=${MAX_ROOMS:-100}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8443/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

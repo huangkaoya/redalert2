@@ -201,6 +201,26 @@ export class MainMenuRootScreen extends RootScreen {
         else if (screenType === MainMenuScreenType.Home) {
             screen = new screenClass(this.strings, this.messageBoxApi, this.appVersion, false, false, this.fullScreen);
         }
+        else if (screenType === MainMenuScreenType.MultiplayerMenu) {
+            screen = new screenClass(this.strings);
+        }
+        else if (screenType === MainMenuScreenType.LanGame) {
+            const { MapFileLoader } = await import('../game/MapFileLoader.js');
+            const { Engine } = await import('../../../engine/Engine.js');
+            const { ResourceLoader } = await import('../../../engine/ResourceLoader.js');
+            const mapResourceLoader = new ResourceLoader(this.config.mapsBaseUrl ?? '');
+            const mapFileLoader = new MapFileLoader(mapResourceLoader, Engine.vfs);
+            const mapList = Engine.getMapList();
+            const gameModes = Engine.getMpModes();
+            screen = new screenClass(this.strings, this.messageBoxApi, this.jsxRenderer, mapList, gameModes, mapFileLoader, this.localPrefs);
+        }
+        else if (screenType === MainMenuScreenType.PublicLobby ||
+                 screenType === MainMenuScreenType.AutoMatch) {
+            screen = new screenClass(this.strings, this.messageBoxApi, this.jsxRenderer);
+        }
+        else if (screenType === MainMenuScreenType.RoomLobby) {
+            screen = new screenClass(this.strings, this.messageBoxApi, this.jsxRenderer, this.rootController);
+        }
         else {
             screen = new screenClass(this.strings, this.messageBoxApi, this.appVersion, false, false);
         }

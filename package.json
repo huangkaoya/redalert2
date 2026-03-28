@@ -26,7 +26,15 @@
     "debug:superweapon": "bun scripts/superweapon-flow.mjs",
     "debug:nuke": "bun scripts/nuke-flow.mjs",
     "debug:minimap-shroud": "bun scripts/minimap-shroud-flow.mjs",
-    "debug:anti-air-hit": "bun scripts/anti-air-hit-flow.mjs"
+    "debug:anti-air-hit": "bun scripts/anti-air-hit-flow.mjs",
+    "server:cert:lan": "powershell -ExecutionPolicy Bypass -File ./server/generate-lan-tls-cert.ps1",
+    "server:cert:trust": "powershell -ExecutionPolicy Bypass -File ./server/trust-lan-tls-cert.ps1",
+    "server:lan": "cd server && npx tsx index.ts --mode=lan --port=9527",
+    "server:lan:tls": "cd server && npx tsx index.ts --mode=lan --host=0.0.0.0 --port=9527 --cert=certs/lan-server-cert.pem --key=certs/lan-server-key.pem",
+    "server:public": "cd server && npx tsx index.ts --mode=public --port=8443",
+    "server:dev": "cd server && npx tsx watch index.ts --mode=lan --port=9527",
+    "server:dev:tls": "cd server && npx tsx watch index.ts --mode=lan --host=0.0.0.0 --port=9527 --cert=certs/lan-server-cert.pem --key=certs/lan-server-key.pem",
+    "server:install": "cd server && npm install"
   },
   "dependencies": {
     "7z-wasm": "^1.1.0",

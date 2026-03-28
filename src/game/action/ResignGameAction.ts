@@ -10,6 +10,9 @@ export class ResignGameAction extends Action {
         this.game = game;
         this.localPlayerName = localPlayerName;
     }
+    unserialize(_data: any): void {
+        // No parameters needed
+    }
     process(): void {
         if (this.localPlayerName !== this.player.name) {
             const player = this.player;

@@ -15,12 +15,12 @@ export class RootController extends Controller {
     async pushScreen(screenType: ScreenType, params?: any): Promise<void> {
         return super.pushScreen(screenType, params);
     }
-    createGame(gameId: string, timestamp: number, gameServer?: string, playerName?: string, gameOpts?: any, singlePlayer?: boolean, tournament?: boolean, mapTransfer: boolean = false, createPrivateGame: boolean = false, returnTo?: any): void {
+    createGame(gameId: string, timestamp: number, gameServer?: string, playerName?: string, gameOpts?: any, singlePlayer?: boolean, tournament?: boolean, mapTransfer: boolean = false, createPrivateGame: boolean = false, returnTo?: any, lanSession?: any): void {
         if (!this.serverRegions) {
             throw new Error('Server regions must be loaded first');
         }
         let gservUrl = '';
-        if (!singlePlayer) {
+        if (!singlePlayer && !lanSession) {
             if (!gameServer) {
                 throw new Error('Game server must be set for a multiplayer game');
             }
@@ -38,6 +38,7 @@ export class RootController extends Controller {
             createPrivateGame,
             gservUrl,
             returnTo,
+            lanSession,
         });
     }
     joinGame(gameId: string, timestamp: number, gservUrl: string, playerName?: string, tournament?: boolean, mapTransfer: boolean = false, returnTo?: any): void {

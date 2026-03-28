@@ -65,6 +65,16 @@ export class HomeScreen implements Screen {
                     }
                 }
             },
+            {
+                label: '联机',
+                tooltip: '局域网联机 / 公网大厅 / 自动匹配',
+                onClick: () => {
+                    console.log('[HomeScreen] Multiplayer clicked');
+                    if (this.controller) {
+                        this.controller.pushScreen(MainMenuScreenType.MultiplayerMenu);
+                    }
+                }
+            },
         ];
         if (this.storageEnabled) {
             buttons.push({

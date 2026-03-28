@@ -1,0 +1,25 @@
+{
+  "name": "redalert2-multiplayer-server",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Red Alert 2 Web Multiplayer Game Server",
+  "main": "index.ts",
+  "scripts": {
+    "start": "tsx server/index.ts",
+    "start:lan": "tsx server/index.ts --mode=lan --port=9527",
+    "start:lan:tls": "tsx index.ts --mode=lan --host=0.0.0.0 --port=9527 --cert=certs/lan-server-cert.pem --key=certs/lan-server-key.pem",
+    "start:public": "tsx server/index.ts --mode=public --port=8443",
+    "dev": "tsx watch server/index.ts --mode=lan --port=9527",
+    "dev:tls": "tsx watch index.ts --mode=lan --host=0.0.0.0 --port=9527 --cert=certs/lan-server-cert.pem --key=certs/lan-server-key.pem",
+    "cert:lan": "powershell -ExecutionPolicy Bypass -File ./generate-lan-tls-cert.ps1",
+    "cert:trust": "powershell -ExecutionPolicy Bypass -File ./trust-lan-tls-cert.ps1"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.13",
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0"
+  }
+}

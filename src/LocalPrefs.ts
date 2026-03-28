@@ -17,6 +17,9 @@ export enum StorageKey {
     LastBots = "_r_lastBots",
     PreferredGameOpts = "_r_hostOpts",
     LastConnection = "_r_lastCon",
+    LastLanServerAddress = "_r_lastLanServerAddress",
+    LastLanServerPort = "_r_lastLanServerPort",
+    LastLanPlayerName = "_r_lastLanPlayerName",
     PreferredServerRegion = "_r_region",
     TauntsEnabled = "_r_taunts"
 }

@@ -74,7 +74,7 @@ export class Replay {
         ds.writeUtf8WithLen(this.engineVersion);
         ds.writeUtf8WithLen(this.modHash);
         ds.writeUtf8WithLen(this.gameId);
-        ds.writeUint32(this.gameTimestamp);
+        ds.writeUint32(Math.floor(this.gameTimestamp / 1000));
         ds.writeUint32(this.finishedTick);
         ds.writeFloat64(this.timestamp);
 
@@ -133,7 +133,7 @@ export class Replay {
         this.engineVersion = ds.readUtf8WithLen();
         this.modHash = ds.readUtf8WithLen();
         this.gameId = ds.readUtf8WithLen();
-        this.gameTimestamp = ds.readUint32();
+        this.gameTimestamp = ds.readUint32() * 1000;
         this.finishedTick = ds.readUint32();
         this.timestamp = ds.readFloat64();
 
@@ -200,7 +200,7 @@ export class Replay {
         const engineVersion = ds.readUtf8WithLen();
         const modHash = ds.readUtf8WithLen();
         const gameId = ds.readUtf8WithLen();
-        const gameTimestamp = ds.readUint32();
+        const gameTimestamp = ds.readUint32() * 1000;
         ds.readUint32();
         ds.readFloat64();
         const gameOptsSerialized = ds.readUtf8WithLen();

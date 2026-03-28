@@ -25,6 +25,8 @@ import { Minimap } from '@/gui/screen/game/component/Minimap';
 import { Replay } from '@/network/gamestate/Replay';
 import { ReplayRecorder } from '@/network/gamestate/ReplayRecorder';
 import { SoloPlayTurnManager } from '@/network/gamestate/SoloPlayTurnManager';
+import { MultiplayerSession } from '@/network/multiplayer/MultiplayerSession';
+import { SlotType } from '@/network/multiplayer/protocol';
 import { CombatantSidebarModel } from '@/gui/screen/game/component/hud/viewmodel/CombatantSidebarModel';
 import { ActionFactoryReg } from '@/game/action/ActionFactoryReg';
 import { MessageList } from '@/gui/screen/game/component/hud/viewmodel/MessageList';
@@ -46,6 +48,7 @@ import { MapDigest } from '@/engine/MapDigest';
 import { MapSupport } from '@/engine/MapSupport';
 import { OBS_COUNTRY_ID } from '@/game/gameopts/constants';
 import { MainMenuRoute } from '@/gui/screen/mainMenu/MainMenuRoute';
+import { PlayerActionCodec } from '@/network/multiplayer/PlayerActionCodec';
 import { RootRoute } from '@/gui/screen/RootRoute';
 import { ChatHistory } from '@/gui/chat/ChatHistory';
 import { PingMonitor } from '@/gui/screen/game/PingMonitor';
@@ -82,6 +85,7 @@ export class GameScreen extends RootScreen {
     private chatNetHandler?: any;
     private isSinglePlayer = false;
     private isTournament = false;
+    private lanSession: MultiplayerSession | null = null;
     private playerName = '';
     private returnTo?: any;
     private debugMapFile?: any;
@@ -121,7 +125,21 @@ export class GameScreen extends RootScreen {
         this.isTournament = params.tournament;
         const playerName = this.playerName = params.playerName;
         const isSinglePlayer = this.isSinglePlayer = params.create && params.singlePlayer;
+        this.lanSession = params.lanSession ?? null;
+        const isLanMultiplayer = params.create && !!params.lanSession;
+        console.log('[LAN-GameScreen] onEnter paths', {
+            isSinglePlayer,
+            isLanMultiplayer,
+            hasLanSession: !!params.lanSession,
+            playerName,
+            hasGameOpts: !!params.gameOpts,
+            gameId: params.gameId,
+        });
         if (isSinglePlayer) {
+            gameOpts = params.gameOpts;
+        }
+        else if (isLanMultiplayer) {
+            // LAN multiplayer: game opts already built by RoomLobbyScreen, no WOL required
             gameOpts = params.gameOpts;
         }
         else {
@@ -172,7 +190,7 @@ export class GameScreen extends RootScreen {
             this.handleMapLoadError(error, gameOpts.mapName);
             return;
         }
-        const loadingScreenApi = this.loadingScreenApiFactory.create(isSinglePlayer ? LoadingScreenType.SinglePlayer : LoadingScreenType.MultiPlayer);
+        const loadingScreenApi = this.loadingScreenApiFactory.create((isSinglePlayer || isLanMultiplayer) ? LoadingScreenType.SinglePlayer : LoadingScreenType.MultiPlayer);
         this.loadingScreenApi = loadingScreenApi;
         this.disposables.add(loadingScreenApi, () => this.loadingScreenApi = undefined);
         this.disposables.add(() => this.gameLoader.clearStaticCaches());
@@ -194,6 +212,36 @@ export class GameScreen extends RootScreen {
         this.game = game;
         this.disposables.add(game, () => this.game = undefined, () => Engine.unloadTheater(theater.type));
         const localPlayer = game.getPlayerByName(playerName);
+        // For LAN multiplayer, wire server connection IDs to game players so
+        // MultiplayerTurnManager can correctly apply incoming TURN_DATA actions.
+        if (isLanMultiplayer && this.lanSession) {
+            const gameSlots = this.lanSession.getGameSlots();
+            console.log('[LAN-GameScreen] gameSlots from session:', gameSlots?.map((s: any) => ({
+                idx: s.index, type: s.type, name: s.playerName, pid: s.playerId,
+                color: s.colorId, country: s.countryId,
+            })));
+            if (gameSlots) {
+                const humanSlots = gameSlots
+                    .filter(s => s.type === SlotType.Player)
+                    .sort((a, b) => a.index - b.index);
+                humanSlots.forEach((slot) => {
+                    const player = game.getPlayerByName(slot.playerName ?? '');
+                    if (player != null && slot.playerId != null) {
+                        player.multiplayerId = slot.playerId;
+                        console.log(`[LAN-GameScreen] mapped player "${player.name}" -> multiplayerId=${slot.playerId}`);
+                    } else {
+                        console.warn(`[LAN-GameScreen] FAILED to map slot`, slot.playerName, 'player=', player, 'playerId=', slot.playerId);
+                    }
+                });
+            } else {
+                console.warn('[LAN-GameScreen] No gameSlots available from session!');
+            }
+            // Dump all game players for reference
+            const allPlayers = game.playerList?.getAll?.() ?? [];
+            console.log('[LAN-GameScreen] All game players:', allPlayers.map((p: any) => ({
+                name: p.name, multiplayerId: p.multiplayerId, isObserver: p.isObserver, defeated: p.defeated,
+            })));
+        }
         let uiInitResult: any;
         try {
             uiInitResult = this.loadUi(game, theater, localPlayer, hudSide, cameoFilenames);
@@ -224,6 +272,24 @@ export class GameScreen extends RootScreen {
         this.disposables.add(() => this.replayRecorderInstance = undefined);
         if (this.isSinglePlayer) {
             this.gameTurnMgr = new SoloPlayTurnManager(game, localPlayer, actionQueue, this.actionLogger, replayRecorder);
+        }
+        else if (isLanMultiplayer && this.lanSession) {
+            console.log('[LAN-GameScreen] Creating LAN turn manager...');
+            const playerActionCodec = new PlayerActionCodec();
+            this.gameTurnMgr = this.lanSession.createTurnManager(
+                game,
+                actionQueue,
+                actionFactory,
+                playerActionCodec,
+                playerActionCodec,
+                this.actionLogger,
+                replayRecorder,
+            );
+            this.lagState = false;
+            console.log('[LAN-GameScreen] LAN turn manager created:', {
+                turnMgrType: this.gameTurnMgr?.constructor?.name,
+                hasSendActions: !!this.gameTurnMgr?.onSendActions,
+            });
         }
         else {
             this.gameTurnMgr = new GameTurnManager(game, actionQueue);
@@ -271,6 +337,14 @@ export class GameScreen extends RootScreen {
             DevToolsApi.registerVar('cheats', this.runtimeVars.cheatsEnabled);
             this.disposables.add(() => DevToolsApi.unregisterVar('cheats'));
         }
+        else if (isLanMultiplayer && this.lanSession) {
+            // Tell the server we finished loading; when all players do, server starts TURN_DATA
+            console.log('[LAN-GameScreen] Reporting load 100% and starting game loop...');
+            this.lanSession.reportLoadProgress(100);
+            // Start game loop immediately — MultiplayerTurnManager will block on TURN_DATA(tick=0)
+            startGameHandler();
+            console.log('[LAN-GameScreen] Game loop started, gameStatus:', game.status);
+        }
         else if (this.gservCon.isOpen()) {
             const rateChangeHandler = (rate: number) => this.gameTurnMgr.setRate(rate);
             this.gservCon.onRateChange.subscribe(rateChangeHandler);
@@ -302,9 +376,14 @@ export class GameScreen extends RootScreen {
             this.uiAnimationLoop.start();
         }
         if (!this.isSinglePlayer) {
-            this.wolService.setAutoReconnect(false);
-            this.gservCon.onClose.unsubscribe(this.onGservClose);
-            this.gservCon.close();
+            if (this.lanSession) {
+                this.lanSession.disconnect();
+                this.lanSession = null;
+            } else {
+                this.wolService?.setAutoReconnect(false);
+                this.gservCon?.onClose?.unsubscribe(this.onGservClose);
+                this.gservCon?.close();
+            }
         }
     }
     private restoreRendererToUiOnly(): void {
@@ -400,8 +479,8 @@ export class GameScreen extends RootScreen {
         }
         this.pointer.unlock();
         const cleanup = () => {
-            this.wolService.closeWolConnection();
-            if (!this.isSinglePlayer && this.gservCon.isOpen()) {
+            this.wolService?.closeWolConnection();
+            if (!this.isSinglePlayer && this.gservCon?.isOpen()) {
                 this.gservCon.onClose.unsubscribe(this.onGservClose);
                 this.gservCon.close();
             }
@@ -994,7 +1073,7 @@ export class GameScreen extends RootScreen {
         game.onEnd.subscribe(gameEndHandler);
         this.disposables.add(() => game.onEnd.unsubscribe(gameEndHandler));
         game.start?.();
-        if (!this.isSinglePlayer) {
+        if (!this.isSinglePlayer && !this.lanSession) {
             this.initNetStats(localPlayer);
         }
         this.gameAnimationLoop = new GameAnimationLoop(localPlayer, this.renderer, this.sound, this.gameTurnMgr, {
@@ -1040,7 +1119,7 @@ export class GameScreen extends RootScreen {
         }
         this.playerUi.init?.(hud);
         this.disposables.add(this.playerUi, () => this.playerUi = undefined);
-        if (!this.isSinglePlayer) {
+        if (!this.isSinglePlayer && !this.lanSession) {
             const chatNetHandler = new ChatNetHandler(this.gservCon, this.wolService, messageList, chatHistory, new ChatMessageFormat(this.strings, localPlayer.name), localPlayer, game, this.replayRecorderInstance, this.mutedPlayers ?? new Set<string>());
             chatNetHandler.init();
             const worldInteraction = this.playerUi.worldInteraction;

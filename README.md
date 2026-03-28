@@ -70,6 +70,26 @@ bun run build
 bun run preview
 ```
 
+### 局域网 WSS / LAN WSS
+
+如果游戏页面本身是 `HTTPS`，浏览器会拒绝 `ws://` 局域网连接，此时局域网服务器也必须通过 `wss://` 提供服务。
+
+Windows 下可以直接执行：
+
+```bash
+bun run server:cert:lan
+bun run server:cert:trust
+bun run server:lan:tls
+```
+
+说明：
+
+- `server:cert:lan` 会在 `server/certs/` 下生成局域网证书和私钥，并自动把当前机器的 IPv4 地址写入证书 SAN。
+- `server:cert:trust` 会把 `server/certs/lan-server-cert.cer` 导入当前 Windows 用户的受信任根证书。
+- `server:lan:tls` 会启动 `wss://<你的局域网IP>:9527/ws`。
+- 其他需要连接的局域网客户端，也必须信任同一个 `server/certs/lan-server-cert.cer`，否则浏览器仍会拒绝 WSS 握手。
+- 如果主机 IP 变了，重新执行一次 `bun run server:cert:lan`。
+
 类型检查：
 
 ```bash

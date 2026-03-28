@@ -316,14 +316,12 @@ export class SkirmishScreen extends MainMenuScreen {
             mapOfficial: (selectedMap! as any).official ?? false,
         };
         this.slotsInfo = [{ type: NetSlotType.Player, name: this.playerName }];
-        for (let i = 1; i < 8; ++i) {
-            if (i < effectiveMaxSlots && this.gameOpts.aiPlayers[i]) {
+        for (let i = 1; i < effectiveMaxSlots; ++i) {
+            if (this.gameOpts.aiPlayers[i]) {
                 this.slotsInfo.push({ type: NetSlotType.Ai, difficulty: (this.gameOpts.aiPlayers[i] as any).difficulty });
             }
             else {
-                const type = i < effectiveMaxSlots
-                    ? (preferredOpts.slotsClosed.has(i) ? NetSlotType.Closed : NetSlotType.Open)
-                    : NetSlotType.Closed;
+                const type = preferredOpts.slotsClosed.has(i) ? NetSlotType.Closed : NetSlotType.Open;
                 this.slotsInfo.push({ type });
             }
         }
@@ -428,13 +426,15 @@ export class SkirmishScreen extends MainMenuScreen {
         if (!wasObserver && isNowObserver) {
             // Switching to observer: open the extra slot so all map positions can be AI
             const extraSlotIdx = this.gameOpts.maxSlots;
-            if (extraSlotIdx < 8 && this.slotsInfo[extraSlotIdx]?.type === NetSlotType.Closed) {
+            if (this.slotsInfo.length <= extraSlotIdx) {
+                this.slotsInfo.push({ type: NetSlotType.Open });
+            } else if (this.slotsInfo[extraSlotIdx]?.type === NetSlotType.Closed) {
                 this.slotsInfo[extraSlotIdx].type = NetSlotType.Open;
             }
         } else if (wasObserver && !isNowObserver) {
             // Switching from observer: close the extra slot
             const extraSlotIdx = this.gameOpts.maxSlots;
-            if (extraSlotIdx < 8) {
+            if (extraSlotIdx < this.slotsInfo.length) {
                 this.slotsInfo[extraSlotIdx].type = NetSlotType.Closed;
                 this.gameOpts.aiPlayers[extraSlotIdx] = undefined as any;
             }

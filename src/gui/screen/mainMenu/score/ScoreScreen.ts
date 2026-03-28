@@ -44,6 +44,7 @@ export class ScoreScreen extends MainMenuScreen {
     private wolService: WolService;
     private scoreTable?: any;
     private reportUpdateTask?: Task<void>;
+    private lastParams?: ScoreScreenParams;
     constructor(strings: any, jsxRenderer: any, wolService: WolService) {
         super();
         this.strings = strings;
@@ -51,7 +52,15 @@ export class ScoreScreen extends MainMenuScreen {
         this.wolService = wolService;
         this.musicType = MusicType.Score;
     }
-    async onEnter(params: ScoreScreenParams): Promise<void> {
+    async onEnter(params?: ScoreScreenParams): Promise<void> {
+        if (params) {
+            this.lastParams = params;
+        } else {
+            params = this.lastParams;
+        }
+        if (!params) {
+            return;
+        }
         this.title = params.singlePlayer
             ? this.strings.get("GUI:SkirmishScore")
             : this.strings.get("GUI:MultiplayerScore");
@@ -94,6 +103,9 @@ export class ScoreScreen extends MainMenuScreen {
         this.controller.setMainComponent(component);
     }
     private loadGameReport(game: Game): void {
+        if (!this.wolService) {
+            return;
+        }
         this.reportUpdateTask?.cancel();
         const task = (this.reportUpdateTask = new Task(async (cancellationToken) => {
             while (true) {
