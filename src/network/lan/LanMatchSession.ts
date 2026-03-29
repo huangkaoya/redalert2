@@ -49,6 +49,13 @@ interface LanGameTurnMessage {
     dropPeerIds: string[];
 }
 
+interface LanGameLoadProgressMessage {
+    type: 'lan-game-load-progress';
+    gameId: string;
+    fromPeerId: string;
+    loadPercent: number;
+}
+
 export interface LanMatchTurnBatch {
     tick: number;
     peerId: string;
@@ -74,6 +81,8 @@ export interface LanMatchSnapshotState {
     bufferedTicks: number[];
     batchPeerIdsByTick: Record<number, string[]>;
     pendingLocalTicks: number[];
+    allPeersLoaded: boolean;
+    loadPercentByPeerId: Record<string, number>;
     transportMembers: LanMatchSnapshotMember[];
 }
 
@@ -123,6 +132,7 @@ export class LanMatchSession {
     private readonly suspectedDropPeerIds = new Set<string>();
     private readonly turnBatchesByTick = new Map<number, Map<string, LanMatchTurnBatch>>();
     private readonly localTurnIdByTick = new Map<number, string>();
+    private readonly loadPercentByPeerId = new Map<string, number>();
 
     private lastSnapshot: LanMatchTransportSnapshot;
     private localTurnCounter = 0;
@@ -141,6 +151,7 @@ export class LanMatchSession {
         this.orderedAssignments.forEach((assignment) => {
             this.assignmentByPeerId.set(assignment.peerId, { ...assignment });
             this.activePeerIds.add(assignment.peerId);
+            this.loadPercentByPeerId.set(assignment.peerId, 0);
         });
         this.lastSnapshot = this.transport.getSnapshot();
         this.handleSnapshotChange = this.handleSnapshotChange.bind(this);
@@ -178,6 +189,27 @@ export class LanMatchSession {
 
     getSnapshot(): LanMatchSnapshotState {
         return this.createSnapshot();
+    }
+
+    reportLoadProgress(percent: number): void {
+        const localPeerId = this.transport.getSelf().id;
+        const nextPercent = Math.max(0, Math.min(100, Math.floor(percent)));
+        const currentPercent = this.loadPercentByPeerId.get(localPeerId) ?? 0;
+        if (nextPercent <= currentPercent) {
+            return;
+        }
+        this.loadPercentByPeerId.set(localPeerId, nextPercent);
+        this.transport.broadcastAppMessage({
+            type: 'lan-game-load-progress',
+            gameId: this.descriptor.gameId,
+            fromPeerId: localPeerId,
+            loadPercent: nextPercent,
+        } satisfies LanGameLoadProgressMessage);
+        this.dispatchSnapshot();
+    }
+
+    areAllPlayersLoaded(): boolean {
+        return this.getOrderedActivePeerIds().every((peerId) => (this.loadPercentByPeerId.get(peerId) ?? 0) >= 100);
     }
 
     submitLocalTurn(tick: number, actionData: Uint8Array): string {
@@ -295,11 +327,24 @@ export class LanMatchSession {
             return;
         }
 
-        const message = payload as LanGameTurnMessage;
-        if (message.type !== 'lan-game-turn' || message.gameId !== this.descriptor.gameId) {
+        const message = payload as LanGameTurnMessage | LanGameLoadProgressMessage;
+        if (message.gameId !== this.descriptor.gameId) {
             return;
         }
         if (message.fromPeerId !== entry.from.id || !this.assignmentByPeerId.has(message.fromPeerId)) {
+            return;
+        }
+
+        if (message.type === 'lan-game-load-progress') {
+            const currentPercent = this.loadPercentByPeerId.get(message.fromPeerId) ?? 0;
+            if (message.loadPercent > currentPercent) {
+                this.loadPercentByPeerId.set(message.fromPeerId, Math.min(100, Math.floor(message.loadPercent)));
+                this.dispatchSnapshot();
+            }
+            return;
+        }
+
+        if (message.type !== 'lan-game-turn') {
             return;
         }
 
@@ -429,15 +474,20 @@ export class LanMatchSession {
                     }),
                 ])
         );
+        const orderedActivePeerIds = this.getOrderedActivePeerIds();
         return {
             gameId: this.descriptor.gameId,
             localPeerId: this.transport.getSelf().id,
             controlPeerId: this.getControlPeerId(),
-            activePeerIds: this.getOrderedActivePeerIds(),
+            activePeerIds: orderedActivePeerIds,
             suspectedDropPeerIds: this.getSortedPeerIds(this.suspectedDropPeerIds),
             bufferedTicks: Array.from(this.turnBatchesByTick.keys()).sort((left, right) => left - right),
             batchPeerIdsByTick,
             pendingLocalTicks: Array.from(this.localTurnIdByTick.keys()).sort((left, right) => left - right),
+            allPeersLoaded: orderedActivePeerIds.every((peerId) => (this.loadPercentByPeerId.get(peerId) ?? 0) >= 100),
+            loadPercentByPeerId: Object.fromEntries(
+                this.orderedAssignments.map((assignment) => [assignment.peerId, this.loadPercentByPeerId.get(assignment.peerId) ?? 0])
+            ),
             transportMembers: this.lastSnapshot.members.map((member) => ({ ...member })),
         };
     }

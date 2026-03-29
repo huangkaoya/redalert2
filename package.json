@@ -29,6 +29,7 @@
     "debug:anti-air-hit": "bun scripts/anti-air-hit-flow.mjs",
     "debug:lan-mesh": "bun scripts/lan-mesh-flow.mjs",
     "debug:lan-app-message": "bun scripts/lan-app-message-flow.mjs",
+    "debug:lan-entry": "bun scripts/lan-entry-shot.mjs",
     "debug:lan-lockstep": "bun scripts/lan-lockstep-flow.mjs",
     "debug:lan-match-session": "bun scripts/lan-match-session-flow.ts",
     "debug:lan-map-transfer": "bun scripts/lan-room-map-transfer-flow.ts"

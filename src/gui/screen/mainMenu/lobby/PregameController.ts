@@ -171,6 +171,26 @@ export class PregameController {
         return Boolean(this.gameOpts && this.slotsInfo);
     }
 
+    private mergeDefinedSettings(...sources: any[]): any {
+        const merged: Record<string, any> = {};
+        for (const source of sources) {
+            if (!source) {
+                continue;
+            }
+            for (const key in source) {
+                if (!Object.prototype.hasOwnProperty.call(source, key) || source[key] === undefined) {
+                    continue;
+                }
+                merged[key] = source[key];
+            }
+        }
+        return merged;
+    }
+
+    private getEffectiveMpDialogSettings(gameModeId: number): any {
+        return this.mergeDefinedSettings(this.rules.mpDialogSettings, this.gameModes.getById(gameModeId).mpDialogSettings);
+    }
+
     getSnapshot(): PregameSnapshot {
         return {
             gameOpts: cloneGameOpts(this.requireGameOpts()),
@@ -256,7 +276,7 @@ export class PregameController {
             slotsInfo[lastUsedSlotIndex - index].type = NetSlotType.Closed;
             gameOpts.aiPlayers[lastUsedSlotIndex - index] = undefined;
         }
-        const mpDialogSettings = this.gameModes.getById(gameOpts.gameMode).mpDialogSettings;
+        const mpDialogSettings = this.getEffectiveMpDialogSettings(gameOpts.gameMode);
         [...gameOpts.humanPlayers, ...gameOpts.aiPlayers].forEach((player: any) => {
             if (!player) {
                 return;
@@ -284,7 +304,7 @@ export class PregameController {
     createLobbyFormProps(options: PregameLobbyFormOptions): any {
         const gameOpts = this.requireGameOpts();
         const slotsInfo = this.requireSlotsInfo();
-        const mpDialogSettings = this.gameModes.getById(gameOpts.gameMode).mpDialogSettings;
+        const mpDialogSettings = this.getEffectiveMpDialogSettings(gameOpts.gameMode);
         const onStateChange = () => options.onStateChange?.();
         const playerSlots = this.buildPlayerSlots(options.decoratePlayerSlot);
 
@@ -311,8 +331,8 @@ export class PregameController {
             mpDialogSettings,
             selectedGameServer: options.selectedGameServer,
             activeSlotIndex: options.activeSlotIndex,
-            teamsAllowed: this.gameModes.getById(gameOpts.gameMode).mpDialogSettings.alliesAllowed,
-            teamsRequired: this.gameModes.getById(gameOpts.gameMode).mpDialogSettings.mustAlly,
+            teamsAllowed: mpDialogSettings.alliesAllowed,
+            teamsRequired: mpDialogSettings.mustAlly,
             playerSlots,
             shortGame: gameOpts.shortGame,
             mcvRepacks: gameOpts.mcvRepacks,
@@ -483,14 +503,14 @@ export class PregameController {
 
         this.currentMapFile = await this.mapFileLoader.load(selectedMap.fileName);
         const preferredOpts = (this.preferredHostOpts = new PreferredHostOpts());
+        const mpDialogSettings = this.getEffectiveMpDialogSettings(selectedModeId);
         if (savedOpts) {
             preferredOpts.unserialize(savedOpts);
         }
         else {
-            preferredOpts.applyMpDialogSettings(this.rules.mpDialogSettings);
+            preferredOpts.applyMpDialogSettings(mpDialogSettings);
         }
 
-        const mpDialogSettings = this.gameModes.getById(selectedModeId).mpDialogSettings;
         const lastBots = savedBots ? new Parser().parseAiOpts(savedBots) : undefined;
         const defaultAiDifficulty = AiDifficulty.Easy;
         const humanCountryId = savedCountry !== undefined &&
@@ -710,7 +730,7 @@ export class PregameController {
         const slotsInfo = this.requireSlotsInfo();
         const gameOpts = this.requireGameOpts();
         if (occupation === SlotOccupation.Occupied && aiDifficulty !== undefined) {
-            const mpDialogSettings = this.gameModes.getById(gameOpts.gameMode).mpDialogSettings;
+            const mpDialogSettings = this.getEffectiveMpDialogSettings(gameOpts.gameMode);
             const slot = slotsInfo[slotIndex];
             slot.type = NetSlotType.Ai;
             slot.difficulty = aiDifficulty;
@@ -837,7 +857,7 @@ export class PregameController {
             playerSlot.status = PlayerStatus.NotReady;
         });
 
-        const mpDialogSettings = this.gameModes.getById(gameOpts.gameMode).mpDialogSettings;
+        const mpDialogSettings = this.getEffectiveMpDialogSettings(gameOpts.gameMode);
         playerSlots.forEach((playerSlot: any, slotIndex: number) => {
             if (!playerSlot) {
                 return;

@@ -18,7 +18,9 @@ export enum StorageKey {
     PreferredGameOpts = "_r_hostOpts",
     LastConnection = "_r_lastCon",
     PreferredServerRegion = "_r_region",
-    TauntsEnabled = "_r_taunts"
+    TauntsEnabled = "_r_taunts",
+    LanPlayerName = "_r_lanPlayerName",
+    LanRecentPlays = "_r_lanRecentPlays"
 }
 export class LocalPrefs {
     protected storage: Storage;

@@ -13,7 +13,11 @@ import { LobbyType } from '@/gui/screen/mainMenu/lobby/component/viewmodel/lobby
 import { MapPreviewRenderer } from '@/gui/screen/mainMenu/lobby/MapPreviewRenderer';
 import { MapFile } from '@/data/MapFile';
 import { MainMenuRoute } from '@/gui/screen/mainMenu/MainMenuRoute';
+import { StorageKey } from '@/LocalPrefs';
 import { uint8ArrayToBase64String } from '@/util/string';
+import { LanRecentPlayRecord } from '@/gui/screen/mainMenu/lan/LanRecentPlay';
+import { SlotType as NetSlotType } from '@/network/gameopt/SlotInfo';
+import { OBS_COUNTRY_ID } from '@/game/gameopts/constants';
 
 interface RootController {
     goToScreen(screenType: number, params?: any): void;
@@ -68,6 +72,8 @@ interface MapDirectory {
     writeFile(file: any): Promise<void>;
 }
 
+const MAX_RECENT_LAN_PLAYS = 8;
+
 export class LanSetupScreen extends MainMenuScreen {
     declare public title: string;
     declare public musicType: MusicType;
@@ -75,6 +81,7 @@ export class LanSetupScreen extends MainMenuScreen {
     private form?: any;
     private resetNonce = 0;
     private inviteNonce = 0;
+    private joinNonce = 0;
     private previewRequestId = 0;
 
     private readonly meshSession = new LanMeshSession();
@@ -98,6 +105,10 @@ export class LanSetupScreen extends MainMenuScreen {
         super();
         this.title = '';
         this.musicType = MusicType.Intro;
+        const savedLanPlayerName = this.localPrefs.getItem(StorageKey.LanPlayerName)?.trim();
+        if (savedLanPlayerName) {
+            this.meshSession.updateSelfName(savedLanPlayerName);
+        }
         this.pregameController = this.createPregameController();
         this.roomSession = new LanRoomSession(this.meshSession, this.gameModes, this.mapFileLoader, this.mapDir, this.mapList);
     }
@@ -130,7 +141,7 @@ export class LanSetupScreen extends MainMenuScreen {
         if (params) {
             this.pregameController.applyMapSelection(params);
             this.pregameController.updateSelfName(this.meshSession.getSelf().name);
-            this.roomSession.startHosting(this.pregameController.getSnapshot());
+            this.roomSession.startHosting(this.createLanHostSnapshot());
         }
         this.refreshSidebarButtons();
         this.refreshSidebarMpText();
@@ -152,6 +163,7 @@ export class LanSetupScreen extends MainMenuScreen {
     private handleLaunch = (descriptor: any) => {
         this.activeMatchSession?.dispose();
         this.activeMatchSession = new LanMatchSession(this.meshSession, descriptor);
+        this.recordRecentPlay(descriptor);
         const currentCustomMap = this.roomSession.getResolvedCustomMapFile();
         this.rootController.goToScreen(ScreenType.Game, {
             create: true,
@@ -211,9 +223,8 @@ export class LanSetupScreen extends MainMenuScreen {
             pregameController: this.pregameController,
             resetNonce: this.resetNonce,
             inviteNonce: this.inviteNonce,
-            onCreateRoom: async () => {
-                await this.handleCreateRoom();
-            },
+            joinNonce: this.joinNonce,
+            recentSessions: this.getRecentPlays(),
             onStartGame: async () => {
                 await this.startLanGame();
             },
@@ -234,6 +245,9 @@ export class LanSetupScreen extends MainMenuScreen {
                 this.roomSession.applyHostPregameSnapshot(this.pregameController.getSnapshot());
                 this.refreshSidebarMpText();
                 void this.refreshSidebarPreview();
+            },
+            onCommitName: (name: string) => {
+                this.persistLanPlayerName(name);
             },
         };
     }
@@ -278,10 +292,37 @@ export class LanSetupScreen extends MainMenuScreen {
         this.refreshView();
     }
 
+    private createLanHostSnapshot(): any {
+        const snapshot = this.pregameController.getSnapshot();
+        const visibleSlots = snapshot.gameOpts.humanPlayers[0]?.countryId === OBS_COUNTRY_ID
+            ? snapshot.gameOpts.maxSlots + 1
+            : snapshot.gameOpts.maxSlots;
+        for (let slotIndex = 1; slotIndex < visibleSlots; slotIndex += 1) {
+            if (snapshot.slotsInfo[slotIndex]?.type === NetSlotType.Player) {
+                continue;
+            }
+            snapshot.slotsInfo[slotIndex] = { type: NetSlotType.Open };
+            snapshot.gameOpts.aiPlayers[slotIndex] = undefined;
+        }
+        return snapshot;
+    }
+
     private openInviteDialog(): void {
+        const roomSnapshot = this.roomSession.getSnapshot();
+        if (!roomSnapshot.canInvite) {
+            this.messageBoxApi.show('当前没有空闲玩家槽位，请先打开一个空位后再邀请。');
+            return;
+        }
         this.inviteNonce += 1;
         this.form?.applyOptions?.((options: any) => {
             options.inviteNonce = this.inviteNonce;
+        });
+    }
+
+    private openJoinDialog(): void {
+        this.joinNonce += 1;
+        this.form?.applyOptions?.((options: any) => {
+            options.joinNonce = this.joinNonce;
         });
     }
 
@@ -308,6 +349,18 @@ export class LanSetupScreen extends MainMenuScreen {
         if (!inWaitingRoom) {
             this.controller.setSidebarButtons([
                 {
+                    label: '创建房间',
+                    tooltip: '先选择模式和地图，再进入等待页',
+                    onClick: () => {
+                        void this.handleCreateRoom();
+                    },
+                },
+                {
+                    label: '加入房间',
+                    tooltip: '扫码或粘贴二维码内容加入现有房间',
+                    onClick: () => this.openJoinDialog(),
+                },
+                {
                     label: '返回',
                     tooltip: '返回主菜单',
                     isBottom: true,
@@ -323,7 +376,10 @@ export class LanSetupScreen extends MainMenuScreen {
         if (meshSnapshot.isInRoom) {
             buttons.push({
                 label: '邀请玩家',
-                tooltip: '打开二维码邀请弹窗',
+                tooltip: roomSnapshot.canInvite
+                    ? '打开二维码邀请弹窗'
+                    : '当前没有空闲玩家槽位',
+                disabled: !roomSnapshot.canInvite,
                 onClick: () => this.openInviteDialog(),
             });
         }
@@ -421,5 +477,71 @@ export class LanSetupScreen extends MainMenuScreen {
             console.warn('[LanSetupScreen] Failed to refresh sidebar preview', error);
             this.controller.setSidebarPreview();
         }
+    }
+
+    private persistLanPlayerName(name: string): void {
+        const trimmed = name.trim();
+        if (!trimmed) {
+            this.localPrefs.removeItem(StorageKey.LanPlayerName);
+            return;
+        }
+        this.localPrefs.setItem(StorageKey.LanPlayerName, trimmed.slice(0, 24));
+    }
+
+    private getRecentPlays(): LanRecentPlayRecord[] {
+        const raw = this.localPrefs.getItem(StorageKey.LanRecentPlays);
+        if (!raw) {
+            return [];
+        }
+        try {
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) {
+                return [];
+            }
+            return parsed
+                .filter((entry): entry is LanRecentPlayRecord => Boolean(
+                    entry &&
+                    typeof entry.gameId === 'string' &&
+                    typeof entry.roomId === 'string' &&
+                    (entry.role === 'host' || entry.role === 'guest') &&
+                    typeof entry.modeLabel === 'string' &&
+                    typeof entry.mapTitle === 'string' &&
+                    typeof entry.timestamp === 'number' &&
+                    Array.isArray(entry.memberNames)
+                ))
+                .sort((left, right) => right.timestamp - left.timestamp)
+                .slice(0, MAX_RECENT_LAN_PLAYS);
+        }
+        catch (error) {
+            console.warn('[LanSetupScreen] Failed to read recent LAN plays', error);
+            return [];
+        }
+    }
+
+    private saveRecentPlays(records: LanRecentPlayRecord[]): void {
+        this.localPrefs.setItem(
+            StorageKey.LanRecentPlays,
+            JSON.stringify(records.slice(0, MAX_RECENT_LAN_PLAYS))
+        );
+    }
+
+    private recordRecentPlay(descriptor: any): void {
+        const roomSnapshot = this.roomSession.getSnapshot();
+        const recentRecord: LanRecentPlayRecord = {
+            gameId: descriptor.gameId,
+            roomId: descriptor.roomId,
+            role: descriptor.hostPeerId === descriptor.localPeerId ? 'host' : 'guest',
+            modeLabel: this.strings.get(this.gameModes.getById(descriptor.gameOpts.gameMode).label),
+            mapTitle: descriptor.gameOpts.mapTitle,
+            mapOfficial: descriptor.gameOpts.mapOfficial,
+            memberNames: roomSnapshot.members.map((member) => member.name),
+            memberCount: roomSnapshot.members.length || descriptor.humanAssignments.length,
+            timestamp: descriptor.timestamp,
+        };
+        const nextRecentPlays = [
+            recentRecord,
+            ...this.getRecentPlays().filter((entry) => entry.gameId !== recentRecord.gameId),
+        ];
+        this.saveRecentPlays(nextRecentPlays);
     }
 }

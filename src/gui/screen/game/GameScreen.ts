@@ -188,10 +188,12 @@ export class GameScreen extends RootScreen {
             return;
         }
         const loadingScreenType =
-            isSinglePlayer || isLanGame
+            isSinglePlayer
                 ? LoadingScreenType.SinglePlayer
-                : LoadingScreenType.MultiPlayer;
-        const loadingScreenApi = this.loadingScreenApiFactory.create(loadingScreenType);
+                : isLanGame
+                    ? LoadingScreenType.Lan
+                    : LoadingScreenType.MultiPlayer;
+        const loadingScreenApi = this.loadingScreenApiFactory.create(loadingScreenType, this.lanMatchSession);
         this.loadingScreenApi = loadingScreenApi;
         this.disposables.add(loadingScreenApi, () => this.loadingScreenApi = undefined);
         this.disposables.add(() => this.gameLoader.clearStaticCaches());
@@ -309,18 +311,24 @@ export class GameScreen extends RootScreen {
                 }
             }
         };
-        if (isSinglePlayer || isLanGame) {
+        if (isSinglePlayer) {
             startGameHandler();
-            if (isSinglePlayer) {
-                DevToolsApi.registerCommand('reset', async () => {
-                    await this.onLeave();
-                    await this.onEnter(params);
-                });
-                DevToolsApi.registerVar('speed', game.desiredSpeed);
-                this.disposables.add(() => DevToolsApi.unregisterCommand('reset'), () => DevToolsApi.unregisterVar('speed'));
-                DevToolsApi.registerVar('cheats', this.runtimeVars.cheatsEnabled);
-                this.disposables.add(() => DevToolsApi.unregisterVar('cheats'));
+            DevToolsApi.registerCommand('reset', async () => {
+                await this.onLeave();
+                await this.onEnter(params);
+            });
+            DevToolsApi.registerVar('speed', game.desiredSpeed);
+            this.disposables.add(() => DevToolsApi.unregisterCommand('reset'), () => DevToolsApi.unregisterVar('speed'));
+            DevToolsApi.registerVar('cheats', this.runtimeVars.cheatsEnabled);
+            this.disposables.add(() => DevToolsApi.unregisterVar('cheats'));
+        }
+        else if (isLanGame) {
+            loadingScreenApi.onLoadProgress(100);
+            await this.waitForLanPlayersLoaded(cancellationToken);
+            if (cancellationToken.isCancelled()) {
+                return;
             }
+            startGameHandler();
         }
         else if (this.gservCon.isOpen()) {
             const rateChangeHandler = (rate: number) => this.gameTurnMgr.setRate(rate);
@@ -331,6 +339,13 @@ export class GameScreen extends RootScreen {
             this.gservCon.sendLoadedPercent(100);
         }
     }
+
+    private async waitForLanPlayersLoaded(cancellationToken: any): Promise<void> {
+        while (!cancellationToken.isCancelled() && this.lanMatchSession && !this.lanMatchSession.areAllPlayersLoaded()) {
+            await sleep(50);
+        }
+    }
+
     async onLeave(): Promise<void> {
         this.pointer.unlock();
         const hadGameAnimationLoop = Boolean(this.gameAnimationLoop);

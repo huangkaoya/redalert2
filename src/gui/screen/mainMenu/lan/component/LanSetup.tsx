@@ -1,7 +1,9 @@
 import React, { startTransition, useEffect, useMemo, useRef, useState } from 'react';
 import { ChatHistory } from '@/gui/chat/ChatHistory';
+import { List, ListItem } from '@/gui/component/List';
 import { LobbyForm } from '@/gui/screen/mainMenu/lobby/component/LobbyForm';
 import { LobbyType, PlayerStatus } from '@/gui/screen/mainMenu/lobby/component/viewmodel/lobby';
+import { LanRecentPlayRecord } from '@/gui/screen/mainMenu/lan/LanRecentPlay';
 import { RECIPIENT_ALL } from '@/network/gservConfig';
 import { LanMeshSession, LanMeshSnapshot } from '@/network/lan/LanMeshSession';
 import { LanRoomSession, LanRoomSnapshot } from '@/network/lan/LanRoomSession';
@@ -31,12 +33,14 @@ interface LanSetupProps {
     pregameController: PregameController;
     resetNonce?: number;
     inviteNonce?: number;
-    onCreateRoom: () => Promise<void>;
+    joinNonce?: number;
+    recentSessions: LanRecentPlayRecord[];
     onStartGame: () => Promise<void>;
     onLeaveRoom: () => Promise<void>;
     onChangeMap: () => Promise<void>;
     onToggleReady: () => Promise<void>;
     onHostPregameChanged: () => void;
+    onCommitName?: (name: string) => void;
 }
 
 const MAX_MESSAGES = 180;
@@ -128,6 +132,30 @@ function describeCustomMapTransfer(roomSnapshot: LanRoomSnapshot): { text: strin
     };
 }
 
+function formatRecentTimestamp(timestamp: number): string {
+    const date = new Date(timestamp);
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+    const hours = `${date.getHours()}`.padStart(2, '0');
+    const minutes = `${date.getMinutes()}`.padStart(2, '0');
+    return `${month}/${day} ${hours}:${minutes}`;
+}
+
+function describeRecentRole(role: LanRecentPlayRecord['role']): string {
+    return role === 'host' ? '房主' : '成员';
+}
+
+function formatMemberSummary(record: LanRecentPlayRecord): string {
+    if (!record.memberNames.length) {
+        return `${record.memberCount} 人房间`;
+    }
+    const visibleMembers = record.memberNames.slice(0, 3).join('、');
+    if (record.memberNames.length > 3) {
+        return `${visibleMembers} 等 ${record.memberCount} 人`;
+    }
+    return `${visibleMembers} · ${record.memberCount} 人`;
+}
+
 export const LanSetup: React.FC<LanSetupProps> = ({
     meshSession,
     roomSession,
@@ -135,8 +163,10 @@ export const LanSetup: React.FC<LanSetupProps> = ({
     pregameController,
     resetNonce = 0,
     inviteNonce = 0,
-    onCreateRoom,
+    joinNonce = 0,
+    recentSessions,
     onHostPregameChanged,
+    onCommitName,
 }) => {
     const [meshSnapshot, setMeshSnapshot] = useState<LanMeshSnapshot>(meshSession.getSnapshot());
     const [roomSnapshot, setRoomSnapshot] = useState<LanRoomSnapshot>(roomSession.getSnapshot());
@@ -160,6 +190,7 @@ export const LanSetup: React.FC<LanSetupProps> = ({
     const [showAdvancedInvite, setShowAdvancedInvite] = useState(false);
     const lastResetNonceRef = useRef(resetNonce);
     const lastInviteNonceRef = useRef(inviteNonce);
+    const lastJoinNonceRef = useRef(joinNonce);
     const appMessageLogRef = useRef<any[]>([]);
 
     const supported = typeof RTCPeerConnection !== 'undefined';
@@ -257,10 +288,27 @@ export const LanSetup: React.FC<LanSetupProps> = ({
     }, [inviteNonce]);
 
     useEffect(() => {
+        if (lastJoinNonceRef.current === joinNonce) {
+            return;
+        }
+        lastJoinNonceRef.current = joinNonce;
+        setJoinDialogOpen(true);
+    }, [joinNonce]);
+
+    useEffect(() => {
         if (inviteDialogOpen && meshSnapshot.isInRoom) {
             void handleCreateInvite();
         }
-    }, [inviteDialogOpen]);
+    }, [inviteDialogOpen, meshSnapshot.isInRoom]);
+
+    useEffect(() => {
+        if (!inviteDialogOpen || roomSnapshot.canInvite) {
+            return;
+        }
+        setInviteDialogOpen(false);
+        setShowAdvancedInvite(false);
+        setClipboardHint(undefined);
+    }, [inviteDialogOpen, roomSnapshot.canInvite]);
 
     useEffect(() => {
         if (roomSnapshot.isRoomActive && joinDialogOpen) {
@@ -285,6 +333,8 @@ export const LanSetup: React.FC<LanSetupProps> = ({
         meshSession.updateSelfName(nameInput);
         const nextSelf = meshSession.getSnapshot().self;
         setMeshSnapshot(meshSession.getSnapshot());
+        setNameInput(nextSelf.name);
+        onCommitName?.(nextSelf.name);
         if (roomSnapshot.isHost && roomSnapshot.roomState) {
             pregameController.updateSelfName(nextSelf.name);
             onHostPregameChanged();
@@ -294,6 +344,10 @@ export const LanSetup: React.FC<LanSetupProps> = ({
     const handleCreateInvite = async () => {
         if (!supported) {
             appendSystemMessage('当前浏览器不支持 WebRTC。');
+            return;
+        }
+        if (!roomSession.getSnapshot().canInvite) {
+            appendSystemMessage('当前没有空闲玩家槽位，请先打开一个空位后再邀请。');
             return;
         }
         setBusy(true);
@@ -386,6 +440,7 @@ export const LanSetup: React.FC<LanSetupProps> = ({
     const activeSlotIndex = selfAssignment?.slotIndex ?? 0;
     const selfMember = roomSnapshot.members.find((member) => member.isSelf);
     const customMapTransfer = describeCustomMapTransfer(roomSnapshot);
+    const latestRecentSession = recentSessions[0];
     const waitingStatusStrip = waitingMode ? (
         <div className="lan-room-status-strip">
             <div className="lan-status-chip">
@@ -498,67 +553,89 @@ export const LanSetup: React.FC<LanSetupProps> = ({
                 </div>
             ) : !waitingMode ? (
                 <div className="lan-entry-layout">
-                    <div className="lan-panel lan-entry-panel lan-entry-name-panel">
+                    <div className="lan-panel lan-entry-panel lan-entry-profile-panel">
                         <div className="lan-panel-header">
-                            <h3>玩家名称</h3>
-                            <span>进入房间前先确认其他玩家会看到的名字。</span>
+                            <h3>玩家信息</h3>
+                            <span>右侧菜单负责创建和加入，这里只保留你的局域网档案。</span>
                         </div>
-                        <label className="lan-input-label" htmlFor="lan-self-name">
-                            玩家名称
-                        </label>
-                        <input
-                            id="lan-self-name"
-                            type="text"
-                            className="lan-text-input"
-                            maxLength={24}
-                            value={nameInput}
-                            data-lan-input="self-name"
-                            onChange={(event) => setNameInput(event.target.value)}
-                            onBlur={commitName}
-                            onKeyDown={(event) => {
-                                if (event.key === 'Enter') {
-                                    commitName();
-                                }
-                            }}
-                        />
+                        <div className="lan-entry-profile-grid">
+                            <div className="lan-entry-profile-editor">
+                                <label className="lan-input-label" htmlFor="lan-self-name">
+                                    玩家名称
+                                </label>
+                                <input
+                                    id="lan-self-name"
+                                    type="text"
+                                    className="lan-text-input"
+                                    maxLength={24}
+                                    value={nameInput}
+                                    data-lan-input="self-name"
+                                    onChange={(event) => setNameInput(event.target.value)}
+                                    onBlur={commitName}
+                                    onKeyDown={(event) => {
+                                        if (event.key === 'Enter') {
+                                            commitName();
+                                        }
+                                    }}
+                                />
+                                <div className="lan-entry-field-hint">
+                                    房间成员列表、聊天和开局后的玩家槽位都会使用这个名字。
+                                </div>
+                            </div>
+
+                            <div className="lan-entry-profile-stats">
+                                <div className="lan-entry-stat">
+                                    <span>当前身份</span>
+                                    <strong>{meshSnapshot.self.name}</strong>
+                                </div>
+                                <div className="lan-entry-stat">
+                                    <span>浏览器支持</span>
+                                    <strong className={supported ? 'tone-good' : 'tone-bad'}>
+                                        {supported ? 'WebRTC 可用' : '不可用'}
+                                    </strong>
+                                </div>
+                                <div className="lan-entry-stat">
+                                    <span>最近房间</span>
+                                    <strong>{latestRecentSession?.roomId ?? '--'}</strong>
+                                </div>
+                                <div className="lan-entry-stat">
+                                    <span>最近模式</span>
+                                    <strong>{latestRecentSession?.modeLabel ?? '暂无记录'}</strong>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="lan-entry-actions-grid">
-                        <div className="lan-panel lan-entry-panel lan-entry-action-card">
-                            <div className="lan-panel-header">
-                                <h3>创建房间</h3>
-                                <span>先选模式和地图，再进入等待页。</span>
-                            </div>
-                            <button
-                                type="button"
-                                className="dialog-button"
-                                data-lan-action="entry-create"
-                                disabled={busy}
-                                onClick={() => {
-                                    setBusy(true);
-                                    onCreateRoom().finally(() => setBusy(false));
-                                }}
-                            >
-                                创建房间
-                            </button>
-                            <div className="lan-entry-card-hint">创建方会在等待页里继续邀请其他玩家。</div>
+                    <div className="lan-panel lan-entry-panel lan-entry-recent-panel">
+                        <div className="lan-panel-header">
+                            <h3>最近参与</h3>
+                            <span>{recentSessions.length ? `本机保留最近 ${recentSessions.length} 次开局记录。` : '完成一次开局后会自动记录在这里。'}</span>
                         </div>
-
-                        <div className="lan-panel lan-entry-panel lan-entry-action-card">
-                            <div className="lan-panel-header">
-                                <h3>加入房间</h3>
-                                <span>直接扫码或粘贴二维码内容进入。</span>
+                        {recentSessions.length ? (
+                            <List className="lan-entry-recent-list">
+                                {recentSessions.map((record) => (
+                                    <ListItem className="lan-entry-recent-item" key={record.gameId}>
+                                        <div className="lan-entry-recent-item-top">
+                                            <strong>{record.mapTitle}</strong>
+                                            <span>{formatRecentTimestamp(record.timestamp)}</span>
+                                        </div>
+                                        <div className="lan-entry-recent-item-meta">
+                                            <span className="lan-entry-recent-chip">{describeRecentRole(record.role)}</span>
+                                            <span>{record.modeLabel}</span>
+                                            <span>房间 {record.roomId}</span>
+                                            <span>{record.mapOfficial ? '官方地图' : '自定义地图'}</span>
+                                        </div>
+                                        <div className="lan-entry-recent-item-members">
+                                            {formatMemberSummary(record)}
+                                        </div>
+                                    </ListItem>
+                                ))}
+                            </List>
+                        ) : (
+                            <div className="lan-entry-empty-state">
+                                右侧可以直接创建房间或加入房间。完成一次联机开局后，最近参与记录会显示在这里。
                             </div>
-                            <button
-                                type="button"
-                                className="dialog-button"
-                                data-lan-action="entry-open-join"
-                                onClick={() => setJoinDialogOpen(true)}
-                            >
-                                加入房间
-                            </button>
-                            <div className="lan-entry-card-hint">不再经过大厅列表，入房后直接进入等待页。</div>
-                        </div>
+                        )}
                     </div>
                 </div>
             ) : (

@@ -772,6 +772,12 @@ input[type="range"]:focus {
     margin-top: 10px;
 }
 
+#ra2web-root .lobby-form .game-options::after {
+    content: "";
+    display: block;
+    clear: both;
+}
+
 #ra2web-root .lobby-form .game-options-left {
     margin-left: 0;
     float: left;
@@ -1242,6 +1248,13 @@ input[type="range"]:focus {
     box-sizing: border-box;
 }
 
+#ra2web-root .lan-setup-form[data-lan-view="entry"] {
+    height: 100%;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
 #ra2web-root .lan-setup-form[data-lan-view="waiting"] {
     padding: 18px 30px 22px;
     height: 100%;
@@ -1269,42 +1282,137 @@ input[type="range"]:focus {
 }
 
 #ra2web-root .lan-setup-form .lan-entry-layout {
+    flex: 1 1 auto;
+    min-height: 510px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-profile-panel {
+    flex: 0 0 auto;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-profile-grid {
     display: grid;
-    grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+    grid-template-columns: minmax(260px, 1.2fr) minmax(220px, 0.9fr);
     gap: 16px;
-    align-items: start;
+    align-items: stretch;
 }
 
-#ra2web-root .lan-setup-form .lan-entry-actions-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
-}
-
-#ra2web-root .lan-setup-form .lan-entry-name-panel {
-    min-height: 0;
-}
-
-#ra2web-root .lan-setup-form .lan-entry-action-card {
-    min-height: 150px;
+#ra2web-root .lan-setup-form .lan-entry-profile-editor {
     display: flex;
     flex-direction: column;
 }
 
-#ra2web-root .lan-setup-form .lan-entry-action-card .dialog-button {
-    margin-top: auto;
-}
-
-#ra2web-root .lan-setup-form .lan-entry-card-hint {
-    margin-top: 10px;
+#ra2web-root .lan-setup-form .lan-entry-field-hint {
+    margin-top: 8px;
     color: silver;
     line-height: 1.35;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-profile-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-stat {
+    border: 1px red solid;
+    background: rgba(0, 0, 0, 0.3);
+    min-height: 58px;
+    padding: 7px 10px 6px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-sizing: border-box;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-stat span {
+    color: silver;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-stat strong {
+    color: white;
+    font-weight: inherit;
 }
 
 #ra2web-root .lan-setup-form .lan-entry-panel,
 #ra2web-root .lan-setup-form .lan-room-summary-panel,
 #ra2web-root .lan-setup-form .lan-room-loading-panel {
     min-height: 170px;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-recent-panel {
+    flex: 1 1 auto;
+    min-height: 292px;
+    display: flex;
+    flex-direction: column;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-recent-list {
+    flex: 1 1 auto;
+    min-height: 240px;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-recent-item {
+    padding: 9px 10px 8px;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-recent-item + .lan-entry-recent-item {
+    border-top: 1px solid rgba(255, 0, 0, 0.35);
+}
+
+#ra2web-root .lan-setup-form .lan-entry-recent-item-top,
+#ra2web-root .lan-setup-form .lan-entry-recent-item-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-recent-item-top strong {
+    color: white;
+    font-weight: inherit;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-recent-item-top span,
+#ra2web-root .lan-setup-form .lan-entry-recent-item-members {
+    color: silver;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-recent-item-meta {
+    margin-top: 4px;
+    font-size: 15px;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-recent-item-members {
+    margin-top: 5px;
+    line-height: 1.35;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-recent-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 20px;
+    padding: 2px 7px 1px;
+    border: 1px red solid;
+    background: rgba(34, 0, 0, 0.45);
+    color: #ffe165;
+    box-sizing: border-box;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-empty-state {
+    flex: 1 1 auto;
+    min-height: 180px;
+    border: 1px red solid;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 14px;
+    color: silver;
+    line-height: 1.45;
+    display: flex;
+    align-items: center;
 }
 
 #ra2web-root .lan-setup-form .lan-setup-main {
@@ -1393,7 +1501,8 @@ input[type="range"]:focus {
 }
 
 #ra2web-root .lan-setup-form .lan-room-form-shell > .lobby-form .lobby-form-before-chat {
-    margin-top: 8px;
+    margin-top: 4px;
+    clear: both;
 }
 
 #ra2web-root .lan-setup-form .lan-room-form-shell > .lobby-form .lobby-form-before-chat .lan-room-status-strip {
@@ -1401,11 +1510,12 @@ input[type="range"]:focus {
 }
 
 #ra2web-root .lan-setup-form .lan-room-form-shell > .lobby-form .chat-wrapper {
-    margin-top: 8px;
+    margin-top: 4px;
 }
 
 #ra2web-root .lan-setup-form .lan-room-form-shell > .lobby-form .messages {
-    height: 92px;
+    height: 54px;
+    margin-bottom: 6px;
 }
 
 #ra2web-root .lan-setup-form .lan-room-loading-panel-compact {
@@ -1421,6 +1531,11 @@ input[type="range"]:focus {
 
 #ra2web-root .lan-setup-form .lan-panel + .lan-panel {
     margin-top: 14px;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-layout > .lan-panel + .lan-panel,
+#ra2web-root .lan-setup-form .lan-dialog-grid > .lan-panel + .lan-panel {
+    margin-top: 0;
 }
 
 #ra2web-root .lan-setup-form .lan-panel-header {
@@ -1607,11 +1722,7 @@ input[type="range"]:focus {
     }
 
     #ra2web-root .lan-setup-form .lan-entry-layout {
-        grid-template-columns: 1fr;
-    }
-
-    #ra2web-root .lan-setup-form .lan-entry-actions-grid {
-        grid-template-columns: 1fr;
+        gap: 12px;
     }
 
     #ra2web-root .lan-setup-form .lan-setup-content {
@@ -1631,6 +1742,11 @@ input[type="range"]:focus {
         display: block;
         margin-top: 4px;
         text-align: left;
+    }
+
+    #ra2web-root .lan-setup-form .lan-entry-profile-grid,
+    #ra2web-root .lan-setup-form .lan-entry-profile-stats {
+        grid-template-columns: 1fr;
     }
 
     #ra2web-root .lan-dialog-overlay {

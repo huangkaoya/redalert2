@@ -92,6 +92,7 @@ export interface LanRoomSnapshot {
     roomState?: LanRoomState;
     members: LanRoomMemberSnapshot[];
     localMapFileReady: boolean;
+    canInvite: boolean;
     canStart: boolean;
     launchDescriptor?: LanLaunchDescriptor;
 }
@@ -972,6 +973,24 @@ export class LanRoomSession {
         return true;
     }
 
+    private canInvite(): boolean {
+        if (!this.roomState || !this.lastMeshSnapshot.isInRoom) {
+            return false;
+        }
+        const visibleSlots = this.computeVisibleSlots(this.roomState);
+        const occupiedSlots = new Set(this.roomState.humanAssignments.map((assignment) => assignment.slotIndex));
+        for (let slotIndex = 0; slotIndex < visibleSlots; slotIndex += 1) {
+            if (occupiedSlots.has(slotIndex)) {
+                continue;
+            }
+            const slotType = this.roomState.slotsInfo[slotIndex]?.type;
+            if (slotType === NetSlotType.Open || slotType === NetSlotType.OpenObserver) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private createSnapshot(): LanRoomSnapshot {
         const roomState = this.roomState ? cloneRoomState(this.roomState) : undefined;
         const hostPeerId = roomState?.hostPeerId;
@@ -998,6 +1017,7 @@ export class LanRoomSession {
             roomState,
             members,
             localMapFileReady: roomState ? roomState.gameOpts.mapOfficial || Boolean(this.currentCustomMapFile) : false,
+            canInvite: this.canInvite(),
             canStart: this.canStart(),
             launchDescriptor: this.launchDescriptor,
         };
