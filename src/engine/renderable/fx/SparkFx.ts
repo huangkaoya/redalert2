@@ -1,6 +1,6 @@
 import { Coords } from '@/game/Coords';
 import * as THREE from 'three';
-import * as SPE from 'shader-particle-engine';
+import SPE from './speRuntime';
 import { patchSpeGroup } from './speCompat';
 export class SparkFx {
     private static readonly PARTICLE_LIFETIME = 1;

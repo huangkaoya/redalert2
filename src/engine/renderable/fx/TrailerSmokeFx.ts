@@ -1,7 +1,7 @@
 import { AnimProps } from "@/engine/AnimProps";
 import { ImageUtils } from "@/engine/gfx/ImageUtils";
 import * as THREE from "three";
-import * as SPELib from "shader-particle-engine";
+import SPELib from "./speRuntime";
 import { patchSpeGroup } from "./speCompat";
 interface SmokeArt {
     art: {

@@ -1,5 +1,6 @@
 import { jsx } from '@/gui/jsx/jsx';
 import { OBS_COUNTRY_ID, NO_TEAM_ID } from '@/game/gameopts/constants';
+import { PlayerConnectionStatus } from '@/network/gamestate/PlayerConnectionStatus';
 import { CompositeDisposable } from '@/util/disposable/CompositeDisposable';
 import { LoadingScreenWrapper } from './LoadingScreenWrapper';
 import { LoadingScreenApi } from './LoadingScreenApi';
@@ -77,17 +78,22 @@ export class MpLoadingScreenApi implements LoadingScreenApi {
             this.createLoadingScreen(loadInfos);
         }
     };
-    constructor(private gservCon: GservCon, private loadInfoParser: LoadInfoParser, private rules: Rules, private strings: Strings, private uiScene: UiScene, private jsxRenderer: JsxRenderer, private gameResConfig: GameResConfig) { }
+    constructor(private gservCon: GservCon | undefined, private loadInfoParser: LoadInfoParser, private rules: Rules, private strings: Strings, private uiScene: UiScene, private jsxRenderer: JsxRenderer, private gameResConfig: GameResConfig) { }
     async start(players: Player[], mapName: string, localPlayerName: string): Promise<void> {
+        this.players = players;
+        this.localPlayerName = localPlayerName;
+        this.mapName = mapName;
+        if (!this.gservCon?.isOpen()) {
+            this.handleLoadInfoUpdate(this.createFallbackLoadInfos(0));
+            return;
+        }
         if (this.gservCon.isOpen()) {
-            this.players = players;
-            this.localPlayerName = localPlayerName;
             this.mapName = mapName;
             this.gservCon.onLoadInfo.subscribe(this.handleLoadInfoUpdate);
             this.disposables.add(() => this.gservCon.onLoadInfo.unsubscribe(this.handleLoadInfoUpdate));
             this.gservCon.requestLoadInfo();
             const intervalId = setInterval(() => {
-                if (this.gservCon.isOpen()) {
+                if (this.gservCon?.isOpen()) {
                     this.gservCon.requestLoadInfo();
                 }
                 else {
@@ -101,10 +107,20 @@ export class MpLoadingScreenApi implements LoadingScreenApi {
         const roundedPercent = Math.floor(percent);
         if (roundedPercent > this.lastLoadPercent) {
             this.lastLoadPercent = roundedPercent;
-            if (this.gservCon.isOpen()) {
+            if (this.gservCon?.isOpen()) {
                 this.gservCon.sendLoadedPercent(roundedPercent);
             }
+            else if (this.players?.length) {
+                this.handleLoadInfoUpdate(this.createFallbackLoadInfos(roundedPercent));
+            }
         }
+    }
+    private createFallbackLoadInfos(loadPercent: number): LoadInfo[] {
+        return (this.players ?? []).map((player) => ({
+            name: player.name,
+            status: PlayerConnectionStatus.Connected,
+            loadPercent: player.name === this.localPlayerName ? loadPercent : 0,
+        }));
     }
     private createExtendedLoadingInfos(loadInfos: LoadInfo[]): ExtendedPlayerInfo[] {
         const colors = [...this.rules.getMultiplayerColors().values()];

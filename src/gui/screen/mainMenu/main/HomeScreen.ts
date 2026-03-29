@@ -65,6 +65,16 @@ export class HomeScreen implements Screen {
                     }
                 }
             },
+            {
+                label: '局域网联机',
+                tooltip: '手工交换 SDP，建立局域网 P2P 数据通道',
+                onClick: () => {
+                    console.log('[HomeScreen] LAN Setup clicked');
+                    if (this.controller) {
+                        this.controller.pushScreen(MainMenuScreenType.LanSetup);
+                    }
+                }
+            },
         ];
         if (this.storageEnabled) {
             buttons.push({

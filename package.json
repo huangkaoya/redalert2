@@ -26,7 +26,12 @@
     "debug:superweapon": "bun scripts/superweapon-flow.mjs",
     "debug:nuke": "bun scripts/nuke-flow.mjs",
     "debug:minimap-shroud": "bun scripts/minimap-shroud-flow.mjs",
-    "debug:anti-air-hit": "bun scripts/anti-air-hit-flow.mjs"
+    "debug:anti-air-hit": "bun scripts/anti-air-hit-flow.mjs",
+    "debug:lan-mesh": "bun scripts/lan-mesh-flow.mjs",
+    "debug:lan-app-message": "bun scripts/lan-app-message-flow.mjs",
+    "debug:lan-lockstep": "bun scripts/lan-lockstep-flow.mjs",
+    "debug:lan-match-session": "bun scripts/lan-match-session-flow.ts",
+    "debug:lan-map-transfer": "bun scripts/lan-room-map-transfer-flow.ts"
   },
   "dependencies": {
     "7z-wasm": "^1.1.0",
@@ -40,8 +45,10 @@
     "classnames": "^2.5.1",
     "file-system-access": "^1.0.4",
     "js-logger": "^1.6.1",
+    "jsqr": "^1.4.0",
     "liang-barsky": "^1.0.12",
     "mersenne-twister": "^1.1.0",
+    "qrcode": "^1.5.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "shader-particle-engine": "^1.0.6",

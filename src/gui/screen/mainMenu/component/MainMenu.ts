@@ -418,11 +418,15 @@ export class MainMenu extends UiObject {
         else {
             this.sidebarButtons.forEach((btn) => btn.show());
             this.sidebarMpSlotContentEl.show();
-            this.sidebarSlots.forEach((slot) => {
+            this.sidebarSlots.forEach((slot, slotIndex) => {
                 let animRunner = slot.getAnimationRunner();
-                if ((animRunner as any).buttonState === MenuButtonState.Unlit) {
-                    (animRunner as any).buttonState = MenuButtonState.Normal;
+                if ((animRunner as any).buttonState === MenuButtonState.Hidden) {
+                    return;
                 }
+                const buttonConfig = this.sidebarButtonConfigs[slotIndex];
+                (animRunner as any).buttonState = buttonConfig?.disabled
+                    ? MenuButtonState.Unlit
+                    : MenuButtonState.Normal;
             });
         }
         this.sidebarNeedsRefresh = false;

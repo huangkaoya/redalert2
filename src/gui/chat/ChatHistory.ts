@@ -28,6 +28,9 @@ export class ChatHistory {
         this.messages.push(message);
         this._onNewMessage.dispatch(this, message);
     }
+    reset() {
+        this.messages = [];
+    }
     getAll() {
         return this.messages;
     }

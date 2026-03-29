@@ -24,5 +24,6 @@ export enum MainMenuScreenType {
     OptionsSound = 17,
     OptionsKeyboard = 18,
     OptionsStorage = 19,
-    TestEntry = 20
+    TestEntry = 20,
+    LanSetup = 21
 }

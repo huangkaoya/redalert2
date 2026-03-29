@@ -10,6 +10,10 @@ export class ObserveGameAction extends Action {
         super(ActionType.ObserveGame);
         this.game = game;
     }
+    unserialize(_data: Uint8Array): void { }
+    serialize(): Uint8Array {
+        return new Uint8Array();
+    }
     process(): void {
         const player = this.player;
         this.game.removeAllPlayerAssets(player);

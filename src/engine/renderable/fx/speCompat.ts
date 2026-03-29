@@ -1,4 +1,4 @@
-import SPE from 'shader-particle-engine';
+import SPE from './speRuntime';
 import type * as THREE from 'three';
 let shaderPatched = false;
 function patchShaderSource(source: string): string {

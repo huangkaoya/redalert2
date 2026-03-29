@@ -10,6 +10,10 @@ export class ResignGameAction extends Action {
         this.game = game;
         this.localPlayerName = localPlayerName;
     }
+    unserialize(_data: Uint8Array): void { }
+    serialize(): Uint8Array {
+        return new Uint8Array();
+    }
     process(): void {
         if (this.localPlayerName !== this.player.name) {
             const player = this.player;

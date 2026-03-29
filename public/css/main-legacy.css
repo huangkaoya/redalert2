@@ -208,7 +208,9 @@ html:-moz-full-screen body {
 }
 
 #ra2web-root .menu-button.disabled {
-    color: black;
+    color: #6e6e6e;
+    opacity: 0.68;
+    text-shadow: 1px 1px rgba(0, 0, 0, 0.75);
 }
 
 #ra2web-root .menu-version-string {
@@ -1233,6 +1235,415 @@ input[type="range"]:focus {
 
 #ra2web-root .map-sel-form .map-sel-search label input {
     flex: 1 0;
+}
+
+#ra2web-root .lan-setup-form {
+    padding: 20px 34px 26px;
+    box-sizing: border-box;
+}
+
+#ra2web-root .lan-setup-form[data-lan-view="waiting"] {
+    padding: 18px 30px 22px;
+    height: 100%;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#ra2web-root .lan-setup-form .lan-setup-notice {
+    margin-bottom: 18px;
+    padding: 8px 10px;
+    border: 1px red solid;
+    background: rgba(32, 0, 0, 0.45);
+    color: #ffcc7a;
+    line-height: 1.35;
+}
+
+#ra2web-root .lan-setup-form .lan-setup-content {
+    display: flex;
+    align-items: flex-start;
+}
+
+#ra2web-root .lan-setup-form .lan-setup-content > * + * {
+    margin-left: 16px;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-layout {
+    display: grid;
+    grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-name-panel {
+    min-height: 0;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-action-card {
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-action-card .dialog-button {
+    margin-top: auto;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-card-hint {
+    margin-top: 10px;
+    color: silver;
+    line-height: 1.35;
+}
+
+#ra2web-root .lan-setup-form .lan-entry-panel,
+#ra2web-root .lan-setup-form .lan-room-summary-panel,
+#ra2web-root .lan-setup-form .lan-room-loading-panel {
+    min-height: 170px;
+}
+
+#ra2web-root .lan-setup-form .lan-setup-main {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+#ra2web-root .lan-setup-form .lan-waiting-main {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    margin-top: auto;
+}
+
+#ra2web-root .lan-setup-form .lan-room-status-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+#ra2web-root .lan-setup-form .lan-status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 24px;
+    padding: 3px 8px 2px;
+    border: 1px red solid;
+    background: rgba(0, 0, 0, 0.25);
+    line-height: 1.35;
+    box-sizing: border-box;
+}
+
+#ra2web-root .lan-setup-form .lan-status-chip strong {
+    color: white;
+    font-weight: inherit;
+}
+
+#ra2web-root .lan-setup-form .lan-status-divider {
+    color: silver;
+}
+
+#ra2web-root .lan-setup-form .lan-room-form-shell {
+    margin-top: 14px;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+#ra2web-root .lan-setup-form .lan-room-form-shell-compact {
+    margin-top: 0;
+}
+
+#ra2web-root .lan-setup-form .lan-room-form-shell > .lobby-form {
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+#ra2web-root .lan-setup-form[data-lan-view="waiting"] .lan-room-form-shell > .lobby-form {
+    display: flex;
+    flex-direction: column;
+}
+
+#ra2web-root .lan-setup-form .lan-room-form-shell > .lobby-form .player-slots {
+    height: auto;
+    min-height: 0;
+    flex: 0 0 auto;
+}
+
+#ra2web-root .lan-setup-form[data-lan-view="waiting"] .lan-room-form-shell > .lobby-form .player-slots {
+    min-height: 263px;
+}
+
+#ra2web-root .lan-setup-form .lan-room-form-shell > .lobby-form .player-slot:empty {
+    display: none;
+}
+
+#ra2web-root .lan-setup-form[data-lan-view="waiting"] .lan-room-form-shell > .lobby-form .game-options {
+    margin-top: auto;
+    padding-top: 12px;
+}
+
+#ra2web-root .lan-setup-form .lan-room-form-shell > .lobby-form .lobby-form-before-chat {
+    margin-top: 8px;
+}
+
+#ra2web-root .lan-setup-form .lan-room-form-shell > .lobby-form .lobby-form-before-chat .lan-room-status-strip {
+    margin-bottom: 0;
+}
+
+#ra2web-root .lan-setup-form .lan-room-form-shell > .lobby-form .chat-wrapper {
+    margin-top: 8px;
+}
+
+#ra2web-root .lan-setup-form .lan-room-form-shell > .lobby-form .messages {
+    height: 92px;
+}
+
+#ra2web-root .lan-setup-form .lan-room-loading-panel-compact {
+    min-height: 0;
+}
+
+#ra2web-root .lan-setup-form .lan-panel {
+    border: 1px red solid;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+#ra2web-root .lan-setup-form .lan-panel + .lan-panel {
+    margin-top: 14px;
+}
+
+#ra2web-root .lan-setup-form .lan-panel-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+#ra2web-root .lan-setup-form .lan-panel-header h3 {
+    margin: 0;
+    font-size: 20px;
+}
+
+#ra2web-root .lan-setup-form .lan-panel-header span {
+    color: silver;
+    text-align: right;
+}
+
+#ra2web-root .lan-setup-form .lan-input-label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+#ra2web-root .lan-setup-form .lan-text-input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+#ra2web-root .lan-setup-form .lan-join-hint {
+    line-height: 1.45;
+}
+
+#ra2web-root .lan-setup-form .lan-sdp-textarea {
+    width: 100%;
+    min-height: 118px;
+    resize: vertical;
+    box-sizing: border-box;
+    border: 1px red solid;
+    background: black;
+    color: white;
+    padding: 7px 8px;
+    font: inherit;
+}
+
+#ra2web-root .lan-setup-form .lan-sdp-textarea::placeholder {
+    color: gray;
+}
+
+#ra2web-root .lan-setup-form .lan-actions {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+#ra2web-root .lan-setup-form .lan-hint {
+    color: silver;
+}
+
+#ra2web-root .lan-setup-form .lan-qr-card {
+    margin-bottom: 10px;
+}
+
+#ra2web-root .lan-setup-form .lan-qr-artwork,
+#ra2web-root .lan-setup-form .lan-scanner-preview {
+    border: 1px red solid;
+    background: black;
+    min-height: 286px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#ra2web-root .lan-setup-form .lan-qr-artwork img,
+#ra2web-root .lan-setup-form .lan-scanner-preview video {
+    display: block;
+    width: 100%;
+    max-width: 286px;
+    image-rendering: pixelated;
+}
+
+#ra2web-root .lan-setup-form .lan-qr-placeholder {
+    padding: 20px;
+    text-align: center;
+    color: silver;
+    line-height: 1.4;
+}
+
+#ra2web-root .lan-setup-form .lan-hidden-input {
+    display: none;
+}
+
+#ra2web-root .lan-setup-form .lan-error-text {
+    margin-top: 10px;
+    color: #ff8888;
+}
+
+#ra2web-root .lan-setup-form .lan-chat-panel .messages {
+    height: 110px;
+}
+
+#ra2web-root .lan-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: 60;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+#ra2web-root .lan-dialog {
+    width: min(760px, 100%);
+    max-height: calc(100vh - 40px);
+    overflow: auto;
+    border: 1px red solid;
+    background: rgba(10, 0, 0, 0.96);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+#ra2web-root .lan-dialog.lan-dialog-wide {
+    width: min(1080px, 100%);
+}
+
+#ra2web-root .lan-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid rgba(255, 0, 0, 0.6);
+}
+
+#ra2web-root .lan-dialog-header h3 {
+    margin: 0;
+    font-size: 22px;
+}
+
+#ra2web-root .lan-dialog-close {
+    min-width: 34px;
+    min-height: 34px;
+    border: 1px red solid;
+    background: black;
+    color: white;
+    font: inherit;
+    cursor: pointer;
+}
+
+#ra2web-root .lan-dialog-body {
+    padding: 16px;
+}
+
+#ra2web-root .lan-dialog-body > * + * {
+    margin-top: 16px;
+}
+
+#ra2web-root .lan-dialog-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+#ra2web-root .lan-setup-form .tone-good {
+    color: #55ff55;
+}
+
+#ra2web-root .lan-setup-form .tone-warn {
+    color: #ffcc66;
+}
+
+#ra2web-root .lan-setup-form .tone-bad {
+    color: #ff6666;
+}
+
+@media (max-width: 700px) {
+    #ra2web-root .lan-setup-form {
+        padding: 20px 18px;
+    }
+
+    #ra2web-root .lan-setup-form .lan-entry-layout {
+        grid-template-columns: 1fr;
+    }
+
+    #ra2web-root .lan-setup-form .lan-entry-actions-grid {
+        grid-template-columns: 1fr;
+    }
+
+    #ra2web-root .lan-setup-form .lan-setup-content {
+        display: block;
+    }
+
+    #ra2web-root .lan-setup-form .lan-setup-content > * + * {
+        margin-left: 0;
+        margin-top: 16px;
+    }
+
+    #ra2web-root .lan-setup-form .lan-panel-header {
+        display: block;
+    }
+
+    #ra2web-root .lan-setup-form .lan-panel-header span {
+        display: block;
+        margin-top: 4px;
+        text-align: left;
+    }
+
+    #ra2web-root .lan-dialog-overlay {
+        padding: 10px;
+    }
+
+    #ra2web-root .lan-dialog {
+        max-height: calc(100vh - 20px);
+    }
+
+    #ra2web-root .lan-dialog-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 #ra2web-root ::-webkit-scrollbar {

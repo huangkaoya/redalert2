@@ -66,6 +66,7 @@ interface LobbyFormProps {
     onColorSelect: (color: any, slotIndex: number) => void;
     onStartPosSelect: (pos: any, slotIndex: number) => void;
     onTeamSelect: (team: any, slotIndex: number) => void;
+    beforeChatContent?: React.ReactNode;
 }
 export class LobbyForm extends React.Component<LobbyFormProps> {
     private getFirstAvailableAiDifficulty(): AiDifficulty {
@@ -200,6 +201,8 @@ export class LobbyForm extends React.Component<LobbyFormProps> {
             </div>
           </div>
         </div>
+
+        {this.props.beforeChatContent !== undefined ? (<div className="lobby-form-before-chat">{this.props.beforeChatContent}</div>) : null}
 
         {this.props.messages !== undefined &&
                 this.props.localUsername !== undefined &&
