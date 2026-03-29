@@ -6,6 +6,7 @@ import {
     LanJoinResponsePacket,
     LanPeerIdentity,
 } from '@/network/lan/LanQrPayload';
+import { formatSdpCandidateSummary, getSdpCandidateWarning, summarizeSdpCandidates } from '@/network/lan/SdpCandidateDiagnostics';
 
 type ControlEnvelope =
     | {
@@ -206,6 +207,7 @@ export class LanMeshSession {
         this.log('info', '正在生成邀请二维码...');
         await context.pc.setLocalDescription(await context.pc.createOffer());
         await this.waitForIceGatheringComplete(context.pc);
+        this.logLinkDiagnostics(context, '邀请 Offer');
 
         const packet: LanInvitePacket = {
             version: 1,
@@ -421,6 +423,13 @@ export class LanMeshSession {
             }
             this.dispatchSnapshot();
         });
+        pc.addEventListener('icecandidateerror', (event) => {
+            if (!this.linksByKey.has(context.key)) {
+                return;
+            }
+            const address = 'address' in event && typeof event.address === 'string' ? ` ${event.address}` : '';
+            this.log('warn', `${context.peer?.name ?? '未知玩家'} 的 ICE 候选采集报错${address}：${event.errorText || 'unknown error'}。`);
+        });
     }
 
     private attachDataChannel(context: LinkContext, channel: RTCDataChannel): void {
@@ -477,6 +486,7 @@ export class LanMeshSession {
         await context.pc.setRemoteDescription(packet.description);
         await context.pc.setLocalDescription(await context.pc.createAnswer());
         await this.waitForIceGatheringComplete(context.pc);
+        this.logLinkDiagnostics(context, '加入 Answer');
 
         const response: LanJoinResponsePacket = {
             version: 1,
@@ -665,6 +675,7 @@ export class LanMeshSession {
         const context = this.createOutgoingLink(target, 'mesh-offerer');
         await context.pc.setLocalDescription(await context.pc.createOffer());
         await this.waitForIceGatheringComplete(context.pc);
+        this.logLinkDiagnostics(context, `对 ${target.name} 的 mesh Offer`);
 
         this.sendDirectEnvelope(relayContext.peer.id, {
             type: 'relay-signal',
@@ -696,6 +707,7 @@ export class LanMeshSession {
             await context.pc.setRemoteDescription(payload.description);
             await context.pc.setLocalDescription(await context.pc.createAnswer());
             await this.waitForIceGatheringComplete(context.pc);
+            this.logLinkDiagnostics(context, `对 ${payload.source.name} 的 mesh Answer`);
 
             this.sendDirectEnvelope(relayContext.peer.id, {
                 type: 'relay-signal',
@@ -843,5 +855,14 @@ export class LanMeshSession {
             text,
             timestamp: Date.now(),
         });
+    }
+
+    private logLinkDiagnostics(context: LinkContext, label: string): void {
+        const summary = summarizeSdpCandidates(context.pc.localDescription);
+        this.log('info', `${label} 候选情况：${formatSdpCandidateSummary(summary)}。`);
+        const warning = getSdpCandidateWarning(summary);
+        if (warning) {
+            this.log('warn', warning);
+        }
     }
 }

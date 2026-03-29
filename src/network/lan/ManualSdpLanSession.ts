@@ -1,4 +1,5 @@
 import { EventDispatcher } from '@/util/event';
+import { formatSdpCandidateSummary, getSdpCandidateWarning, summarizeSdpCandidates } from './SdpCandidateDiagnostics';
 
 export type ManualLanRole = 'host' | 'guest';
 
@@ -78,6 +79,7 @@ export class ManualSdpLanSession {
         this.log('info', '正在生成房主 Offer...');
         await pc.setLocalDescription(await pc.createOffer());
         await this.waitForIceGatheringComplete(pc);
+        this.logLocalDescriptionDiagnostics('房主 Offer');
         this.refreshSnapshot();
         this.log('info', '房主 Offer 已生成，可以复制给加入者。');
         return this.snapshot.localDescriptionText;
@@ -103,6 +105,7 @@ export class ManualSdpLanSession {
         this.log('info', '正在生成加入者 Answer...');
         await pc.setLocalDescription(await pc.createAnswer());
         await this.waitForIceGatheringComplete(pc);
+        this.logLocalDescriptionDiagnostics('加入者 Answer');
         this.refreshSnapshot();
         this.log('info', '加入者 Answer 已生成，可以复制回房主。');
         return this.snapshot.localDescriptionText;
@@ -174,6 +177,13 @@ export class ManualSdpLanSession {
                 return;
             }
             this.refreshSnapshot();
+        });
+        pc.addEventListener('icecandidateerror', (event) => {
+            if (pc !== this.peerConnection) {
+                return;
+            }
+            const address = 'address' in event && typeof event.address === 'string' ? ` ${event.address}` : '';
+            this.log('warn', `ICE 候选采集报错${address}：${event.errorText || 'unknown error'}。`);
         });
         pc.addEventListener('signalingstatechange', () => {
             if (pc !== this.peerConnection) {
@@ -365,6 +375,15 @@ export class ManualSdpLanSession {
             channelState: this.dataChannel?.readyState ?? 'closed',
         };
         this.dispatchSnapshot();
+    }
+
+    private logLocalDescriptionDiagnostics(label: string): void {
+        const summary = summarizeSdpCandidates(this.peerConnection?.localDescription);
+        this.log('info', `${label} 候选情况：${formatSdpCandidateSummary(summary)}。`);
+        const warning = getSdpCandidateWarning(summary);
+        if (warning) {
+            this.log('warn', warning);
+        }
     }
 
     private dispatchSnapshot(): void {
