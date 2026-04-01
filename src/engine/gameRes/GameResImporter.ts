@@ -22,7 +22,6 @@ import type { Config } from '../../Config';
 import type { Strings } from '../../data/Strings';
 import type { DataStream } from '../../data/DataStream';
 import type { FFmpeg } from '@ffmpeg/ffmpeg';
-import { OriginalMixFile } from '../../test/OriginalMixFile';
 interface SevenZipWasmModule {
     FS: any;
     callMain: (args: string[]) => void;
