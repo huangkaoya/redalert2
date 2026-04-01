@@ -197,7 +197,7 @@ export class AttackMission extends Mission<AttackFailReason> {
 const getTargetWeight: (unitData: UnitData, tryFocusHarvester: boolean) => number = (unitData, tryFocusHarvester) => {
     if (tryFocusHarvester && unitData.rules.harvester) {
         return 100000;
-    } else if (unitData.type === ObjectType.Building) {
+    } else if (unitData.type as any === ObjectType.Building) {
         return unitData.maxHitPoints * 10;
     } else {
         return unitData.maxHitPoints;

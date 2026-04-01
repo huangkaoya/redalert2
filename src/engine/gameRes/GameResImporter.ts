@@ -403,7 +403,7 @@ export class GameResImporter {
                         continue;
                     }
                     if (mp3Data) {
-                        const mp3Blob = new Blob([mp3Data], { type: "audio/mpeg" });
+                        const mp3Blob = new Blob([mp3Data as any], { type: "audio/mpeg" });
                         try {
                             const virtualMp3 = VirtualFile.fromBytes(mp3Data, mp3FileName);
                             await targetMusicDir.writeFile(virtualMp3);
@@ -485,7 +485,7 @@ export class GameResImporter {
             console.error("Bink video conversion failed, skipping menu video.", e);
             return;
         }
-        const webmBlob = new Blob([webmBuffer], { type: "video/webm" });
+        const webmBlob = new Blob([webmBuffer as any], { type: "video/webm" });
         const virtualWebmFile = VirtualFile.fromBytes(webmBuffer, webmFileName);
         await targetRfsRootDir.writeFile(virtualWebmFile);
     }

@@ -58,11 +58,11 @@ export class Chat extends Component<ChatProps> {
     render() {
         const { messages, tooltips, strings, chatHistory, channels } = this.props;
         return (<div className="chat-wrapper">
-        <div className="messages" ref={el => (this.messageList = el)} data-r-tooltip={tooltips?.output}>
+        <div className="messages" ref={el => { this.messageList = el; }} data-r-tooltip={tooltips?.output}>
           {messages.map((message, index) => this.renderMessage(message, index))}
         </div>
         <div className="new-message-wrapper">
-          <ChatInput ref={el => (this.textBox = el)} chatHistory={chatHistory} channels={channels} className="new-message" tooltip={tooltips?.input} strings={strings} onSubmit={this.props.onSendMessage} onCancel={this.props.onCancelMessage}/>
+          <ChatInput ref={el => { this.textBox = el; }} chatHistory={chatHistory} channels={channels} className="new-message" tooltip={tooltips?.input} strings={strings} onSubmit={this.props.onSendMessage} onCancel={this.props.onCancelMessage}/>
           <button className="icon-button send-message-button" data-r-tooltip={tooltips?.button} onClick={() => this.textBox?.send()}/>
         </div>
       </div>);

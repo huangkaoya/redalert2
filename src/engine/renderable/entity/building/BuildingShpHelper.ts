@@ -10,14 +10,14 @@ export class BuildingShpHelper {
     }, string>): Map<string, any> {
         const frameInfos = new Map<string, any>();
         if (mainShp) {
-            frameInfos.set(mainShp, ShpAggregator.getShpFrameInfo(mainShp, building.hasShadow));
+            frameInfos.set(mainShp, ShpAggregator.getShpFrameInfo(mainShp as any, building.hasShadow));
         }
         if (turretShp) {
-            frameInfos.set(turretShp, ShpAggregator.getShpFrameInfo(turretShp, building.hasShadow));
+            frameInfos.set(turretShp, ShpAggregator.getShpFrameInfo(turretShp as any, building.hasShadow));
         }
         for (const [anim, shpName] of animShps) {
-            const animProps = new AnimProps(anim.art, shpName);
-            const frameInfo = ShpAggregator.getShpFrameInfo(shpName, animProps.shadow);
+            const animProps = new AnimProps(anim.art, shpName as any);
+            const frameInfo = ShpAggregator.getShpFrameInfo(shpName as any, animProps.shadow);
             frameInfos.set(shpName, frameInfo);
         }
         return frameInfos;

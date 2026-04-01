@@ -1,3 +1,3 @@
-export class Trigger {
+export interface Bridge {
     [key: string]: any;
 }

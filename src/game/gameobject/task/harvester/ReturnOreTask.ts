@@ -17,17 +17,17 @@ export class ReturnOreTask extends Task {
     private forceTarget: any;
     private resetLastOreSite: boolean;
     private explicitOrder: boolean;
-    private useChildTargetLines: boolean = true;
-    private preventOpportunityFire: boolean = false;
     private rangeHelper: RangeHelper;
     private target?: any;
     private reservedDockNumber?: number;
-    constructor(game: any, forceTarget: any, resetLastOreSite: boolean = false, explicitOrder: boolean = false) {
+    constructor(game: any, forceTarget?: any, resetLastOreSite: boolean = false, explicitOrder: boolean = false) {
         super();
         this.game = game;
         this.forceTarget = forceTarget;
         this.resetLastOreSite = resetLastOreSite;
         this.explicitOrder = explicitOrder;
+        this.useChildTargetLines = true;
+        this.preventOpportunityFire = false;
         this.rangeHelper = new RangeHelper(game.map.tileOccupation);
     }
     onStart(unit: any): void {

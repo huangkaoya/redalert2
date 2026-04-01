@@ -260,8 +260,8 @@ export class Building {
         }
         this.bibShpFile = E;
         let x = new N.BuildingShpHelper(this.imageFinder);
-        w = this.animShpFiles = x.collectAnimShpFiles(w, this.objectArt);
-        let O = (this.shpFrameInfos = x.getShpFrameInfos(this.objectArt, C, E, w)), M = this.buildingImageDataCache.get(this.gameObject.name);
+        w = this.animShpFiles = x.collectAnimShpFiles(w as any, this.objectArt) as any;
+        let O = (this.shpFrameInfos = x.getShpFrameInfos(this.objectArt, C, E, w as any)), M = this.buildingImageDataCache.get(this.gameObject.name);
         M ||
             ((M = y.aggregate(O.values(), `agg_${this.objectRules.name}.shp`)),
                 this.buildingImageDataCache.set(this.gameObject.name, M)),
@@ -354,7 +354,7 @@ export class Building {
         var a = Math.max(i, r, s);
         1 < a && ((i /= a), (r /= a), (s /= a));
         let n = new THREE.Color(i, r, s).multiplyScalar(0.9);
-        a = n.getHexString();
+        a = n.getHexString() as any;
         let o = Building.lampTextures.get(a);
         if (!o) {
             o = this.createLampTexture(a);
@@ -371,10 +371,10 @@ export class Building {
                 : THREE.ReverseSubtractEquation,
             blendSrc: THREE.DstColorFactor,
             blendDst: THREE.OneFactor,
-        })),
+        }) as any),
             (t = t.lightVisibility),
             (t = new THREE.PlaneGeometry(2 * t, 2 * t));
-        let l = new THREE.Mesh(t, a);
+        let l = new THREE.Mesh(t, a as any);
         (l.rotation.x = -Math.PI / 2),
             (l.renderOrder = 999995),
             (l.matrixAutoUpdate = false),
@@ -421,7 +421,7 @@ export class Building {
                 this.lastHasC4Charge !== t &&
                 t &&
                 ((this.lastHasC4Charge = t), this.highlight());
-            var r = this.highlightAnimRunner.shouldUpdate(), s = this.gameObject.invulnerableTrait.isActive(), t = s !== this.lastInvulnerable;
+            var r = this.highlightAnimRunner.shouldUpdate(), s = this.gameObject.invulnerableTrait.isActive(), t = (s !== this.lastInvulnerable) as any;
             (this.lastInvulnerable = s) &&
                 t &&
                 this.invulnAnimRunner.animate(),
@@ -528,7 +528,7 @@ export class Building {
                                 A.AnimationType.SPECIAL_REPAIR_LOOP &&
                                 this.currentAnimType !==
                                     A.AnimationType.SPECIAL_REPAIR_END) ||
-                                d !== E.RepairStatus.Idle
+                                (d as any) !== E.RepairStatus.Idle
                                 ? this.setAnimation(A.AnimationType.SPECIAL_REPAIR_START, i)
                                 : (this.repairStartRequested = true),
                                 (this.repairStopRequested = false))
@@ -570,6 +570,7 @@ export class Building {
                                 break;
                             case f.AnimationState.NOT_STARTED:
                                 e.start(i);
+                            // falls through
                             case f.AnimationState.RUNNING:
                             default:
                                 e.update(i);
@@ -596,8 +597,8 @@ export class Building {
                     (this.selectionModel.isSelected() &&
                         -1 !== this.gameObject.rules.techLevel)) &&
                     !n);
-            var h, u, c = this.gameObject.wallTrait?.wallType !==
-                this.lastWallType, d = void 0 === this.lastOccupiedState ||
+            var h, u, c = (this.gameObject.wallTrait?.wallType !==
+                this.lastWallType) as any, d = void 0 === this.lastOccupiedState ||
                 this.lastOccupiedState !==
                     !!this.gameObject.garrisonTrait?.isOccupied(), g = void 0 === this.lastHealth ||
                 this.lastHealth !== this.gameObject.healthTrait.health;
@@ -761,10 +762,10 @@ export class Building {
     createObjects(t) {
         var e = this.objectArt.foundation;
         this.debugFrame.value &&
-            ((a = v.DebugUtils.createWireframe(e, this.objectArt.height)),
+            ((a = v.DebugUtils.createWireframe(e, this.objectArt.height) as any),
                 t.add(a));
         let i = new b.MapSpriteTranslation(e.width, e.height);
-        var { spriteOffset: r, anchorPointWorld: s } = i.compute(), a = (this.spriteOffset = this.computeSpriteAnchorOffset(r));
+        var { spriteOffset: r, anchorPointWorld: s } = i.compute() as any, a = (this.spriteOffset = this.computeSpriteAnchorOffset(r));
         let n = (this.spriteWrap = new THREE.Object3D());
         n.matrixAutoUpdate = false;
         let o = n, l = { ...a }, c = false;
@@ -779,9 +780,9 @@ export class Building {
             r = {
                 x: -r[0] / g.Coords.ISO_TILE_SIZE,
                 y: -r[1] / g.Coords.ISO_TILE_SIZE,
-            };
+            } as any;
             let e = new b.MapSpriteTranslation(r.x, r.y);
-            var { spriteOffset: h, anchorPointWorld: r } = e.compute();
+            var { spriteOffset: h, anchorPointWorld: r } = e.compute() as any;
             (o.position.x = r.x),
                 (o.position.z = r.y),
                 o.updateMatrix(),
@@ -817,7 +818,7 @@ export class Building {
                 n.add(e.get3DObject());
             }),
             this.objectRules.turret &&
-                (({ turret: h, turretRot: e } = this.createTurretObject(a, s)),
+                (({ turret: h, turretRot: e } = this.createTurretObject(a, s) as any),
                     (this.turret = h),
                     (this.turretRot = e),
                     n.add(this.turret)),
@@ -836,14 +837,14 @@ export class Building {
                     this.gameObject.gapGeneratorTrait?.radiusTiles ??
                     this.gameObject.primaryWeapon?.range;
             if (a) {
-                a = this.rangeCircle = this.createRangeCircle(a);
+                a = this.rangeCircle = this.createRangeCircle(a) as any;
                 let e = (this.rangeCircleWrapper = new THREE.Object3D());
                 (e.matrixAutoUpdate = false),
                     (e.position.x = s.x / 2),
                     (e.position.z = s.y / 2),
                     e.updateMatrix(),
                     (e.visible = false),
-                    e.add(a),
+                    e.add(a as any),
                     t.add(e);
             }
         }
@@ -938,7 +939,7 @@ export class Building {
     }
     createMuzzleFlashAnim(e, i) {
         if (this.objectArt.muzzleFlash?.length) {
-            var r = u.getRandomInt(0, this.objectArt.muzzleFlash.length - 1), s = this.objectArt.muzzleFlash[r], r = this.gameObject.owner.country?.side === a.SideType.GDI
+            var r: any = u.getRandomInt(0, this.objectArt.muzzleFlash.length - 1), s = this.objectArt.muzzleFlash[r], r = this.gameObject.owner.country?.side === a.SideType.GDI
                 ? this.gameObject.primaryWeapon
                 : this.gameObject.secondaryWeapon;
             if (r) {
@@ -959,7 +960,7 @@ export class Building {
         (e.type !== A.AnimationType.BUILDUP &&
             e.type !== A.AnimationType.UNBUILD) ||
             ((o = n.shadow ? t.numImages / 2 : t.numImages),
-                (n.rate = o / (60 * this.rules.general.buildupTime)));
+                (n.rate = (o as any) / (60 * this.rules.general.buildupTime)));
         var o = { x: i.x + e.offset.x, y: i.y + e.offset.y };
         let l = T.ShpRenderable.factory(this.aggregatedImageData.file, this.palette, this.camera, o, n.shadow, 0, !e.flat, r, s && !e.flat);
         return (l.setSize(t),
@@ -1203,6 +1204,7 @@ export class Building {
                         });
                     break;
                 }
+            // falls through
             case A.AnimationType.FACTORY_ROOF_DEPLOYING:
                 if (this.hasAnimation(A.AnimationType.FACTORY_ROOF_DEPLOYING) &&
                     this.objectRules.factory) {
@@ -1214,6 +1216,7 @@ export class Building {
                         });
                     break;
                 }
+            // falls through
             case A.AnimationType.SPECIAL_REPAIR_START:
             case A.AnimationType.SPECIAL_REPAIR_LOOP:
             case A.AnimationType.SPECIAL_REPAIR_END:
@@ -1232,6 +1235,7 @@ export class Building {
                     this.animations.get(r).start(t);
                     break;
                 }
+            // falls through
             case A.AnimationType.SPECIAL_SHOOT:
                 if (this.objectRules.isBaseDefense) {
                     this.setAnimationVisibility(A.AnimationType.ACTIVE, false);
@@ -1258,6 +1262,7 @@ export class Building {
                     this.animations.get(a).start(t);
                     break;
                 }
+            // falls through
             case A.AnimationType.IDLE:
             default:
                 (this.currentAnimType = A.AnimationType.IDLE),

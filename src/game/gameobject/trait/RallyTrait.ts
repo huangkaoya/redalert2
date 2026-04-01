@@ -59,7 +59,7 @@ export class RallyTrait {
             const tileBridge = !bridge || bridge.isHighBridge()
                 ? map.tileOccupation.getBridgeOnTile(tile)
                 : undefined;
-            return (!(isFlying ? [] : map.terrain.findObstacles({ tile, onBridge: tileBridge }, unit)).length &&
+            return (!(isFlying ? [] : map.terrain.findObstacles({ tile, onBridge: tileBridge }, unit as any)).length &&
                 (targetElevation === undefined || Math.abs(targetElevation - (tile.z + (tileBridge?.tileElevation ?? 0))) < 4) &&
                 (!checkBuildings || !map.getObjectsOnTile(tile).find(obj => obj.isBuilding() && !obj.isDestroyed)) &&
                 (isFlying || map.terrain.getPassableSpeed(tile, unit.rules.speedType, unit.isInfantry(), !!tileBridge) > 0));

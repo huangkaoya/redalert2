@@ -150,7 +150,7 @@ export const DiploForm: React.FC<DiploFormProps> = ({ strings, playerInfos, loca
                   </td>
                   <td className="player-name">
                     {playerInfo.player.isAi
-                    ? strings.get(aiUiNames.get(playerInfo.player.aiDifficulty) || '')
+                    ? strings.get(aiUiNames.get(playerInfo.player.aiDifficulty as any) || '')
                     : playerInfo.player.name}
                   </td>
                   <td>

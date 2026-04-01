@@ -1,5 +1,5 @@
 export interface GameObjectData {
-    id: number;
+    id: any;
     type: string;
     name: string;
     rules: any;

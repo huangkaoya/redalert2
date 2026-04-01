@@ -36,12 +36,12 @@ export const Select: React.FC<SelectProps> = ({ initialValue, disabled, tooltip,
             };
         }
     }, [isOpen]);
-    const selectedChild = React.Children.toArray(children).find((child) => React.isValidElement(child) && child.props.value === value);
+    const selectedChild = React.Children.toArray(children).find((child) => React.isValidElement(child) && (child.props as any).value === value);
     return (<div style={{ display: 'inline-block', verticalAlign: 'middle' }} className={className}>
       <div className={classNames('select', { disabled })} data-r-tooltip={tooltip} ref={containerRef}>
         <div className="select-value" onClick={() => !disabled && setIsOpen(!isOpen)}>
           <div style={labelStyle?.(value)}>
-            {React.isValidElement(selectedChild) ? selectedChild.props.label : ''}
+            {React.isValidElement(selectedChild) ? (selectedChild.props as any).label : ''}
           </div>
         </div>
         {isOpen && (<div className="select-layer">

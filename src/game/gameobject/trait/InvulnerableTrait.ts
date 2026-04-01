@@ -11,7 +11,7 @@ export class InvulnerableTrait {
         return this.timer.isActive();
     }
     setActiveFor(duration: number, world: World): void {
-        this.timer.setActiveFor(duration, world);
+        this.timer.setActiveFor(duration, world as any);
     }
     [NotifyTick.onTick](gameObject: GameObject, world: World): void {
         this.timer.tick(world.currentTick);

@@ -72,7 +72,7 @@ export class BotManager {
                 bot.setGameApi(this.gameApi);
                 bot.setActionsApi(new ActionsApi(game, this.actionFactory, this.actionQueue, bot));
                 bot.setProductionApi(new ProductionApi(player.production));
-                bot.setLogger(new LoggerApi(AppLogger.get(bot.name), this.gameApi));
+                bot.setLogger(new LoggerApi(AppLogger.get(bot.name) as any, this.gameApi));
                 logger.info(`[BotManager] APIs set for bot "${bot.name}", calling onGameStart...`);
                 bot.onGameStart(this.gameApi);
                 logger.info(`[BotManager] Bot "${bot.name}" onGameStart completed successfully`);
@@ -85,8 +85,8 @@ export class BotManager {
     update(gameState: any): void {
         for (const action of this.actionQueue.dequeueAll()) {
             try {
-                action.process();
-                const actionLog = action.print();
+                (action as any).process();
+                const actionLog = (action as any).print();
                 if (actionLog) {
                     this.actionLogger?.debug?.(`(${action.player.name})@${gameState.currentTick}: ${actionLog}`);
                 }

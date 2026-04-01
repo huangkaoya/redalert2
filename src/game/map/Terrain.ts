@@ -384,7 +384,7 @@ export class Terrain {
             }
         };
     }
-    private getPassableSpeed(tile: Tile, speedType: SpeedType, onBridge: boolean, bridgeLevel: boolean, ignoredBlockers: GameObject[] = [], skipBlockerCheck = false): number {
+    public getPassableSpeed(tile: Tile, speedType: SpeedType, onBridge: boolean, bridgeLevel: boolean, ignoredBlockers: GameObject[] = [], skipBlockerCheck = false): number {
         if (!this.mapBounds.isWithinBounds(tile))
             return 0;
         let landType = bridgeLevel ? tile.onBridgeLandType : tile.landType;

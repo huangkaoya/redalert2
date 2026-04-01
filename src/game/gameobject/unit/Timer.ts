@@ -8,7 +8,7 @@ export class Timer {
     isActive(): boolean {
         return this.activeTicks > 0;
     }
-    setActiveFor(ticks: number, timestamp: number): void {
+    setActiveFor(ticks: number, timestamp?: number): void {
         this.activeTicks = ticks;
         this.activeFor = ticks;
         this.activeSince = timestamp;

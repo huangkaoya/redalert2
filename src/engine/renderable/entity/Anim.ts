@@ -169,8 +169,8 @@ export class Anim {
                 }
                 const shapeMesh = this.mainObj.getShapeMesh();
                 shapeMesh.renderOrder = this.renderOrder;
-                shapeMesh.material.depthTest = !this.renderOrder;
-                shapeMesh.material.transparent = !!this.renderOrder;
+                (shapeMesh as any).material.depthTest = !this.renderOrder;
+                (shapeMesh as any).material.transparent = !!this.renderOrder;
             }
             const mainObj3D = this.mainObj.get3DObject();
             if (mainObj3D) {
@@ -179,7 +179,7 @@ export class Anim {
             container.position.x = anchorPointWorld.x;
             container.position.z = anchorPointWorld.y;
             if (this.objectArt.zAdjust) {
-                MathUtils.translateTowardsCamera(container, this.camera, -this.objectArt.zAdjust * Coords.ISO_WORLD_SCALE);
+                MathUtils.translateTowardsCamera(container, this.camera as any, -this.objectArt.zAdjust * Coords.ISO_WORLD_SCALE);
             }
             container.updateMatrix();
             parentObj.add(container);
@@ -214,7 +214,7 @@ export class Anim {
     }): ShpRenderable | undefined {
         let shpFile: any;
         try {
-            shpFile = this.shpFile = this.imageFinder.findByObjectArt(this.objectArt);
+            shpFile = this.shpFile = this.imageFinder.findByObjectArt(this.objectArt as any);
         }
         catch (error) {
             if (error instanceof ImageFinder.MissingImageError) {
@@ -226,7 +226,7 @@ export class Anim {
         const renderable = ShpRenderable.factory(shpFile, this.palette, this.camera, offset);
         renderable.setFlat(this.objectArt.flat);
         const animProps = new AnimProps(this.objectArt.art, shpFile);
-        this.animation = new Animation(animProps, this.gameSpeed);
+        this.animation = new Animation(animProps, this.gameSpeed as any);
         this.animationRunner = new SimpleRunner();
         this.animationRunner.animation = this.animation;
         return renderable;

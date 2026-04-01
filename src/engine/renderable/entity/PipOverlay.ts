@@ -272,7 +272,7 @@ export class PipOverlay {
                 this.healthBar = this.createBuildingHealthBar(this.gameObject);
                 rootObj.add(this.healthBar);
                 if (this.gameObject.art.height >= 1) {
-                    this.selectionBox = this.createBuildingSelectionBox(this.gameObject);
+                    this.selectionBox = this.createBuildingSelectionBox(this.gameObject) as any;
                     rootObj.add(this.selectionBox);
                 }
                 const occupationInfo = this.createBuildingOccupationInfo(this.gameObject);
@@ -316,7 +316,7 @@ export class PipOverlay {
     }
     onCreate(effectManager: any): void {
         if (this.gameObject.isBuilding() && this.gameObject.rallyTrait) {
-            this.rallyLine = new RallyPointFx(this.camera, new THREE.Vector3(), new THREE.Vector3(), new THREE.Color(), 999999);
+            this.rallyLine = new RallyPointFx(this.camera as any, new THREE.Vector3(), new THREE.Vector3(), new THREE.Color(), 999999);
             this.rallyLine.visible = false;
             effectManager.addEffect(this.rallyLine);
             this.disposables.add(() => this.rallyLine!.remove(), this.rallyLine);
@@ -706,8 +706,8 @@ export class PipOverlay {
                 camera: this.camera,
                 align: { x: 1, y: -1 },
                 offset: {
-                    x: -Math.floor(texture.image.width / 2),
-                    y: -Math.floor(texture.image.height / 2),
+                    x: -Math.floor((texture.image as any).width / 2),
+                    y: -Math.floor((texture.image as any).height / 2),
                 },
                 scale: Coords.ISO_WORLD_SCALE,
             });
@@ -832,7 +832,7 @@ export class PipOverlay {
         this.updateDebugLabel();
         if (this.lastSelectionLevel === undefined || this.lastSelectionLevel !== selectionLevel) {
             this.lastSelectionLevel = selectionLevel;
-            const elementMap = new Map([
+            const elementMap = new Map<number, any>([
                 [0, this.healthBar],
                 [2, this.selectionBox],
                 [1, this.pipsSprite],

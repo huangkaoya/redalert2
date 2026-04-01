@@ -9,7 +9,7 @@ export class FireSaleExecutor extends TriggerExecutor {
         this.houseId = Number(params[1]);
     }
     execute(game: Game): void {
-        const targetPlayer = game.getAllPlayers().find((player: Player) => player.country?.id === this.houseId);
+        const targetPlayer = game.getAllPlayers().find((player: Player) => player.country?.id === this.houseId as any);
         if (targetPlayer) {
             for (const building of targetPlayer.buildings) {
                 game.sellTrait.sell(building);

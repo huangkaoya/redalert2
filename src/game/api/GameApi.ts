@@ -98,33 +98,33 @@ export class GameApi {
             radarDisabled: !!player.radarTrait?.isDisabled(),
         };
     }
-    getAllTerrainObjects(): string[] {
+    getAllTerrainObjects(): any[] {
         return this.game
             .getWorld()
             .getAllObjects()
             .filter((obj: any) => obj.isTerrain())
             .map((obj: any) => obj.id);
     }
-    getAllUnits(filter: (rules: any) => boolean = () => true): string[] {
+    getAllUnits(filter: (rules: any) => boolean = () => true): any[] {
         return this.game
             .getWorld()
             .getAllObjects()
             .filter((obj: any) => obj.isTechno() && filter(obj.rules))
             .map((obj: any) => obj.id);
     }
-    getNeutralUnits(filter: (rules: any) => boolean = () => true): string[] {
+    getNeutralUnits(filter: (rules: any) => boolean = () => true): any[] {
         return this.game
             .getCivilianPlayer()
             .getOwnedObjects()
             .filter((obj: any) => filter(obj.rules))
             .map((obj: any) => obj.id);
     }
-    getUnitsInArea(area: any): string[] {
+    getUnitsInArea(area: any): any[] {
         return this.game.map.technosByTile
             .queryRange(area)
             .map((obj: any) => obj.id);
     }
-    getVisibleUnits(playerName: string, type: "self" | "allied" | "hostile" | "enemy", filter: (rules: any) => boolean = () => true): string[] {
+    getVisibleUnits(playerName: string, type: "self" | "allied" | "hostile" | "enemy", filter: (rules: any) => boolean = () => true): any[] {
         const player = this.game.getPlayerByName(playerName);
         if (!player)
             throw new Error(`Player "${playerName}" doesn't exist`);
@@ -160,7 +160,7 @@ export class GameApi {
             filter(obj.rules))
             .map((obj: any) => obj.id);
     }
-    getGameObjectData(objectId: string): GameObjectData | undefined {
+    getGameObjectData(objectId: any): GameObjectData | undefined {
         if (this.game.getWorld().hasObjectId(objectId)) {
             const obj = this.game.getObjectById(objectId);
             return {
@@ -178,7 +178,7 @@ export class GameApi {
             };
         }
     }
-    getUnitData(objectId: string): UnitData | undefined {
+    getUnitData(objectId: any): UnitData | undefined {
         const gameObjectData = this.getGameObjectData(objectId);
         if (gameObjectData) {
             const unit = this.game.getObjectById(objectId);

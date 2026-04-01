@@ -88,7 +88,7 @@ interface ReplayHeader {
     gameOptsSerialized: string;
 }
 export class ReplaySelScreen extends MainMenuScreen {
-    public title: string;
+    declare public title: string;
     private disposables: CompositeDisposable;
     private availableReplays: ReplayMeta[] = [];
     private selectedReplay?: ReplayMeta;
@@ -450,7 +450,7 @@ export class ReplaySelScreen extends MainMenuScreen {
             }> | undefined;
             if (gameOpts) {
                 const randomGen = GameOptRandomGen.factory(header.gameId, header.gameTimestamp);
-                const generatedColors = randomGen.generateColors(gameOpts);
+                const generatedColors = randomGen.generateColors(gameOpts as any);
                 const availableColors = this.getAvailablePlayerColors();
                 players = gameOpts.humanPlayers
                     .filter(player => player.countryId !== OBS_COUNTRY_ID)

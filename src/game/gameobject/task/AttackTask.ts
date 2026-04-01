@@ -44,10 +44,10 @@ interface Position {
     onBridge?: any;
 }
 export class AttackTask extends Task {
-    private game: any;
+    public game: any;
     private target: any;
     private weapon: any;
-    private options: AttackOptions;
+    public options: AttackOptions;
     private moveExecuted: boolean = false;
     private moveAttempts: number = 0;
     private rangeCheckCooldown: number = 0;
@@ -93,7 +93,7 @@ export class AttackTask extends Task {
             this.needsTargetUpdate = target;
         }
     }
-    private onTargetChange(obj: any): void {
+    public onTargetChange(obj: any): void {
         const attackTrait = obj.attackTrait;
         const target = this.target;
         attackTrait.currentTarget = target;

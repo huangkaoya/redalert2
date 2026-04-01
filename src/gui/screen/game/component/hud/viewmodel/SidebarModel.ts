@@ -27,7 +27,7 @@ export class SidebarModel {
     topTextLeftAlign: boolean = false;
     tabs: SidebarTab[];
     activeTabId: SidebarCategory;
-    constructor(game: any, replay: any) {
+    constructor(game: any, replay?: any) {
         this.game = game;
         this.replay = replay;
         this.powerDrained = 0;

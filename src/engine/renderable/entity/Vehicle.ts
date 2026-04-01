@@ -347,8 +347,8 @@ export class Vehicle {
             ((p = s ? this.invulnAnimRunner.getValue() : 0),
                 (y = (n ? this.highlightAnimRunner.getValue() : 0) || p),
                 (m = this.lighting.getAmbientIntensity()),
-                A.ExtraLightHelper.multiplyVxl(this.vxlExtraLight, this.baseVxlExtraLight, m, y),
-                A.ExtraLightHelper.multiplyShp(this.shpExtraLight, this.baseShpExtraLight, y)),
+                A.ExtraLightHelper.multiplyVxl(this.vxlExtraLight, this.baseVxlExtraLight, m, y as any),
+                A.ExtraLightHelper.multiplyShp(this.shpExtraLight, this.baseShpExtraLight, y as any)),
             this.gameObject.isDestroyed && this.resolveObjectRemove)) {
             if ((this.squidGrabAnim &&
                 (this.posObj?.remove(this.squidGrabAnim.get3DObject()),
@@ -356,7 +356,7 @@ export class Vehicle {
                     (this.squidGrabAnim = void 0)),
                 this.destroyStartTime || (this.destroyStartTime = i),
                 this.isSinker())) {
-                var d = (i - this.destroyStartTime) / 3e3, g = 1 <= d;
+                var d: any = (i - this.destroyStartTime) / 3e3, g: any = 1 <= d;
                 g
                     ? (this.mainObj.visible = !1)
                     : (this.objectRules.naval &&
@@ -386,13 +386,13 @@ export class Vehicle {
                 void 0 !== this.lastDirection &&
                 this.objectArt.isVoxel &&
                 this.gameObject.zone === M.ZoneType.Air &&
-                ((T = e - this.lastDirection),
+                ((T = (e - this.lastDirection) as any),
                     void 0 !== this.lastDirectionDelta &&
-                        Math.abs(T) < 2 &&
+                        Math.abs(T as any) < 2 &&
                         Math.abs(this.lastDirectionDelta) < 2 &&
-                        Math.sign(T) !== Math.sign(this.lastDirectionDelta)
+                        Math.sign(T as any) !== Math.sign(this.lastDirectionDelta)
                         ? (e = this.lastDirection)
-                        : (this.lastDirectionDelta = T)),
+                        : (this.lastDirectionDelta = T as any)),
                 (this.lastDirection = e);
             var m = this.gameObject.owner.color;
             this.lastOwnerColor !== m &&
@@ -403,7 +403,7 @@ export class Vehicle {
                     this.placeholder?.setPalette(this.palette));
             var f, y = this.gameObject.isMoving ||
                 (!this.objectArt.isVoxel &&
-                    !!this.gameObject.spinVelocity), d = this.gameObject.isFiring, g = void 0 === this.lastMoving || this.lastMoving !== y, T = void 0 === this.lastFiring || this.lastFiring !== d;
+                    !!this.gameObject.spinVelocity), d = this.gameObject.isFiring as any, g = (void 0 === this.lastMoving || this.lastMoving !== y) as any, T = (void 0 === this.lastFiring || this.lastFiring !== (d as any)) as any;
             if (0 < r && (y || g)) {
                 let e = this.gameObject.moveTrait.velocity.clone(), t = e.multiplyScalar(r);
                 m = t.add(this.gameObject.position.worldPosition);
@@ -411,7 +411,7 @@ export class Vehicle {
             }
             (g || T) &&
                 ((this.lastMoving = y),
-                    (this.lastFiring = d),
+                    (this.lastFiring = d as any),
                     this.objectArt.isVoxel ||
                         this.updateShapeAnimation(y, d));
             let t;
@@ -438,9 +438,9 @@ export class Vehicle {
                 ? (this.updateVxlRotation(e, p),
                     this.updateBodyVxl(),
                     (v =
-                        (T = this.gameObject.rocking?.facing) !==
-                            this.lastRockingFacing),
-                    (this.lastRockingFacing = T),
+                        ((T = this.gameObject.rocking?.facing as any) !==
+                            this.lastRockingFacing) as any),
+                    (this.lastRockingFacing = T as any),
                     !v ||
                         void 0 === T ||
                         (0 < (f = this.gameObject.rocking.factor) &&
@@ -774,7 +774,7 @@ export class Vehicle {
         }
         else {
             let e = new f.MapSpriteTranslation(1, 1);
-            var { spriteOffset: d, anchorPointWorld: g } = e.compute(), d = this.computeSpriteAnchorOffset(d);
+            var { spriteOffset: d, anchorPointWorld: g } = e.compute() as any, d = this.computeSpriteAnchorOffset(d) as any;
             let i;
             try {
                 i = this.imageFinder.findByObjectArt(this.objectArt);
@@ -885,7 +885,7 @@ export class Vehicle {
                 this.gameObject.rules.naval ||
                     this.updateClippingPlanes(this.gameObject.tile.z, !0);
             }
-            return new Promise((e) => (this.resolveObjectRemove = e));
+            return new Promise((e) => (this.resolveObjectRemove = e as any));
         }
     }
     dispose() {

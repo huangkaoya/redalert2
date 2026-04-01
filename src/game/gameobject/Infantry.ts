@@ -29,7 +29,7 @@ export class Infantry extends Techno {
     }
     static factory(id: string, rules: any, owner: any, general: any): Infantry {
         const infantry = new this(id, rules, owner);
-        infantry.moveTrait = new MoveTrait(infantry, general);
+        infantry.moveTrait = new MoveTrait(infantry as any, general);
         infantry.traits.add(infantry.moveTrait);
         if (infantry.rules.crashable) {
             infantry.crashableTrait = new CrashableTrait(infantry);
@@ -48,7 +48,7 @@ export class Infantry extends Techno {
         return infantry;
     }
     constructor(id: string, rules: any, owner: any) {
-        super(ObjectType.Infantry, id, rules, owner);
+        super(ObjectType.Infantry as any, id, rules, owner);
         this.direction = 0;
         this.onBridge = false;
         this.zone = ZoneType.Ground;

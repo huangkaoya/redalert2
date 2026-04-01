@@ -45,6 +45,7 @@ export class SidebarRadarAnimationRunner {
                     break;
                 case AnimationState.NOT_STARTED:
                     anim.start(now);
+                // falls through
                 case AnimationState.RUNNING:
                 default:
                     anim.update(now);

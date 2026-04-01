@@ -21,7 +21,7 @@ export class RaycastHelper {
     intersect(point: Point, targets: THREE.Object3D[], recursive: boolean = false): THREE.Intersection[] {
         const raycaster = new THREE.Raycaster();
         const normalizedPointer = this.normalizePointer(point, this.scene.viewport);
-        raycaster.setFromCamera(normalizedPointer, this.scene.camera);
+        raycaster.setFromCamera(normalizedPointer as any, this.scene.camera);
         return raycaster.intersectObjects(targets, recursive);
     }
     private normalizePointer(point: Point, viewport: Viewport): Point {

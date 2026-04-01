@@ -115,7 +115,7 @@ export class TrailerSmokeFx {
         if (!this.particleGroup) {
             let texture = TrailerSmokeFx.textureCache.get(this.shpFile);
             if (!texture) {
-                const canvas = ImageUtils.convertShpToCanvas(this.shpFile, this.palette, true);
+                const canvas = ImageUtils.convertShpToCanvas(this.shpFile as any, this.palette, true);
                 texture = new THREE.Texture(canvas);
                 texture.minFilter = THREE.NearestFilter;
                 texture.magFilter = THREE.NearestFilter;
@@ -139,7 +139,7 @@ export class TrailerSmokeFx {
             patchSpeGroup(this.particleGroup);
             this.particleGroup.mesh.name = "fx_trailer_smoke";
             this.particleGroup.mesh.frustumCulled = false;
-            const animProps = new AnimProps(this.smokeArt.art, this.shpFile);
+            const animProps = new AnimProps(this.smokeArt.art as any, this.shpFile as any);
             const activeMultiplier = ((this.smokeArt.art.getBool("Normalized") ? 2 : 1) * animProps.rate) /
                 this.spawnDelayFrames;
             this.particleMaxAge = this.shpFile.numImages / animProps.rate;

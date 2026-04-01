@@ -68,16 +68,16 @@ export class PlaceBuildingAction extends Action {
             const queue = player.production.getQueueForObject(buildingRules);
             if (queue.status === QueueStatus.Ready && queue.getFirst().rules === buildingRules) {
                 const worker = this.game.getConstructionWorker(player);
-                if (player.production.isAvailableForProduction(buildingRules) &&
+                if (player.production.isAvailableForProduction(buildingRules as any) &&
                     worker.canPlaceAt(buildingRules.name, tile, { normalizedTile: true })) {
                     const placed = worker.placeAt(buildingRules.name, tile, true);
-                    player.addUnitsBuilt(buildingRules, 1);
-                    queue.shift(buildingRules, 1);
+                    player.addUnitsBuilt(buildingRules as any, 1);
+                    queue.shift(buildingRules as any, 1);
                     const factory = player.production.getPrimaryFactory(FactoryType.BuildingType);
                     if (factory) {
                         factory.factoryTrait.status = FactoryStatus.Delivering;
                     }
-                    return placed[0];
+                    return placed[0] as any;
                 }
             }
         }

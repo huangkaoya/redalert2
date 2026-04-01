@@ -12,7 +12,7 @@ export class Mixer {
     setVolume(channel: number, volume: number): void {
         if (this.getVolume(channel) !== volume) {
             this.volumes.set(channel, volume);
-            this._onVolumeChange.dispatch(this, channel);
+            this._onVolumeChange.dispatch(this as any, channel);
         }
     }
     getVolume(channel: number): number {
@@ -20,7 +20,7 @@ export class Mixer {
     }
     setMuted(channel: number, muted: boolean): void {
         this.mutes.set(channel, muted);
-        this._onVolumeChange.dispatch(this, channel);
+        this._onVolumeChange.dispatch(this as any, channel);
     }
     isMuted(channel: number): boolean {
         return !!this.mutes.get(channel);

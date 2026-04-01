@@ -35,7 +35,7 @@ export class MessageList {
             animate: false,
         };
         this.messages.push(msg);
-        this._onNewMessage.dispatch(this, msg);
+        this._onNewMessage.dispatch(this as any, msg);
     }
     addSystemMessage(text: string, colorOrPlayer: string | {
         color: {
@@ -53,7 +53,7 @@ export class MessageList {
             durationSeconds,
         };
         this.messages.push(msg);
-        this._onNewMessage.dispatch(this, msg);
+        this._onNewMessage.dispatch(this as any, msg);
     }
     addChatMessage(text: string, color: string) {
         const msg: Message = {
@@ -63,7 +63,7 @@ export class MessageList {
             animate: true,
         };
         this.messages.push(msg);
-        this._onNewMessage.dispatch(this, msg);
+        this._onNewMessage.dispatch(this as any, msg);
     }
     prune() {
         const now = Date.now();

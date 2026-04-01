@@ -70,12 +70,12 @@ interface QuadTreeOptions {
 }
 export class GameMap {
     private mapFile: MapFile;
-    private tiles: TileCollection;
-    private mapBounds: MapBounds;
-    private tileOccupation: TileOccupation;
+    public tiles: TileCollection;
+    public mapBounds: MapBounds;
+    public tileOccupation: TileOccupation;
     private tileOcclusion: TileOcclusion;
-    private terrain: Terrain;
-    private bridges: Bridges;
+    public terrain: Terrain;
+    public bridges: Bridges;
     private technosByTile: QuadTree<Techno>;
     get startingLocations() {
         return this.mapFile.startingLocations;
@@ -83,7 +83,7 @@ export class GameMap {
     constructor(mapFile: MapFile, t: any, i: any, r: any) {
         this.mapFile = mapFile;
         this.tiles = new TileCollection(this.mapFile.tiles, t, i.general, r);
-        this.mapBounds = new MapBounds().fromMapFile(this.mapFile, this.tiles);
+        this.mapBounds = new MapBounds().fromMapFile(this.mapFile as any, this.tiles);
         this.tileOccupation = new TileOccupation(this.tiles);
         this.tileOcclusion = new TileOcclusion(this.tiles);
         this.terrain = new Terrain(this.tiles, this.mapFile.theaterType, this.mapBounds, this.tileOccupation, i);
@@ -92,7 +92,7 @@ export class GameMap {
         for (const cellTag of this.mapFile.cellTags) {
             const tile = this.tiles.getByMapCoords(cellTag.coords.x, cellTag.coords.y);
             if (tile) {
-                tile.tag = tags.find((tag) => tag.id === cellTag.tagId);
+                (tile as any).tag = tags.find((tag) => tag.id === cellTag.tagId);
             }
         }
         const mapSize = this.tiles.getMapSize();
@@ -180,7 +180,7 @@ export class GameMap {
         return resultTile;
     }
     isWithinHardBounds(tile: Tile): boolean {
-        return this.mapBounds.isWithinHardBounds(tile);
+        return this.mapBounds.isWithinHardBounds(tile as any);
     }
     getInitialMapObjects(): InitialMapObjects {
         return {

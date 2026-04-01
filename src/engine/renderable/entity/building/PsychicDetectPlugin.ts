@@ -43,7 +43,7 @@ export class PsychicDetectPlugin {
                         const sourcePos = line.source.position.worldPosition.clone();
                         const targetPos = line.target.getWorldCoords().clone();
                         const color = new THREE.Color(line.source.owner.color.asHex());
-                        const effect = new DetectionLineFx(this.camera, sourcePos, targetPos, color, 1e6);
+                        const effect = new DetectionLineFx(this.camera as any, sourcePos, targetPos, color, 1e6);
                         this.lineEffects.set(hash, effect);
                         this.renderableManager.addEffect(effect);
                     }

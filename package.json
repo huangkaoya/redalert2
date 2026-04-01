@@ -5,7 +5,8 @@
   "type": "module",
   "packageManager": "bun@1.3.10",
   "scripts": {
-    "dev": "bun --bun vite",
+    "dev": "node ./node_modules/vite/bin/vite.js",
+    "dev:bun": "bun --bun vite",
     "build": "bun --bun vite build",
     "typecheck:entry": "bun --bun tsc -p tsconfig.build.json",
     "preview": "bun --bun vite preview",

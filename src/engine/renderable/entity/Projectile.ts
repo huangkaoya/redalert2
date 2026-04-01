@@ -17,7 +17,7 @@ import { quaternionFromVec3 } from "@/game/math/geometry";
 import { PaletteType } from "@/engine/type/PaletteType";
 import * as THREE from "three";
 export class Projectile {
-    private static sonicWaveGeometry?: THREE.PlaneBufferGeometry;
+    private static sonicWaveGeometry?: THREE.PlaneGeometry;
     private static sonicWaveMaterial?: THREE.MeshBasicMaterial;
     public gameObject: any;
     public rules: any;

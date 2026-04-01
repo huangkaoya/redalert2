@@ -123,7 +123,7 @@ export class MapSpriteBatchLayer {
             availableBuilder = newBuilder;
         }
         const mainSpec = this.buildBatchShpSpec(obj, this.aggregatedImageData);
-        availableBuilder.add(mainSpec);
+        availableBuilder.add(mainSpec as any);
         let shadowSpec: BatchShpSpec | undefined;
         if (obj.art.hasShadow) {
             let shadowBuilder = this.shadowBatchShpBuilders.find((builder) => !builder.isFull());
@@ -143,7 +143,7 @@ export class MapSpriteBatchLayer {
                 shadowBuilder = newShadowBuilder;
             }
             shadowSpec = this.buildShadowBatchShpSpec(mainSpec, this.aggregatedImageData);
-            shadowBuilder.add(shadowSpec);
+            shadowBuilder.add(shadowSpec as any);
         }
         this.batchShpSpecsByObject.set(obj, { main: mainSpec, shadow: shadowSpec });
     }
@@ -188,17 +188,17 @@ export class MapSpriteBatchLayer {
             return;
         const batchKey = this.getBatchKey(obj);
         const builders = this.batchShpBuilders.get(batchKey);
-        const mainBuilder = builders?.find((builder) => builder.has(specs.main));
+        const mainBuilder = builders?.find((builder) => builder.has(specs.main as any));
         if (mainBuilder) {
-            mainBuilder.remove(specs.main);
+            mainBuilder.remove(specs.main as any);
             if (mainBuilder.isEmpty() && builders!.length > 1) {
                 this.get3DObject()?.remove(mainBuilder.build());
                 mainBuilder.dispose();
                 builders?.splice(builders.indexOf(mainBuilder), 1);
             }
             if (specs.shadow) {
-                const shadowBuilder = this.shadowBatchShpBuilders.find((builder) => builder.has(specs.shadow!));
-                shadowBuilder?.remove(specs.shadow);
+                const shadowBuilder = this.shadowBatchShpBuilders.find((builder) => builder.has(specs.shadow as any));
+                shadowBuilder?.remove(specs.shadow as any);
                 if (shadowBuilder?.isEmpty() && this.shadowBatchShpBuilders.length > 1) {
                     this.get3DObject()?.remove(shadowBuilder.build());
                     shadowBuilder.dispose();
@@ -234,11 +234,11 @@ export class MapSpriteBatchLayer {
         const batchKey = this.getBatchKey(obj);
         const mainBuilder = this.batchShpBuilders
             .get(batchKey)
-            ?.find((builder) => builder.has(specs.main));
-        mainBuilder?.update(specs.main);
+            ?.find((builder) => builder.has(specs.main as any));
+        mainBuilder?.update(specs.main as any);
         if (specs.shadow) {
-            const shadowBuilder = this.shadowBatchShpBuilders.find((builder) => builder.has(specs.shadow!));
-            shadowBuilder?.update(specs.shadow);
+            const shadowBuilder = this.shadowBatchShpBuilders.find((builder) => builder.has(specs.shadow as any));
+            shadowBuilder?.update(specs.shadow as any);
         }
     }
     dispose(): void {

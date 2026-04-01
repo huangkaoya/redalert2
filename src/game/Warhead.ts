@@ -227,7 +227,7 @@ interface TileOccupation {
 export class Warhead {
     static readonly SPECIAL_WARHEAD_NAME = "Special";
     static readonly HE_WARHEAD_NAME = "HE";
-    constructor(private rules: WarheadRules) { }
+    constructor(public rules: WarheadRules) { }
     canDamage(obj: GameObject, tile: Position, zone: ZoneType): boolean {
         if (!obj.isSpawned || obj.isDisposed || obj.isDestroyed || obj.isCrashing) {
             return false;
@@ -337,7 +337,7 @@ export class Warhead {
         gameWorld.traits.filter(NotifyAttack).forEach((trait: any) => {
             trait[NotifyAttack.onAttack](target, weaponInfo?.obj, gameWorld);
         });
-        target.onAttack(gameWorld, weaponInfo);
+        target.onAttack(gameWorld as any, weaponInfo);
         gameWorld.events.dispatch(new ObjectAttackedEvent(target, weaponInfo, isDirectHit));
         if (target.isTechno() && !this.rules.temporal) {
             this.suppressOrScatterTarget(target as TechnoObject, gameWorld);
@@ -347,7 +347,7 @@ export class Warhead {
                 (target as InfantryObject).infDeathType = this.rules.infDeath;
             }
             if (this.rules.temporal) {
-                target.deathType = DeathType.Temporal;
+                (target as any).deathType = DeathType.Temporal;
             }
             if (target.isUnit() && (target as TechnoObject).crashableTrait && target.zone === ZoneType.Air && !this.rules.temporal) {
                 (target as TechnoObject).crashableTrait!.crash(weaponInfo);
@@ -365,7 +365,7 @@ export class Warhead {
                 if (target.isInfantry()) {
                     (target as InfantryObject).isPanicked = true;
                 }
-                target.unitOrderTrait.addTask(new ScatterTask(gameWorld));
+                target.unitOrderTrait.addTask(new ScatterTask(gameWorld, undefined as any, undefined as any));
                 if (target.isInfantry()) {
                     target.unitOrderTrait.addTask(new CallbackTask(() => (target as InfantryObject).isPanicked = false).setCancellable(false));
                 }
@@ -393,16 +393,16 @@ export class Warhead {
         obj?: GameObject;
         getBridge?(): GameObject;
     }, weaponInfo: WeaponInfo | undefined, friendly: boolean, areaEffectSmudge: string | undefined, customSpread?: number, isWeatherStorm = false): void {
-        const weapon = weaponInfo?.weapon ?? this.createDummyWeaponInfo();
+        const weapon = weaponInfo?.weapon ?? this.createDummyWeaponInfo() as any;
         const sourceObj = weaponInfo?.obj;
         const sourcePlayer = weaponInfo?.player;
         const cellSpread = customSpread ? customSpread / Coords.LEPTONS_PER_TILE : this.rules.cellSpread;
         const percentAtMax = this.rules.percentAtMax;
         const processedObjects = new Set<GameObject>();
         const objectDistances = new Map<GameObject, number[]>();
-        const rangeHelper = new RangeHelper(gameWorld.map.tileOccupation);
-        const tileFinder = new RadialTileFinder(gameWorld.map.tiles, gameWorld.map.mapBounds, centerTile, { width: 1, height: 1 }, 0, Math.ceil(cellSpread), () => true);
-        let currentTile: Position | null;
+        const rangeHelper = new RangeHelper(gameWorld.map.tileOccupation as any);
+        const tileFinder = new RadialTileFinder(gameWorld.map.tiles as any, gameWorld.map.mapBounds as any, centerTile as any, { width: 1, height: 1 }, 0, Math.ceil(cellSpread), () => true);
+        let currentTile: any;
         while ((currentTile = tileFinder.getNextTile())) {
             for (const obj of gameWorld.map.getObjectsOnTile(currentTile)) {
                 if (processedObjects.has(obj) && !obj.isBuilding())
@@ -421,13 +421,13 @@ export class Warhead {
                 }
                 let distance: number;
                 if (obj.isBuilding()) {
-                    distance = currentTile === centerTile ? 0 : rangeHelper.distance3(currentTile, centerCoords) / Coords.LEPTONS_PER_TILE;
+                    distance = currentTile === centerTile ? 0 : rangeHelper.distance3(currentTile as any, centerCoords) / Coords.LEPTONS_PER_TILE;
                 }
                 else if (obj.isTerrain() || obj.isOverlay()) {
-                    distance = rangeHelper.distance3(currentTile, centerTile) / Coords.LEPTONS_PER_TILE;
+                    distance = rangeHelper.distance3(currentTile as any, centerTile as any) / Coords.LEPTONS_PER_TILE;
                 }
                 else {
-                    distance = rangeHelper.distance3(obj, centerCoords) / Coords.LEPTONS_PER_TILE;
+                    distance = rangeHelper.distance3(obj as any, centerCoords) / Coords.LEPTONS_PER_TILE;
                 }
                 if (distance < 0.001)
                     distance = 0;
@@ -507,7 +507,7 @@ export class Warhead {
                     if (obj.isVehicle() && this.rules.rocker) {
                         const rockIntensity = MathUtils.clamp(damage / 300, 0, 1);
                         if (rockIntensity > 0) {
-                            const rockDirection = FacingUtil.fromMapCoords(obj.position.getMapPosition().clone().sub(Coords.vecWorldToGround(centerCoords))) - obj.direction;
+                            const rockDirection = FacingUtil.fromMapCoords((obj.position.getMapPosition() as any).clone().sub(Coords.vecWorldToGround(centerCoords as any) as any) as any) - obj.direction;
                             obj.applyRocking(rockDirection, rockIntensity);
                         }
                     }
@@ -517,7 +517,7 @@ export class Warhead {
                 hasInvulnerableHit = true;
             }
         }
-        const radLevel = weapon.rules.radLevel;
+        const radLevel = (weapon as any).rules.radLevel;
         if (radLevel && cellSpread) {
             gameWorld.mapRadiationTrait.createRadSite(centerTile, radLevel, cellSpread + 1);
         }

@@ -8,7 +8,7 @@ import { GameObject } from '../GameObject';
 import { World } from '@/game/World';
 export class TransportTrait {
     private obj: GameObject;
-    private units: GameObject[] = [];
+    public units: GameObject[] = [];
     private loadQueue: GameObject[] = [];
     constructor(obj: GameObject) {
         this.obj = obj;

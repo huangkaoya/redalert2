@@ -34,7 +34,7 @@ export class EvaSpecs {
                         priority: dialogSection.getEnum("Priority", EvaPriority, EvaPriority.Normal, true),
                         queue: dialogSection.getString("Type").trim().toLowerCase() === "queue",
                     };
-                    this.specs.set(dialogName, spec);
+                    this.specs.set(dialogName as string, spec);
                 }
                 else {
                     console.warn(`Missing eva section [${dialogName}]`);

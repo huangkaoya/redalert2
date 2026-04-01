@@ -5,7 +5,7 @@ import { Replay } from '../../network/gamestate/Replay';
 import { ReplayStorageError } from './ReplayStorageError';
 import { ReplayMeta } from './ReplayMeta';
 declare const THREE: {
-    Math: {
+    MathUtils: {
         generateUUID(): string;
     };
 };

@@ -56,7 +56,7 @@ export class OctreeContainer extends RenderableContainer {
             cameraClone = this.camera.clone() as THREE.OrthographicCamera | THREE.PerspectiveCamera;
         }
         else {
-            cameraClone.copy(this.camera);
+            cameraClone.copy(this.camera as any);
         }
         if ('top' in cameraClone && 'bottom' in cameraClone && 'left' in cameraClone && 'right' in cameraClone) {
             const orthoCamera = cameraClone as THREE.OrthographicCamera;

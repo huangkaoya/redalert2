@@ -1,3 +1,13 @@
+export interface TheaterSettings {
+    isoPaletteName: string;
+    overlayPaletteName: string;
+    unitPaletteName: string;
+    libPaletteName: string;
+    extension: string;
+    type: TheaterType;
+    [key: string]: any;
+}
+
 export enum TheaterType {
     None = 0,
     Temperate = 1,

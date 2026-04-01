@@ -142,7 +142,7 @@ export class RealFileSystemDir {
             const fileHandle = await this.handle.getFileHandle(finalFilename, { create: true });
             const writable = await fileHandle.createWritable();
             try {
-                await writable.write(virtualFile.getBytes());
+                await writable.write(virtualFile.getBytes() as any);
                 await writable.close();
             }
             catch (writeError) {

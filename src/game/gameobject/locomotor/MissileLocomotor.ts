@@ -119,6 +119,7 @@ export class MissileLocomotor {
                     done = false;
                     break;
                 }
+            // falls through
             case FlightPhase.Midcourse:
                 const horizontalDistance = new Vector2(targetDirection.x, targetDirection.z).length();
                 if (!this.missileRules.lazyCurve) {

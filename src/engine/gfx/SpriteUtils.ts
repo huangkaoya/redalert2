@@ -50,8 +50,8 @@ class SpriteUtilsClass {
             options.textureArea = {
                 x: 0,
                 y: 0,
-                width: texture.image.width,
-                height: texture.image.height,
+                width: (texture.image as any).width,
+                height: (texture.image as any).height,
             };
         }
         if (!options.offset) {
@@ -60,8 +60,8 @@ class SpriteUtilsClass {
         const textureWidth = options.textureArea.width;
         const textureHeight = options.textureArea.height;
         const imageSize: ImageSize = {
-            width: options.texture.image.width,
-            height: options.texture.image.height,
+            width: (options.texture.image as any).width,
+            height: (options.texture.image as any).height,
         };
         const cosY = Math.cos(camera.rotation.y) * (options.scale ?? 1);
         const flatScale = cosY / Math.sin(-camera.rotation.x);

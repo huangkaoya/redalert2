@@ -33,7 +33,7 @@ export class ScatterPositionHelper {
     private movePositionHelper: MovePositionHelper;
     constructor(game: Game) {
         this.game = game;
-        this.movePositionHelper = new MovePositionHelper(game.map);
+        this.movePositionHelper = new MovePositionHelper(game.map as any);
     }
     findPositions(units: Unit[], options: FindFreeMovePositionOptions = {}): Map<Unit, MovePosition> {
         const occupiedTiles = new Set();
@@ -50,13 +50,13 @@ export class ScatterPositionHelper {
     findFreeMovePosition(unit: Unit, occupiedTiles: Set<any>, { ignoredBlockers, excludedTiles, noSlopes }: FindFreeMovePositionOptions = {}): MovePosition | undefined {
         const map = this.game.map;
         const unitBridge = unit.onBridge ? map.tileOccupation.getBridgeOnTile(unit.tile) : undefined;
-        const tileFinder = new RandomTileFinder(map.tiles, map.mapBounds, unit.tile, 1, this.game, (tile) => {
+        const tileFinder = new RandomTileFinder(map.tiles, map.mapBounds, unit.tile, 1, this.game as any, (tile) => {
             if (excludedTiles?.includes(tile))
                 return false;
             const bridge = map.tileOccupation.getBridgeOnTile(tile);
             return (((bridge &&
-                this.movePositionHelper.isEligibleTile(tile, bridge, unitBridge, unit.tile)) ||
-                this.movePositionHelper.isEligibleTile(tile, undefined, unitBridge, unit.tile)) &&
+                this.movePositionHelper.isEligibleTile(tile as any, bridge, unitBridge, unit.tile)) ||
+                this.movePositionHelper.isEligibleTile(tile as any, undefined, unitBridge, unit.tile)) &&
                 (!noSlopes || tile.rampType === 0));
         });
         let foundTile;
@@ -68,7 +68,7 @@ export class ScatterPositionHelper {
             foundTile = tile;
             foundBridge = map.tileOccupation.getBridgeOnTile(tile);
             if (foundBridge &&
-                !this.movePositionHelper.isEligibleTile(tile, foundBridge, unitBridge, unit.tile)) {
+                !this.movePositionHelper.isEligibleTile(tile as any, foundBridge, unitBridge, unit.tile)) {
                 foundBridge = undefined;
             }
             if (!occupiedTiles.has(tile)) {

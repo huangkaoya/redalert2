@@ -1,9 +1,9 @@
 import { TriggerCondition } from "@/game/trigger/TriggerCondition";
 import { EventType } from "@/game/event/EventType";
 export class BuildObjectTypeCondition extends TriggerCondition {
-    private objectType: string;
+    private objectType: any;
     private objectIndex: number;
-    constructor(params: any[], trigger: any, objectType: string) {
+    constructor(params: any[], trigger: any, objectType: any) {
         super(params, trigger);
         this.objectType = objectType;
         this.objectIndex = Number(params[1]);

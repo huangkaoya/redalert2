@@ -69,10 +69,10 @@ export class Hud extends UiObject {
     private _onScrollButtonClick: EventDispatcher<this, any>;
     private _onCommandBarButtonClick: EventDispatcher<this, CommandBarButtonType>;
     private commandBarButtons: any[] = [];
-    private sidebarWidth: number;
+    public sidebarWidth: number;
     private repeaterCount: number;
     private repeaterHeight: number;
-    private actionBarHeight: number;
+    public actionBarHeight: number;
     private sidebarTop?: any;
     private sidebarRadar?: any;
     private sideCameoRepeaters?: any;
@@ -482,7 +482,7 @@ export class Hud extends UiObject {
             innerRef: (ref: any) => (this.menuContentContainerInner = ref),
         }))));
     }
-    private getTextColor(): string {
+    public getTextColor(): string {
         return this.sideType === SideType.GDI
             ? "rgb(165,211,255)"
             : "yellow";

@@ -9,7 +9,8 @@ import { MoveAsideTask } from "@/game/gameobject/task/move/MoveAsideTask";
 import { MovePositionHelper } from "@/game/gameobject/unit/MovePositionHelper";
 import { RadialTileFinder } from "@/game/map/tileFinder/RadialTileFinder";
 import { RangeHelper } from "@/game/gameobject/unit/RangeHelper";
-import { AppLogger, Logger } from "@/util/logger";
+import AppLogger from "@/util/logger";
+const Logger = AppLogger;
 import { Coords } from "@/game/Coords";
 import { TaskStatus } from "@/game/gameobject/task/system/TaskStatus";
 import { ZoneType } from "@/game/gameobject/unit/ZoneType";
@@ -71,7 +72,7 @@ export class MoveTask extends Task {
     protected toBridge: boolean;
     protected options?: MoveOptions;
     public preventOpportunityFire = false;
-    private logger: Logger;
+    private logger: typeof Logger;
     private destinationLeptons: Vector2;
     private currentWaypointLeptons: Vector2;
     private needsPathUpdate = false;
@@ -93,7 +94,7 @@ export class MoveTask extends Task {
         this.targetTile = targetTile;
         this.toBridge = toBridge;
         this.options = options;
-        this.logger = AppLogger.get("move");
+        this.logger = AppLogger.get("move") as any;
         this.destinationLeptons = new Vector2();
         this.currentWaypointLeptons = new Vector2();
         this.targetLinesConfig = { pathNodes: [] };
@@ -162,7 +163,7 @@ export class MoveTask extends Task {
         else if (unit.rules.movementZone === MovementZone.Fly) {
             path = this.computeAirPath(unit);
         }
-        else if (locomotor.ignoresTerrain) {
+        else if ((locomotor as any).ignoresTerrain) {
             path = this.computeDirectJumpPath(unit);
         }
         else {
@@ -820,7 +821,7 @@ export class MoveTask extends Task {
                             obj.veteranTrait?.hasVeteranAbility(VeteranAbility.SCATTER) &&
                             !this.game.areFriendly(obj, unit))) {
                             if (!crushable.unitOrderTrait.hasTasks()) {
-                                crushable.unitOrderTrait.addTask(new ScatterTask(this.game));
+                                crushable.unitOrderTrait.addTask(new ScatterTask(this.game, undefined, undefined));
                             }
                         }
                     }
@@ -902,7 +903,7 @@ export class MoveTask extends Task {
         }
         return weapon;
     }
-    private findRelocationTile(preferredTile: Tile, preferredBridge: Bridge | undefined, unit: Unit): Tile | undefined {
+    protected findRelocationTile(preferredTile: Tile, preferredBridge: Bridge | undefined, unit: Unit): Tile | undefined {
         const map = this.game.map;
         if (unit.rules.movementZone === MovementZone.Fly) {
             const isValidTile = (tile: Tile): boolean => !map.tileOccupation
@@ -933,7 +934,7 @@ export class MoveTask extends Task {
                     (unit.zone === ZoneType.Air ||
                         (islandMap?.get(tile, !!bridge) === unitIslandId &&
                             !map.terrain.findObstacles({ tile, onBridge: bridge }, unit).length &&
-                            moveHelper.isEligibleTile(tile, bridge, preferredBridge, preferredTile))) &&
+                            moveHelper.isEligibleTile(tile as any, bridge, preferredBridge as any, preferredTile as any))) &&
                     this.canStopAtTile(unit, tile, !!bridge));
             });
             return finder.getNextTile();
@@ -970,7 +971,7 @@ export class MoveTask extends Task {
             if ((this.options?.allowOutOfBoundsTarget ||
                 this.game.map.mapBounds.isWithinBounds(this.targetTile)) &&
                 unit.rules.movementZone !== MovementZone.Fly &&
-                !locomotor.ignoresTerrain &&
+                !(locomotor as any).ignoresTerrain &&
                 unit.unitOrderTrait.getCurrentTask()?.isCancelling()) {
                 if (!this.groundPathPlan) {
                     const plan = this.computeGroundPath(unit);

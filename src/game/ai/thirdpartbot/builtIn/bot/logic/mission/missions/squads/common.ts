@@ -8,7 +8,7 @@ const NONCE_GI_UNDEPLOY = 1;
 // Micro methods
 export function manageMoveMicro(attacker: UnitData, attackPoint: Vector2): BatchableAction {
     if (attacker.name === "E1") {
-        const isDeployed = attacker.stance === StanceType.Deployed;
+        const isDeployed = (attacker.stance as any) === StanceType.Deployed;
         if (isDeployed) {
             return BatchableAction.noTarget(attacker.id, OrderType.DeploySelected, NONCE_GI_UNDEPLOY);
         }
@@ -22,8 +22,8 @@ export function manageAttackMicro(attacker: UnitData, target: UnitData): Batchab
     if (attacker.name === "E1") {
         // Para (deployed weapon) range is 5.
         const deployedWeaponRange = attacker.secondaryWeapon?.maxRange || 5;
-        const isDeployed = attacker.stance === StanceType.Deployed;
-        if (!isDeployed && (distance <= deployedWeaponRange || attacker.attackState === AttackState.JustFired)) {
+        const isDeployed = (attacker.stance as any) === StanceType.Deployed;
+        if (!isDeployed && (distance <= deployedWeaponRange || (attacker.attackState as any) === AttackState.JustFired)) {
             return BatchableAction.noTarget(attacker.id, OrderType.DeploySelected, NONCE_GI_DEPLOY);
         } else if (isDeployed && distance > deployedWeaponRange) {
             return BatchableAction.noTarget(attacker.id, OrderType.DeploySelected, NONCE_GI_UNDEPLOY);
@@ -32,7 +32,7 @@ export function manageAttackMicro(attacker: UnitData, target: UnitData): Batchab
     let targetData = target;
     let orderType: OrderType = OrderType.Attack;
     const primaryWeaponRange = attacker.primaryWeapon?.maxRange || 5;
-    if (targetData?.type == ObjectType.Building && distance < primaryWeaponRange * 0.8) {
+    if ((targetData?.type as any) == ObjectType.Building && distance < primaryWeaponRange * 0.8) {
         orderType = OrderType.Attack;
     } else if (targetData?.rules.canDisguise) {
         // Special case for mirage tank/spy as otherwise they just sit next to it.

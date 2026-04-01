@@ -352,7 +352,7 @@ export class Game {
                 console.warn(`Invalid owner "${techno.owner}" for map object`, techno);
                 continue;
             }
-            if (!owner.isNeutral) {
+            if (!(owner as any).isNeutral) {
                 continue;
             }
             const obj = this.createObject(techno.type, name);

@@ -49,6 +49,6 @@ export class VirtualFile {
         return this.stream.byteLength;
     }
     asFile(mimeType?: string): File {
-        return new File([this.getBytes()], this.filename, { type: mimeType });
+        return new File([this.getBytes() as any], this.filename, { type: mimeType });
     }
 }

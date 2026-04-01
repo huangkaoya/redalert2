@@ -21,8 +21,8 @@ export class Tooltip extends UiObject {
             }
             const texture = (this.texture = this.createTexture(this.text, this.color));
             const size = {
-                width: texture.image.width,
-                height: texture.image.height,
+                width: (texture.image as any).width,
+                height: (texture.image as any).height,
             };
             const mesh = (this.mesh = this.createMesh(texture, size.width, size.height));
             const position = this.computePosition(this.pointer, this.viewport, size);

@@ -68,7 +68,7 @@ export class SpawnLinkTrait {
                 currentTask.updateTarget(parent.tile, parent.isUnit() && parent.onBridge);
             }
             else {
-                gameObject.unitOrderTrait.addTask(new MoveTask(world, parent.tile, parent.isUnit() && parent.onBridge, {
+                gameObject.unitOrderTrait.addTask(new MoveTask(world as any, parent.tile, parent.isUnit() && parent.onBridge, {
                     closeEnoughTiles: 0,
                     strictCloseEnough: true
                 }));

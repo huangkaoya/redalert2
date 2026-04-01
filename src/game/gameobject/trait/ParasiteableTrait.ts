@@ -11,7 +11,7 @@ import { WaitMinutesTask } from '../task/system/WaitMinutesTask';
 import { GameSpeed } from '../../GameSpeed';
 import { RadialTileFinder } from '../../map/tileFinder/RadialTileFinder';
 import { AttackTask } from '../task/AttackTask';
-const getRockingTicks = (): number => Vehicle.ROCKING_TICKS + 2;
+const getRockingTicks = (): number => (Vehicle as any).ROCKING_TICKS + 2;
 export class ParasiteableTrait implements NotifyTick, NotifyHeal, NotifyDamage, NotifyAttack, NotifyDestroy, NotifyTeleport {
     private gameObject: any;
     private beingBoarded: boolean = false;

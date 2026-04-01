@@ -188,7 +188,7 @@ export class RenderableFactory {
     }
     createAnim(name: string): Anim {
         const artObject = this.art.getObject(name, ObjectType.Animation);
-        return new Anim(name, artObject, { x: 0, y: 0 }, this.imageFinder, this.theater, this.camera, this.debugWireframes, this.gameSpeed, this.useSpriteBatching, undefined, this.worldSound);
+        return new Anim(name, artObject, { x: 0, y: 0 }, this.imageFinder as any, this.theater, this.camera, this.debugWireframes as any, this.gameSpeed as any, this.useSpriteBatching, undefined, this.worldSound as any);
     }
     create(entity: GameEntity): RenderableEntity {
         let palette = this.theater.getPalette(entity.art.paletteType, entity.art.customPaletteName);
@@ -201,16 +201,16 @@ export class RenderableFactory {
         if (entity.isTechno()) {
             palette = palette.clone();
             const selectionModel = this.unitSelection.getOrCreateSelectionModel(entity);
-            const pipOverlay = new PipOverlay(this.rules.general.paradrop, this.rules.audioVisual, entity, this.localPlayer, this.alliances, selectionModel, this.imageFinder, this.palettes.get("palette.pal"), this.camera, this.strings, this.flyerHelperOpt, this.hiddenObjectsOpt, this.debugText, (name: string) => this.createAnim(name), this.useSpriteBatching, this.useMeshInstancing);
+            const pipOverlay = new PipOverlay(this.rules.general.paradrop, this.rules.audioVisual, entity as any, this.localPlayer, this.alliances, selectionModel, this.imageFinder, this.palettes.get("palette.pal"), this.camera as any, this.strings as any, this.flyerHelperOpt as any, this.hiddenObjectsOpt as any, this.debugText as any, (name: string) => this.createAnim(name), this.useSpriteBatching, this.useMeshInstancing);
             if (entity.isUnit()) {
                 const moveSound = entity.rules.moveSound;
                 if (moveSound && this.worldSound) {
-                    plugins.push(new MoveSoundFxPlugin(entity, moveSound, this.worldSound));
+                    plugins.push(new MoveSoundFxPlugin(entity as any, moveSound, this.worldSound));
                 }
             }
             plugins.push(new ChronoSparkleFxPlugin(entity, this.rules.audioVisual.chronoSparkle1));
             if (entity.mindControllerTrait) {
-                plugins.push(new MindControlLinkPlugin(entity, selectionModel, this.alliances, this.localPlayer));
+                plugins.push(new MindControlLinkPlugin(entity, selectionModel, this.alliances, this.localPlayer as any));
             }
             let renderable: RenderableEntity;
             if (entity.isBuilding()) {
@@ -218,7 +218,7 @@ export class RenderableFactory {
                 const isoPalette = this.theater.isoPalette;
                 renderable = new Building(entity, selectionModel, this.rules, this.art, this.imageFinder, this.theater, this.voxels, this.voxelAnims, palette, animPalette, isoPalette, this.camera, this.lighting, this.debugWireframes, this.gameSpeed, this.vxlBuilderFactory, this.useSpriteBatching, new ShpAggregator(), this.buildingImageDataCache, pipOverlay, this.worldSound, AnimationType.BUILDUP);
                 if (entity.psychicDetectorTrait) {
-                    plugins.push(new PsychicDetectPlugin(entity, entity.psychicDetectorTrait, this.localPlayer, this.camera));
+                    plugins.push(new PsychicDetectPlugin(entity, entity.psychicDetectorTrait, this.localPlayer as any, this.camera as any));
                 }
             }
             else if (entity.isVehicle()) {
@@ -244,23 +244,23 @@ export class RenderableFactory {
                 }
             }
             else if (entity.isAircraft()) {
-                renderable = new Aircraft(entity, this.rules, this.voxels, this.voxelAnims, palette, this.lighting, this.debugWireframes, this.gameSpeed, selectionModel, this.vxlBuilderFactory, this.useSpriteBatching, pipOverlay);
+                renderable = new Aircraft(entity as any, this.rules as any, this.voxels as any, this.voxelAnims as any, palette, this.lighting as any, this.debugWireframes as any, this.gameSpeed, selectionModel, this.vxlBuilderFactory as any, this.useSpriteBatching, pipOverlay);
             }
             else {
                 throw new Error("Unhandled game object type " + entity.type);
             }
             if (entity.tntChargeTrait) {
-                plugins.push(new TntFxPlugin(entity, entity.tntChargeTrait, this.rules.combatDamage.ivanIconFlickerRate, renderable, this.imageFinder, this.art, this.alliances, this.localPlayer, this.worldSound, (name: string) => this.createAnim(name)));
+                plugins.push(new TntFxPlugin(entity as any, entity.tntChargeTrait, this.rules.combatDamage.ivanIconFlickerRate, renderable, this.imageFinder, this.art, this.alliances, this.localPlayer, this.worldSound, (name: string) => this.createAnim(name)));
             }
             plugins.push(new ObjectCloakPlugin(entity, this.localPlayer, this.alliances, renderable));
             plugins.forEach((plugin) => renderable.registerPlugin(plugin));
             return renderable;
         }
         if (entity.isTerrain()) {
-            return new Terrain(entity, this.mapRenderable?.terrainLayer, this.imageFinder, palette, this.camera, this.lighting, this.debugWireframes, this.gameSpeed, this.useSpriteBatching);
+            return new Terrain(entity, this.mapRenderable?.terrainLayer, this.imageFinder as any, palette, this.camera, this.lighting, this.debugWireframes, this.gameSpeed, this.useSpriteBatching) as any;
         }
         if (entity.isOverlay()) {
-            return new Overlay(entity, this.rules, this.art, this.imageFinder, palette, this.camera, this.lighting, this.debugWireframes, this.bridgeImageCache, this.mapRenderable?.overlayLayer, this.useSpriteBatching);
+            return new Overlay(entity as any, this.rules as any, this.art, this.imageFinder as any, palette, this.camera, this.lighting as any, this.debugWireframes as any, this.bridgeImageCache, this.mapRenderable?.overlayLayer, this.useSpriteBatching) as any;
         }
         if (entity.isProjectile()) {
             const projectile = new Projectile(entity, this.rules, this.imageFinder, this.voxels, this.voxelAnims, this.theater, palette, this.palettes.get("palette.pal"), this.camera, this.gameSpeed, this.lighting, this.lightingDirector, this.vxlBuilderFactory, this.useSpriteBatching, this.useMeshInstancing);
@@ -268,11 +268,11 @@ export class RenderableFactory {
             return projectile;
         }
         if (entity.isSmudge()) {
-            return new Smudge(entity, this.imageFinder, palette, this.camera, this.lighting, this.debugWireframes, this.mapRenderable?.smudgeLayer);
+            return new Smudge(entity, this.imageFinder as any, palette, this.camera, this.lighting, this.debugWireframes, this.mapRenderable?.smudgeLayer) as any;
         }
         if (entity.isDebris()) {
-            const debris = new Debris(entity, this.rules, this.imageFinder, this.voxels, this.voxelAnims, palette, this.camera, this.lighting, this.gameSpeed, this.vxlBuilderFactory, this.useSpriteBatching);
-            plugins.forEach((plugin) => debris.registerPlugin(plugin));
+            const debris = new Debris(entity as any, this.rules as any, this.imageFinder as any, this.voxels as any, this.voxelAnims, palette, this.camera, this.lighting as any, this.gameSpeed, this.vxlBuilderFactory as any, this.useSpriteBatching);
+            plugins.forEach((plugin) => debris.registerPlugin(plugin as any));
             return debris;
         }
         throw new Error("Not implemented");

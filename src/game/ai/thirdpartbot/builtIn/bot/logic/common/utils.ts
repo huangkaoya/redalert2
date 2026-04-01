@@ -120,7 +120,7 @@ export function groupBy<K extends string, V>(array: V[], predicate: (arg: V) => 
 }
 
 export function toPathNode(tile: Tile, onBridge: boolean): PathNode {
-    return { tile, onBridge };
+    return { tile, onBridge } as any;
 }
 
 export function toVector2(tile: Tile): Vector2 {

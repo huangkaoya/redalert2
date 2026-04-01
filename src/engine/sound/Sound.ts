@@ -86,7 +86,7 @@ export class Sound {
     private getSoundKey(key: SoundKey | string): string | undefined {
         let soundKey: string | undefined;
         if (typeof SoundKey[key as keyof typeof SoundKey] === "string") {
-            soundKey = this.audioVisualRules.ini.getString(SoundKey[key as keyof typeof SoundKey]);
+            soundKey = this.audioVisualRules.ini.getString(SoundKey[key as keyof typeof SoundKey] as any);
             if (!soundKey)
                 return;
         }

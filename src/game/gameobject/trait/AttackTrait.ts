@@ -400,13 +400,13 @@ export class AttackTrait implements NotifyTick, NotifyDamage, NotifyTeleport {
                     Coords.LEPTONS_PER_TILE;
                 h = this.computeThreat(d, e, u, h, i.rules.general.threat);
                 if (h > o) {
-                    n = { target: d, weapon: u };
+                    n = { target: d, weapon: u } as any;
                     o = h;
                 }
             }
         }
         if (n.target && e.rules.distributedFire) {
-            this.updateDistributedFireHistory(n);
+            this.updateDistributedFireHistory(n as any);
         }
         return n;
     }

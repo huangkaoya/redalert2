@@ -94,7 +94,7 @@ export class TeslaFx {
             const amplitude = Math.max(0.18 * Coords.ISO_WORLD_SCALE, distance * 0.02);
             const points: THREE.Vector3[] = [];
             for (let i = 0; i < pointCount; i++) {
-                const t = pointCount === 1 ? 0 : i / (pointCount - 1);
+                const t = (pointCount as number) === 1 ? 0 : i / (pointCount - 1);
                 const point = sourceOffset.clone().lerp(destOffset, t);
                 if (i !== 0 && i !== pointCount - 1) {
                     const envelope = Math.sin(t * Math.PI);

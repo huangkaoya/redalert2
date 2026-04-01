@@ -24,7 +24,6 @@ export class EnterTransportTask extends Task {
     private game: any;
     public target: any;
     private movePerformed: boolean = false;
-    private preventOpportunityFire: boolean = false;
     private initialTargetTile: any;
     private state: EnterTransportState;
     private queueingNode?: QueueingNode;
@@ -32,6 +31,7 @@ export class EnterTransportTask extends Task {
         super();
         this.game = game;
         this.target = target;
+        this.preventOpportunityFire = false;
     }
     isAllowed(unit: any): boolean {
         return (!this.target.isDestroyed &&

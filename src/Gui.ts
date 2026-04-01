@@ -323,7 +323,7 @@ export class Gui {
             if (replayDirHandle) {
                 const { RealFileSystemDir } = await import('./data/vfs/RealFileSystemDir.js');
                 const { ReplayStorageFileSystem } = await import('./gui/replay/ReplayStorageFileSystem.js');
-                replayManager = new ReplayManager(new ReplayStorageFileSystem(new RealFileSystemDir(replayDirHandle)));
+                replayManager = new ReplayManager(new ReplayStorageFileSystem(new RealFileSystemDir(replayDirHandle) as any));
             }
         }
         catch (error) {
@@ -476,7 +476,7 @@ export class Gui {
                 mixer = this.createDefaultMixer();
             }
             this.mixer = mixer;
-            this.audioSystem = new AudioSystem(mixer);
+            this.audioSystem = new AudioSystem(mixer as any);
             const debugRoot = ((window as any).__ra2debug ??= {});
             debugRoot.audioSystem = this.audioSystem;
             debugRoot.mixer = this.mixer;

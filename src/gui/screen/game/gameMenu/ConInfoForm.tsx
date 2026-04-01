@@ -113,7 +113,7 @@ export const ConInfoForm: React.FC<ConInfoFormProps> = ({ strings, conInfos, pla
           {strings.get("TXT_TIME_ALLOWED", timeRemaining)}
         </div>
         <div className="chat">
-          <Chat strings={strings} messages={messages} channels={[RECIPIENT_ALL, RECIPIENT_TEAM]} chatHistory={chatHistory} userColors={new Map(players.map((player) => [player.name, player.color.asHexString()]))} localUsername={localPlayer.name} onSendMessage={onSendMessage}/>
+          <Chat strings={strings} messages={messages} channels={[RECIPIENT_ALL, RECIPIENT_TEAM] as any} chatHistory={chatHistory} userColors={new Map(players.map((player) => [player.name, player.color.asHexString()]))} localUsername={localPlayer.name} onSendMessage={onSendMessage as any} onCancelMessage={undefined as any}/>
         </div>
       </div>
     </div>);
