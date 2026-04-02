@@ -22,12 +22,12 @@ export class Mp3File {
         }
         else if (typeof (this.sourceData as VirtualFile).getBytes === 'function') {
             const bytes = (this.sourceData as VirtualFile).getBytes();
-            blob = new Blob([bytes], { type: "audio/mp3" });
+            blob = new Blob([bytes as any], { type: "audio/mp3" });
         }
         else if ((this.sourceData as DataStream).buffer) {
             const ds = this.sourceData as DataStream;
             const bytes = new Uint8Array(ds.buffer, ds.byteOffset, ds.byteLength);
-            blob = new Blob([bytes], { type: "audio/mp3" });
+            blob = new Blob([bytes as any], { type: "audio/mp3" });
         }
         else {
             throw new Error("Mp3File: Cannot convert source data to Blob.");

@@ -435,7 +435,7 @@ export class CrateGeneratorTrait implements NotifyTick {
             gameState.rules.combatDamage.flameDamage :
             gameState.rules.combatDamage.c4Warhead;
         const warhead = new Warhead(gameState.rules.getWarhead(warheadType));
-        warhead.detonate(gameState, damage, unit.tile, unit.tileElevation, unit.position.worldPosition, unit.zone, CollisionType.None, gameState.createTarget(unit, unit.tile), { player: unit.owner, weapon: undefined }, false, undefined, 0);
+        warhead.detonate(gameState, damage, unit.tile, unit.tileElevation, unit.position.worldPosition, unit.zone, CollisionType.None, gameState.createTarget(unit, unit.tile), { player: unit.owner, weapon: undefined } as any, false, undefined, 0);
         return true;
     }
     private grantTiberiumPowerup(tile: any, gameState: any): boolean {

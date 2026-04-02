@@ -245,7 +245,7 @@ export class Debris {
             mainObj.updateMatrix();
             shpRenderable.setFlat(this.objectArt.flat);
             const animProps = new AnimProps(this.objectArt.art, image);
-            const animation = new Animation(animProps, this.gameSpeed);
+            const animation = new Animation(animProps, this.gameSpeed as any);
             this.shpAnimRunner = new SimpleRunner();
             this.shpAnimRunner.animation = animation;
         }

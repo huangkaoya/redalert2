@@ -114,7 +114,7 @@ export class SharedDetectDisguiseTrait {
             }
         }
         for (const owner of detectedOwners) {
-            owner.sharedDetectDisguiseTrait?.add(entity);
+            (owner as any).sharedDetectDisguiseTrait?.add(entity);
         }
     }
     private undetect(entity: any, game: any) {

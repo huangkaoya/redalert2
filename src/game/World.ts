@@ -4,6 +4,7 @@ export class World {
     private allObjects: Map<number, GameObject>;
     private _onObjectSpawned: EventDispatcher;
     private _onObjectRemoved: EventDispatcher;
+    [key: string]: any;
     constructor() {
         this.allObjects = new Map();
         this._onObjectSpawned = new EventDispatcher();
@@ -15,7 +16,7 @@ export class World {
     get onObjectRemoved() {
         return this._onObjectRemoved.asEvent();
     }
-    spawnObject(object: GameObject): void {
+    spawnObject(object: GameObject, tile?: any): void {
         if (this.allObjects.has(object.id)) {
             throw new Error("Trying to add an already existing object");
         }

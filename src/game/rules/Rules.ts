@@ -340,7 +340,7 @@ export class Rules {
         if (!section) {
             throw new Error("Missing [General] section");
         }
-        this.general.readIni(section);
+        this.general.readIni(section as any);
     }
     private readAi(): void {
         const section = this.ini.getSection("AI");
@@ -368,7 +368,7 @@ export class Rules {
         if (!section) {
             throw new Error("Missing [MultiplayerDialogSettings] section");
         }
-        this.mpDialogSettings.readIni(section);
+        this.mpDialogSettings.readIni(section as any);
     }
     private readObjectTypes(sectionName: string, typeMap: Map<number, string>): void {
         const section = this.ini.getSection(sectionName);
@@ -410,8 +410,8 @@ export class Rules {
         typeMap.forEach((typeName, id) => {
             const section = this.ini.getSection(typeName);
             if (section) {
-                const rules = new ObjectRulesFactory().create(objectType, section, this.general, id);
-                rulesMap.set(typeName, rules);
+                const rules = new ObjectRulesFactory().create(objectType, section, this.general, id as any);
+                rulesMap.set(typeName, rules as any);
             }
             else {
                 this.logger?.debug(`${ObjectType[objectType]} type "${typeName}" has no rules section`);
@@ -424,8 +424,8 @@ export class Rules {
             if (!section) {
                 throw new Error("Missing ini section for country " + name);
             }
-            const rules = new CountryRules(id);
-            rules.readIni(section);
+            const rules = new CountryRules(id as any);
+            rules.readIni(section as any);
             this.countryRules.set(name, rules);
         });
     }

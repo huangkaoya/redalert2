@@ -298,7 +298,7 @@ export class MapSelScreen extends MainMenuScreen {
                 await this.messageBoxApi.alert(supportError, this.strings.get("GUI:Ok"));
                 return;
             }
-            manifest = new MapManifest().fromMapFile(virtualFile, this.gameModes.getAll());
+            manifest = new MapManifest().fromMapFile(virtualFile, this.gameModes.getAll() as any);
         }
         catch (error) {
             console.error(error);
@@ -395,7 +395,7 @@ export class MapSelScreen extends MainMenuScreen {
             (await this.messageBoxApi.confirm(this.strings.get("GUI:EjectPlayers"), this.strings.get("GUI:Ok"), this.strings.get("GUI:Cancel")));
         cancellationToken.throwIfCancelled();
         if (shouldProceed) {
-            await this.controller?.popScreen<MapSelScreenResult>({
+            await (this.controller as any)?.popScreen({
                 gameMode: this.selectedGameMode,
                 mapName: this.selectedMapName,
                 changedMapFile: this.changedMapFile,
@@ -454,7 +454,7 @@ export class MapSelScreen extends MainMenuScreen {
                 throw error;
             }
             if (updatePreview && !cancellationToken.isCancelled()) {
-                const preview = new MapPreviewRenderer(this.strings).render(new MapFile(mapFile), this.lobbyType, this.controller.getSidebarPreviewSize());
+                const preview = new MapPreviewRenderer(this.strings).render(new MapFile(mapFile), this.lobbyType as any, this.controller.getSidebarPreviewSize());
                 this.controller.setSidebarPreview(preview);
             }
             this.mapFileUpdateTask = undefined;

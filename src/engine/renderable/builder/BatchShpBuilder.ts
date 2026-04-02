@@ -5,6 +5,7 @@ import { TextureUtils } from '../../gfx/TextureUtils';
 import { PaletteBasicMaterial } from '../../gfx/material/PaletteBasicMaterial';
 import { ShpFile } from '../../../data/ShpFile';
 interface BatchItem {
+    [key: string]: any;
     position: THREE.Vector3;
     shpFile: ShpFile;
     depth: boolean;
@@ -37,7 +38,7 @@ export class BatchShpBuilder {
     get trianglesPerSprite(): number {
         return SpriteUtils.TRIANGLES_PER_SPRITE;
     }
-    constructor(shpFile: ShpFile, palette: any, camera: THREE.Camera, textureCache: Map<ShpFile, ShpTextureAtlas>, opacity: number = 1, transparent: boolean = false, batchSize: number = 10000, scale: number = 1) {
+    constructor(shpFile: ShpFile, palette: any, camera: THREE.Camera, textureCache: Map<any, any>, opacity: number = 1, transparent: boolean = false, batchSize: number = 10000, scale: number = 1) {
         this.shpFile = shpFile;
         this.palette = palette;
         this.camera = camera;

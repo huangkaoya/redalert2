@@ -167,7 +167,7 @@ export class MoveTrait {
     teleportUnitToTile(targetTile: any, bridge: any, fromTile: any, preserveMovement: boolean, gameState: GameState): void {
         const gameObject = this.gameObject;
         const oldTile = gameObject.tile;
-        gameObject.traits
+        (gameObject.traits as any)
             .filter(NotifyTeleport)
             .forEach((trait: any) => {
             trait[NotifyTeleport.onBeforeTeleport](gameObject, gameState, fromTile, preserveMovement);
@@ -259,12 +259,12 @@ export class MoveTrait {
                 }
             }
         }
-        gameState.traits
+        (gameState.traits as any)
             .filter(GlobalNotifyTileChange)
             .forEach((trait: any) => {
             trait[GlobalNotifyTileChange.onTileChange](gameObject, gameState, oldTile, isTeleport);
         });
-        gameObject.traits
+        (gameObject.traits as any)
             .filter(NotifyTileChange)
             .forEach((trait: any) => {
             trait[NotifyTileChange.onTileChange](gameObject, gameState, oldTile, isTeleport);
@@ -272,7 +272,7 @@ export class MoveTrait {
         gameState.events.dispatch(new EnterTileEvent(gameObject.tile, gameObject));
     }
     handleElevationChange(oldElevation: number, gameState: GameState): void {
-        gameState.traits
+        (gameState.traits as any)
             .filter(NotifyElevationChange)
             .forEach((trait: any) => {
             trait[NotifyElevationChange.onElevationChange](this.gameObject, gameState, oldElevation);

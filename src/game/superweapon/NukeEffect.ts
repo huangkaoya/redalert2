@@ -18,9 +18,9 @@ export class NukeEffect extends SuperWeaponEffect {
         const target = game.createTarget(undefined, this.tile);
         const silo = this.owner
             .getOwnedObjectsByType(ObjectType.Building)
-            .find(building => building.rules.nukeSilo);
+            .find(building => (building as any).rules.nukeSilo);
         if (silo) {
-            const weaponInstance = Weapon.factory(weapon.name, WeaponType.Primary, silo, game.rules);
+            const weaponInstance = Weapon.factory(weapon.name, WeaponType.Primary, silo as any, game.rules);
             weaponInstance.fire(target, game);
         }
         else {

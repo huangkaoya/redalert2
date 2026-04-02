@@ -85,7 +85,7 @@ export class RadBeamFx {
     dispose(): void {
         if (this.lineMesh) {
             this.lineMesh.geometry.dispose();
-            this.lineMesh.material.dispose();
+            (this.lineMesh.material as any).dispose();
         }
     }
 }

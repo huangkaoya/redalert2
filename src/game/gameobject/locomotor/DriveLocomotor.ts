@@ -61,9 +61,9 @@ export class DriveLocomotor {
                 const controlPoint1 = startPos.clone().lerp(midPos, 0.5);
                 const controlPoint2 = endPos.clone().lerp(midPos, 0.5);
                 this.steerCurve = new CurvePath();
-                this.steerCurve.add(new LineCurve(startPos, controlPoint1));
-                this.steerCurve.add(new QuadraticBezierCurve(controlPoint1, midPos, controlPoint2));
-                this.steerCurve.add(new LineCurve(controlPoint2, endPos));
+                this.steerCurve.add(new LineCurve(startPos, controlPoint1) as any);
+                this.steerCurve.add(new QuadraticBezierCurve(controlPoint1, midPos, controlPoint2) as any);
+                this.steerCurve.add(new LineCurve(controlPoint2, endPos) as any);
                 this.lastPosition = startPos;
                 return secondLastWaypoint;
             }
@@ -136,12 +136,12 @@ export class DriveLocomotor {
             const velocityVector = curveTangent.clone().setLength(speed);
             unit.moveTrait.velocity.set(velocityVector.x, 0, velocityVector.y);
             const rotationSpeed = unit.rules.rot;
-            const { facing, delta } = FacingUtil.tick(unit.direction, FacingUtil.fromMapCoords(curveTangent), rotationSpeed);
+            const { facing, delta } = FacingUtil.tick(unit.direction, FacingUtil.fromMapCoords(curveTangent as any), rotationSpeed);
             unit.direction = facing;
             unit.spinVelocity = delta;
             const previousPosition = this.lastPosition;
-            this.lastPosition = curvePoint.clone();
-            movementDelta = curvePoint.sub(previousPosition);
+            this.lastPosition = curvePoint.clone() as any;
+            movementDelta = curvePoint.sub(previousPosition as any) as any;
         }
         else {
             const directionToTarget = new Vector2().copy(targetPosition).sub(currentPosition);

@@ -9,6 +9,6 @@ export class HudFactory {
         this.viewport = viewport;
     }
     create(): Hud {
-        return new Hud(this.sideType, this.viewport, Engine.getImages(), Engine.getPalettes(), this.cameoFilenames, this.sidebarModel, this.messageList, this.chatHistory, this.debugText, this.debugTextEnabled, this.localPlayer, this.players, this.stalemateDetectTrait, this.countdownTimer, this.jsxRenderer, this.strings, this.commandBarButtons, this.persistentHoverTags);
+        return new Hud(this.sideType, this.viewport, Engine.getImages() as any, Engine.getPalettes() as any, this.cameoFilenames, this.sidebarModel, this.messageList, this.chatHistory, this.debugText, this.debugTextEnabled, this.localPlayer, this.players, this.stalemateDetectTrait, this.countdownTimer, this.jsxRenderer, this.strings, this.commandBarButtons, this.persistentHoverTags);
     }
 }

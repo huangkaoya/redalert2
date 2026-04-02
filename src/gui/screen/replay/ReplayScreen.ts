@@ -288,7 +288,7 @@ export class ReplayScreen extends RootScreen {
             Engine.unloadTheater(theater.type);
             this.gameLoader.clearStaticCaches();
         });
-        this.disposables.add(game);
+        this.disposables.add(game as any);
         const sidebarModel = new SidebarModel(game, params.replay);
         const messageList = new MessageList(game.rules.audioVisual.messageDuration, 6, undefined);
         const chatHistory = new ChatHistory();
@@ -302,11 +302,11 @@ export class ReplayScreen extends RootScreen {
             CommandBarButtonType.ReplayPause,
             CommandBarButtonType.ReplaySpeed
         ];
-        this.hudFactory = new HudFactory(hudSide, this.viewport.value, sidebarModel, messageList, chatHistory, game.debugText, this.runtimeVars.debugText, undefined, game.getCombatants(), game.stalemateDetectTrait, game.countdownTimer, cameoFilenames, this.jsxRenderer, this.strings, replayCommandButtons);
+        this.hudFactory = new HudFactory(hudSide, this.viewport.value, sidebarModel, messageList, chatHistory, game.debugText, this.runtimeVars.debugText, undefined, game.getCombatants(), game.stalemateDetectTrait, game.countdownTimer, cameoFilenames, this.jsxRenderer, this.strings, replayCommandButtons, undefined);
         this.disposables.add(() => (this.hudFactory = undefined));
         const hud = this.hudFactory.create();
         this.hud = hud;
-        const minimap = this.minimap = new Minimap(game, undefined, hud.getTextColor(), game.rules.general.radar);
+        const minimap = this.minimap = new Minimap(game, undefined, hud.getTextColor() as any, game.rules.general.radar as any);
         hud.setMinimap(minimap);
         this.disposables.add(minimap, () => (this.minimap = undefined));
         minimap.setPointerEvents(this.pointer.pointerEvents);
@@ -318,7 +318,7 @@ export class ReplayScreen extends RootScreen {
         worldScene.create3DObject();
         const actionFactory = new ActionFactory();
         new ActionFactoryReg().register(actionFactory, game, undefined);
-        const gameTurnMgr = this.gameTurnMgr = new ReplayTurnManager(game, params.replay, actionFactory, this.actionLogger);
+        const gameTurnMgr = this.gameTurnMgr = new ReplayTurnManager(game, params.replay, actionFactory, this.actionLogger as any);
         this.gameTurnMgr.init();
         const tauntPlayback = new TauntPlayback(this.sound.audioSystem, Engine.getTaunts());
         const handleReplayEvent = (event: any) => {
@@ -343,7 +343,7 @@ export class ReplayScreen extends RootScreen {
             await this.onLeave();
             await this.onEnter(params);
         });
-        DevToolsApi.registerVar("speed", game.desiredSpeed);
+        DevToolsApi.registerVar("speed", game.desiredSpeed as any);
         this.disposables.add(() => DevToolsApi.unregisterCommand("reset"), () => DevToolsApi.unregisterVar("speed"));
     }
     onViewportChange(): void {
@@ -372,7 +372,7 @@ export class ReplayScreen extends RootScreen {
         this.loadingScreenApi?.dispose();
         this.music?.play(MusicType.Normal);
         const evaSpecs = new EvaSpecs(SideType.GDI).readIni(Engine.getIni("eva.ini"));
-        const eva = new Eva(evaSpecs, this.sound, this.renderer);
+        const eva = new Eva(evaSpecs, this.sound as any, this.renderer as any);
         eva.init();
         this.disposables.add(eva);
         try {
@@ -391,7 +391,7 @@ export class ReplayScreen extends RootScreen {
         this.renderer.addScene(this.uiScene);
         this.pointer.setVisible(true);
         game.start();
-        this.gameAnimationLoop = new GameAnimationLoop(undefined, this.renderer, this.sound, this.gameTurnMgr!, {
+        this.gameAnimationLoop = new GameAnimationLoop(undefined, this.renderer as any, this.sound, this.gameTurnMgr!, {
             skipFrames: true,
             skipBudgetMillis: 8,
             onError: this.config.devMode ? undefined : (error: any, isCritical?: boolean) => this.handleError(error, this.strings.get("TS:GameCrashed") +
@@ -401,7 +401,7 @@ export class ReplayScreen extends RootScreen {
         });
         this.uiAnimationLoop.stop();
         this.gameAnimationLoop.start();
-        const handleReplayFinished = () => this.onReplayEnd(game);
+        const handleReplayFinished = () => this.onReplayEnd();
         this.gameTurnMgr!.onFinished.subscribe(handleReplayFinished);
         this.disposables.add(() => this.gameTurnMgr?.onFinished.unsubscribe(handleReplayFinished));
     }
@@ -434,7 +434,7 @@ export class ReplayScreen extends RootScreen {
         const devMode = this.config.devMode;
         const worldInteractionFactory = new WorldInteractionFactory(undefined, game, unitSelection, renderableManager, this.uiScene, worldScene, this.pointer, this.renderer, this.keyBinds, this.generalOptions, freeCamera, debugPaths, devMode, document, minimap, this.strings, this.hud!.getTextColor(), debugText, this.battleControlApi);
         const discordUrl = this.config.discordUrl;
-        const playerUi = this.playerUi = new ObserverUi(game, undefined, this.sidebarModel!, this.params!.replay, this.renderer, worldScene, this.sound, worldInteractionFactory, menu, this.runtimeVars, this.strings, renderableManager, this.messageBoxApi, discordUrl);
+        const playerUi = this.playerUi = new ObserverUi(game, undefined, this.sidebarModel!, this.params!.replay, this.renderer, worldScene, this.sound, worldInteractionFactory, menu, this.runtimeVars, this.strings, renderableManager, this.messageBoxApi, discordUrl) as any;
         playerUi.onPlayerChange.subscribe(({ player, sidebarModel }) => {
             this.sidebarModel = sidebarModel;
             this.rerenderHud();

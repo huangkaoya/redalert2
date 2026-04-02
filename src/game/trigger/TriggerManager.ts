@@ -143,7 +143,7 @@ export class TriggerManager {
     private executeActions(trigger: Trigger, targets: MapObject[], context: GameContext): void {
         for (const action of trigger.actions) {
             const executor = this.executorFactory.create(action, trigger);
-            executor.execute(context, targets);
+            executor.execute(context, targets as any);
         }
     }
     setTriggerEnabled(triggerId: string, enabled: boolean): void {

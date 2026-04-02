@@ -17,7 +17,7 @@ export class InvulnerableAnimRunner extends SimpleRunner {
         props.rate = rate;
         props.loopEnd = steps;
         props.loopCount = -1;
-        this.animation = new Animation(props, gameSpeed);
+        this.animation = new Animation(props, gameSpeed as any);
         this.animation.stop();
     }
     animate(): void {

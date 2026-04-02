@@ -27,7 +27,7 @@ export class GatherOreTask extends Task {
     private target?: any;
     public useChildTargetLines: boolean = true;
     public preventOpportunityFire: boolean = false;
-    constructor(game: any, initialTarget: any, explicitOrder: boolean = false) {
+    constructor(game: any, initialTarget?: any, explicitOrder: boolean = false) {
         super();
         this.game = game;
         this.initialTarget = initialTarget;

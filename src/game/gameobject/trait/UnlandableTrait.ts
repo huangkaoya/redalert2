@@ -21,7 +21,7 @@ export class UnlandableTrait {
         if (!gameObject.unitOrderTrait.isIdle())
             return;
         const exitTile = this.chooseExitTile(gameObject.tile, world);
-        gameObject.unitOrderTrait.addTask(new TaskGroup(new MoveTask(world, exitTile, false, { allowOutOfBoundsTarget: true }), new CallbackTask((obj) => world.unspawnObject(obj))).setCancellable(false));
+        gameObject.unitOrderTrait.addTask(new TaskGroup(new MoveTask(world as any, exitTile, false, { allowOutOfBoundsTarget: true }), new CallbackTask((obj) => world.unspawnObject(obj))).setCancellable(false));
     }
     private chooseExitTile(tile: any, world: World): any {
         const mapSize = world.map.tiles.getMapSize();

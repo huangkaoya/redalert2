@@ -25,6 +25,8 @@ export { StanceType } from '@/game/gameobject/infantry/StanceType';
 export { ZoneType } from '@/game/gameobject/unit/ZoneType';
 export { FactoryType } from '@/game/rules/TechnoRules';
 export { TechnoRules } from '@/game/rules/TechnoRules';
+export { WeaponRules } from '@/game/rules/WeaponRules';
+export { ProjectileRules } from '@/game/rules/ProjectileRules';
 
 // Re-export event types
 export { ApiEventType } from '@/game/api/EventsApi';
@@ -35,6 +37,17 @@ export type { PlayerData } from '@/game/api/interface/PlayerData';
 export type { UnitData } from '@/game/api/interface/UnitData';
 export type { PathNode } from '@/game/api/interface/PathNode';
 export type { Tile } from '@/game/map/Tile';
+export type { BuildingPlacementData } from '@/game/api/interface/BuildingPlacementData';
+
+/**
+ * Rectangle interface for bounding area calculations.
+ */
+export interface Rectangle {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
 
 // Types not directly exported from the original codebase - define locally
 

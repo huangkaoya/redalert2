@@ -62,6 +62,7 @@ interface Weapon {
         };
     };
 }
+// @ts-ignore
 export class VeteranTrait implements NotifyTargetDestroy {
     private gameObject: GameObject;
     private veteranRules: VeteranRules;
@@ -144,7 +145,7 @@ export class VeteranTrait implements NotifyTargetDestroy {
             if (!gameObject.explodes) {
                 gameObject.explodes = true;
                 if (!gameObject.armedTrait) {
-                    gameObject.armedTrait = new ArmedTrait(gameObject, gameManager.rules);
+                    gameObject.armedTrait = new ArmedTrait(gameObject as any, gameManager.rules as any);
                     gameManager.addObjectTrait(gameObject, gameObject.armedTrait);
                 }
             }

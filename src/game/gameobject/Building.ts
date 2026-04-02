@@ -99,7 +99,7 @@ export class Building extends Techno {
             building.traits.add(building.superWeaponTrait);
         }
         if (rules.numberOfDocks) {
-            building.dockTrait = new DockTrait(building, world, rules.numberOfDocks, art.dockingOffsets);
+            building.dockTrait = new DockTrait(building as any, world, rules.numberOfDocks, art.dockingOffsets);
             building.traits.add(building.dockTrait);
             if (rules.helipad) {
                 building.helipadTrait = new HelipadTrait();
@@ -143,7 +143,7 @@ export class Building extends Techno {
         return building;
     }
     constructor(owner: any, rules: TechnoRules, art: any) {
-        super(ObjectType.Building, owner, rules, art);
+        super(ObjectType.Building as any, owner, rules, art);
         this._buildStatus = BuildStatus.BuildUp;
         this.lastBuildStatus = this.buildStatus;
     }

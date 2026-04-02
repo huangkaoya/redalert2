@@ -240,7 +240,7 @@ export class Overlay {
             else {
                 imageSource = this.imageFinder.findByObjectArt(this.objectArt);
             }
-            const mainRenderable = this.mainRenderable = this.createMainObject(imageSource, drawOffset);
+            const mainRenderable = this.mainRenderable = this.createMainObject(imageSource, drawOffset as any);
             mainRenderable.create3DObject();
             container.add(mainRenderable.get3DObject());
             if (needsIntersection && mainRenderable) {
@@ -263,7 +263,7 @@ export class Overlay {
                 container.position.z += tileSize + (isXBridge ? 0.5 * tileSize : 0);
                 const shadowMesh = mainRenderable.getShadowMesh();
                 if (shadowMesh) {
-                    EngineMathUtils.translateTowardsCamera(shadowMesh, this.camera, (MAGIC_OFFSET + 0.05) * Coords.ISO_WORLD_SCALE);
+                    EngineMathUtils.translateTowardsCamera(shadowMesh, this.camera as any, (MAGIC_OFFSET + 0.05) * Coords.ISO_WORLD_SCALE);
                     shadowMesh.updateMatrix();
                 }
                 const bridgeShadowSurface = this.createBridgeShadowSurface();

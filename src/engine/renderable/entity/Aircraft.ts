@@ -154,8 +154,8 @@ export class Aircraft {
         this.vxlBuilderFactory = vxlBuilderFactory;
         this.useSpriteBatching = useSpriteBatching;
         this.pipOverlay = pipOverlay;
-        this.highlightAnimRunner = new HighlightAnimRunner(this.gameSpeed);
-        this.invulnAnimRunner = new InvulnerableAnimRunner(this.gameSpeed);
+        this.highlightAnimRunner = new HighlightAnimRunner(this.gameSpeed as any);
+        this.invulnAnimRunner = new InvulnerableAnimRunner(this.gameSpeed as any);
         this.objectRules = gameObject.rules;
         this.objectArt = gameObject.art;
         this.label = "aircraft_" + this.objectRules.name;
@@ -170,7 +170,7 @@ export class Aircraft {
         this.extraLight = new THREE.Vector3().copy(this.baseExtraLight);
     }
     private updateBaseLight(): void {
-        this.baseExtraLight = new THREE.Vector3().setScalar(Math.PI * 1.5 + this.lighting.computeNoAmbient(this.objectArt.lightingType, this.gameObject.tile) + this.rules.audioVisual.extraAircraftLight);
+        this.baseExtraLight = new THREE.Vector3().setScalar(Math.PI * 1.5 + this.lighting.computeNoAmbient(this.objectArt.lightingType as any, this.gameObject.tile) + this.rules.audioVisual.extraAircraftLight);
     }
     updateLighting(): void {
         this.plugins.forEach((plugin) => plugin.updateLighting?.());
@@ -253,7 +253,7 @@ export class Aircraft {
             const invulnValue = isInvulnerable ? this.invulnAnimRunner.getValue() : 0;
             const highlightValue = (shouldUpdateHighlight ? this.highlightAnimRunner.getValue() : 0) || invulnValue;
             const ambientIntensity = this.lighting.getAmbientIntensity();
-            ExtraLightHelper.multiplyVxl(this.extraLight, this.baseExtraLight, ambientIntensity, highlightValue);
+            ExtraLightHelper.multiplyVxl(this.extraLight as any, this.baseExtraLight as any, ambientIntensity, highlightValue);
         }
         const isWarpedOut = this.gameObject.warpedOutTrait.isActive();
         const warpedOutChanged = isWarpedOut !== this.lastWarpedOut;
@@ -270,8 +270,8 @@ export class Aircraft {
         if (this.lastOwnerColor !== ownerColor) {
             this.palette.remap(ownerColor);
             this.lastOwnerColor = ownerColor;
-            this.vxlBuilders.forEach((builder) => builder.setPalette(this.palette));
-            this.placeholder?.setPalette(this.palette);
+            this.vxlBuilders.forEach((builder) => builder.setPalette(this.palette as any));
+            this.placeholder?.setPalette(this.palette as any);
         }
         const zone = this.gameObject.zone;
         if (zone !== this.lastZone) {
@@ -321,10 +321,10 @@ export class Aircraft {
         const voxel = this.voxels.get(vxlFile);
         if (!voxel) {
             console.warn(`VXL missing for aircraft ${this.objectRules.name}. Vxl file ${vxlFile} not found. `);
-            this.placeholder = new DebugRenderable({ width: 0.5, height: 0.5 }, this.objectArt.height, this.palette, { centerFoundation: true });
+            this.placeholder = new DebugRenderable({ width: 0.5, height: 0.5 }, this.objectArt.height, this.palette as any, { centerFoundation: true });
             this.placeholder.setBatched(this.useSpriteBatching);
             if (this.useSpriteBatching) {
-                this.placeholder.setBatchPalettes(this.paletteRemaps);
+                this.placeholder.setBatchPalettes(this.paletteRemaps as any);
             }
             this.placeholder.create3DObject();
             return this.placeholder.get3DObject();

@@ -51,7 +51,7 @@ export class SoundSpecs {
                     if (soundName) {
                         let soundSection = this.ini.getSection(soundName);
                         if (soundSection) {
-                            this.specs.set(soundName, new SoundSpec().read(soundSection, this.defaults));
+                            this.specs.set(soundName as string, new SoundSpec().read(soundSection, this.defaults));
                         }
                         else {
                             console.warn(`Missing sound section [${soundName}]`);

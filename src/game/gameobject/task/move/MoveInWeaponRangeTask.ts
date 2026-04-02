@@ -14,7 +14,7 @@ import { FacingUtil } from "@/game/gameobject/unit/FacingUtil";
 import { Vector2 } from "@/game/math/Vector2";
 export const STRAFE_CLOSE_ENOUGH = 2;
 export class MoveInWeaponRangeTask extends MoveTask {
-    private target: any;
+    public target: any;
     private weapon: any;
     private recalcMinRange: boolean = true;
     private cancelRequested: boolean = false;
@@ -83,7 +83,7 @@ export class MoveInWeaponRangeTask extends MoveTask {
             this.rangeHelper.tileDistance(unit, this.bomberManeuverTile) <= 1);
     }
     findStrafeDestination(unit: any, targetTile: any): any {
-        const tileFinder = new RandomTileFinder(this.game.map.tiles, this.game.map.mapBounds, targetTile, this.weapon.range, this.game, (tile) => this.rangeHelper.isInWeaponRange(unit, targetTile, this.weapon, this.game.rules, tile));
+        const tileFinder = new RandomTileFinder(this.game.map.tiles, this.game.map.mapBounds, targetTile as any, this.weapon.range, this.game, (tile) => this.rangeHelper.isInWeaponRange(unit, targetTile, this.weapon, this.game.rules, tile as any));
         return tileFinder.getNextTile();
     }
     hasReachedDestination(unit: any): boolean {
@@ -276,7 +276,7 @@ export class MoveInWeaponRangeTask extends MoveTask {
                 break;
         }
         if (tile) {
-            const tileFinder = new RadialTileFinder(map.tiles, map.mapBounds, tile, { width: 1, height: 1 }, 0, maxDist, (t) => this.rangeHelper.isInWeaponRange(unit, this.target, this.weapon, this.game.rules, t) &&
+            const tileFinder = new RadialTileFinder(map.tiles, map.mapBounds, tile as any, { width: 1, height: 1 }, 0, maxDist, (t) => this.rangeHelper.isInWeaponRange(unit, this.target, this.weapon, this.game.rules, t as any) &&
                 this.losHelper.hasLineOfSight(t, this.target, this.weapon) &&
                 map.terrain.getPassableSpeed(t, unit.rules.speedType, unit.isInfantry(), !!t.onBridgeLandType) > 0 &&
                 !map.terrain.findObstacles({ tile: t, onBridge: !!t.onBridgeLandType }, unit).length);

@@ -1,14 +1,14 @@
 import { TaskStatus } from "./TaskStatus";
 export class Task {
-    protected status: TaskStatus;
-    protected children: Task[];
-    protected cancellable: boolean;
-    protected useChildTargetLines: boolean;
-    protected blocking: boolean;
-    protected waitingForChildrenToFinish: boolean;
-    protected preventOpportunityFire: boolean;
-    protected preventLanding: boolean;
-    protected isAttackMove: boolean;
+    public status: TaskStatus;
+    public children: Task[];
+    public cancellable: boolean;
+    public useChildTargetLines: boolean;
+    public blocking: boolean;
+    public waitingForChildrenToFinish: boolean;
+    public preventOpportunityFire: boolean;
+    public preventLanding: boolean;
+    public isAttackMove: boolean;
     constructor() {
         this.status = TaskStatus.NotStarted;
         this.children = [];

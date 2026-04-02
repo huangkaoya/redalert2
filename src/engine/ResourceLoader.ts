@@ -142,7 +142,7 @@ export class ResourceLoader {
         const totalSizeHint = manifestItems.reduce((sum, item) => sum + (item.sizeHint ?? 0), 0);
         let totalLoadedBytes = 0;
         for (const item of manifestItems) {
-            if (cancellationToken?.isCancellationRequested) {
+            if ((cancellationToken as any)?.isCancellationRequested) {
                 throw new OperationCanceledError(cancellationToken);
             }
             const itemProgress = { loadedBytes: 0 };
@@ -166,6 +166,6 @@ export class ResourceLoader {
         return new LoaderResult(resultsMap);
     }
     protected async fetchResource(url: string, cancellationToken?: CancellationToken, options?: FetchResourceOptions): Promise<ArrayBuffer> {
-        return await this.httpRequest.fetchRaw(url, cancellationToken, options?.onProgress);
+        return await this.httpRequest.fetchRaw(url, cancellationToken as any, options?.onProgress as any);
     }
 }

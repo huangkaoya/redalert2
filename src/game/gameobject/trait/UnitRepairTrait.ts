@@ -58,7 +58,7 @@ export class UnitRepairTrait {
                     const rallyNode = gameObject.rallyTrait.findRallyNodeForUnit(unit, world.map);
                     if (rallyNode) {
                         gameObject.dockTrait.undockUnit(unit);
-                        unit.unitOrderTrait.addTask(new MoveTask(world, rallyNode.tile, !!rallyNode.onBridge, {
+                        unit.unitOrderTrait.addTask(new MoveTask(world as any, rallyNode.tile, !!rallyNode.onBridge, {
                             closeEnoughTiles: world.rules.general.closeEnough
                         }));
                     }

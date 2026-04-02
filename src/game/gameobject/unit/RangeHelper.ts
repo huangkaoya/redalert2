@@ -159,7 +159,7 @@ export class RangeHelper {
             return this.isInRange3(source, target, minRange, maxRange);
         }
     }
-    private isInRange3(source: RangeTarget, target: RangeTarget, minRange: number, maxRange: number): boolean {
+    public isInRange3(source: RangeTarget, target: RangeTarget, minRange: number, maxRange: number): boolean {
         const distance = this.distance3(source, target) / Coords.LEPTONS_PER_TILE;
         return MathUtil.isBetween(distance, minRange, maxRange);
     }

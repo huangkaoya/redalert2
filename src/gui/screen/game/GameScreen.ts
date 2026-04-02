@@ -254,7 +254,7 @@ export class GameScreen extends RootScreen {
         const actionQueue = new ActionQueue();
         const replay = this.replay = new Replay();
         replay.gameId = gameId;
-        replay.gameTimestamp = timestamp;
+        replay.gameTimestamp = Math.floor(timestamp / 1000);
         replay.gameOpts = gameOpts;
         replay.engineVersion = this.engineVersion;
         replay.modHash = this.engineModHash;

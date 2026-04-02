@@ -362,8 +362,8 @@ export class Minimap extends UiObject {
                     }
                     const screenTileCoords = IsoCoords.screenToScreenTile(viewport.width / 2, viewport.height / 2);
                     const viewportRect = {
-                        x: centerTile.dx - screenTileCoords.x,
-                        y: centerTile.dy - screenTileCoords.y,
+                        x: (centerTile as any).dx - screenTileCoords.x,
+                        y: (centerTile as any).dy - screenTileCoords.y,
                         width: 2 * screenTileCoords.x,
                         height: 2 * screenTileCoords.y,
                     };

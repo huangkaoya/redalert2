@@ -74,7 +74,7 @@ export class ActionsApi {
     sellBuilding(buildingId: number): void {
         this.sellObject(buildingId);
     }
-    toggleRepairWrench(buildingId: number): void {
+    toggleRepairWrench(buildingId: any): void {
         this.createAndPushAction(ActionType.ToggleRepair, (action) => {
             action.buildingId = buildingId;
         });
@@ -158,7 +158,7 @@ export class ActionsApi {
             action.tile2 = secondaryTile ? { x: secondaryTile.rx, y: secondaryTile.ry } : undefined;
         });
     }
-    orderUnits(unitIds: number[], orderType: any, targetX?: number, targetY?: number, useBridge?: boolean): void {
+    orderUnits(unitIds: any[], orderType: any, targetX?: any, targetY?: any, useBridge?: boolean): void {
         this.createAndPushAction(ActionType.SelectUnits, (action) => {
             action.unitIds = unitIds;
         });

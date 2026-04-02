@@ -83,7 +83,7 @@ export class ArmedTrait implements NotifyTick, NotifyDestroy {
         const primaryWeaponName = (isElite && gameObject.rules.elitePrimary) || gameObject.rules.primary;
         if (primaryWeaponName) {
             const fireFlh = isElite ? gameObject.art.elitePrimaryFireFlh : gameObject.art.primaryFireFlh;
-            this.primaryWeapon = Weapon.factory(primaryWeaponName, WeaponType.Primary, gameObject, this.rules, fireFlh);
+            this.primaryWeapon = Weapon.factory(primaryWeaponName, WeaponType.Primary, gameObject as any, this.rules as any, fireFlh);
         }
         else {
             this.primaryWeapon = undefined;
@@ -91,7 +91,7 @@ export class ArmedTrait implements NotifyTick, NotifyDestroy {
         const secondaryWeaponName = (isElite && gameObject.rules.eliteSecondary) || gameObject.rules.secondary;
         if (secondaryWeaponName) {
             const fireFlh = isElite ? gameObject.art.eliteSecondaryFireFlh : gameObject.art.secondaryFireFlh;
-            this.secondaryWeapon = Weapon.factory(secondaryWeaponName, WeaponType.Secondary, gameObject, this.rules, fireFlh);
+            this.secondaryWeapon = Weapon.factory(secondaryWeaponName, WeaponType.Secondary, gameObject as any, this.rules as any, fireFlh);
         }
         else {
             this.secondaryWeapon = undefined;
@@ -101,7 +101,7 @@ export class ArmedTrait implements NotifyTick, NotifyDestroy {
                 (gameObject.crashableTrait && this.secondaryWeapon?.rules.name) ||
                 this.primaryWeapon?.rules.name ||
                 this.rules.combatDamage.deathWeapon;
-            this.deathWeapon = Weapon.factory(deathWeaponName, WeaponType.DeathWeapon, gameObject, this.rules);
+            this.deathWeapon = Weapon.factory(deathWeaponName, WeaponType.DeathWeapon, gameObject as any, this.rules as any);
         }
     }
     private selectSpecialWeapon(index: number, isElite: boolean = false): void {
@@ -119,11 +119,11 @@ export class ArmedTrait implements NotifyTick, NotifyDestroy {
             throw new Error(`Missing weapon at index ${index} for object "${gameObject.name}"`);
         }
         const fireFlh = gameObject.art.getSpecialWeaponFlh(index);
-        this.primaryWeapon = Weapon.factory(weaponName, WeaponType.Primary, gameObject, this.rules, fireFlh);
+        this.primaryWeapon = Weapon.factory(weaponName, WeaponType.Primary, gameObject as any, this.rules as any, fireFlh);
         this.secondaryWeapon = undefined;
         this.specialWeaponIndex = index;
-        this.deathWeapon = this.primaryWeapon.rules.suicide
-            ? Weapon.factory(gameObject.rules.deathWeapon || this.primaryWeapon.name, WeaponType.DeathWeapon, gameObject, this.rules)
+        this.deathWeapon = (this.primaryWeapon.rules as any).suicide
+            ? Weapon.factory(gameObject.rules.deathWeapon || this.primaryWeapon.name, WeaponType.DeathWeapon, gameObject as any, this.rules as any)
             : undefined;
     }
     public toggleEliteWeapons(isElite: boolean): void {
@@ -140,7 +140,7 @@ export class ArmedTrait implements NotifyTick, NotifyDestroy {
     public computeGuardScanRange(weapon?: Weapon): number {
         const maxWeaponRange = this.guardWeaponRangeOverride ??
             [this.primaryWeapon, this.secondaryWeapon]
-                .filter(w => w === weapon || w?.rules.neverUse)
+                .filter(w => w === weapon || (w?.rules as any).neverUse)
                 .reduce((max, w) => Math.max(max, w!.range), 0);
         const guardRange = Math.max(maxWeaponRange, this.gameObject.rules.guardRange);
         return Math.min(15, 2 * guardRange - 1);
@@ -174,7 +174,7 @@ export class ArmedTrait implements NotifyTick, NotifyDestroy {
             context.weapon?.rules.suicide &&
             context.obj.transportTrait?.units.find(unit => unit === gameObject))
             return;
-        this.deathWeapon.fire(target.createTarget(gameObject, gameObject.tile), target);
+        this.deathWeapon.fire(target.createTarget(gameObject, gameObject.tile), target as any);
     }
     public dispose(): void {
         this.gameObject = undefined!;

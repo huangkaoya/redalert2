@@ -72,7 +72,7 @@ export class Vehicle extends Techno {
         const vehicle = new this(owner, rules, terrain);
         vehicle.isSinker = !rules.underwater &&
             (rules.weight >= gameRules.general.shipSinkingWeight || !rules.naval);
-        vehicle.moveTrait = new MoveTrait(vehicle, moveRules);
+        vehicle.moveTrait = new MoveTrait(vehicle as any, moveRules);
         vehicle.traits.add(vehicle.moveTrait);
         if (rules.crashable) {
             vehicle.crashableTrait = new CrashableTrait(vehicle);
@@ -120,7 +120,7 @@ export class Vehicle extends Techno {
         return vehicle;
     }
     constructor(owner: any, rules: VehicleRules, terrain: TerrainInfo) {
-        super(ObjectType.Vehicle, owner, rules, terrain);
+        super(ObjectType.Vehicle as any, owner, rules, terrain);
         this.zone = rules.naval ? ZoneType.Water : ZoneType.Ground;
     }
     isUnit(): boolean {

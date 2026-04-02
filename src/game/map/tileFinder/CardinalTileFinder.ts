@@ -12,7 +12,7 @@ export class CardinalTileFinder {
     private predicate: (tile: Tile) => boolean;
     private dirVec: Vector2;
     private finished: boolean;
-    private diagonal: boolean;
+    public diagonal: boolean;
     private distance: number;
     constructor(tiles: TileCollection, mapBounds: MapBounds, startTile: Tile, distance: number, maxDistance: number, predicate: (tile: Tile) => boolean = () => true) {
         this.tiles = tiles;

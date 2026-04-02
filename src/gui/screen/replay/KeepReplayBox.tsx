@@ -42,7 +42,7 @@ export const KeepReplayBox: React.FC<KeepReplayBoxProps> = ({ defaultName, strin
       <form onSubmit={handleSubmit}>
         <div className="field">
           <label>{strings.get("GUI:ReplayNamePrompt")}</label>
-          <input type="text" name="replayname" autoComplete="off" ref={inputRef} defaultValue={defaultName} maxLength={Replay.maxNameLength}/>
+          <input type="text" name="replayname" autoComplete="off" ref={inputRef} defaultValue={defaultName} maxLength={(Replay as any).maxNameLength}/>
         </div>
         <button type="submit" style={{ visibility: "hidden" }}/>
       </form>

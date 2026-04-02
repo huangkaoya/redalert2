@@ -62,7 +62,7 @@ export class RenderableManager {
         };
     }
     init(): void {
-        this.container = OctreeContainer.factory(this.camera);
+        this.container = OctreeContainer.factory(this.camera as any);
         this.container.autoCull = false;
         this.worldScene.add(this.container);
         this.worldScene.onCameraUpdate.subscribe(this.onCameraUpdate);
@@ -83,17 +83,17 @@ export class RenderableManager {
         const renderable = this.renderablesByGameObject.get(gameObject);
         renderable.setPosition(gameObject.position.worldPosition);
         if (!(gameObject.isTechno() && gameObject.rules.isLightpost)) {
-            this.container.updateChild(renderable);
+            this.container.updateChild(renderable as any as import('./gfx/RenderableContainer').Renderable);
         }
     }
     removeAndDisposeRenderable(renderable: Renderable, gameObject: GameObject): void {
         const container = gameObject.isTechno() && gameObject.rules.isLightpost
             ? this.worldScene
             : this.container;
-        container.remove(renderable);
+        container.remove(renderable as any);
         renderable.dispose?.();
         this.renderablesByGameObject.delete(gameObject);
-        this.renderablesById.delete(gameObject.id);
+        this.renderablesById.delete(gameObject.id as any);
     }
     createTransientAnim(anim: any, callback?: (renderable: Renderable) => void): Renderable {
         const renderable = this.renderableFactory.createTransientAnim(anim, this.container);
@@ -132,11 +132,11 @@ export class RenderableManager {
         this.renderablesById.forEach(renderable => renderable.dispose?.());
     }
     createRenderable(gameObject: GameObject, container: any): Renderable {
-        const renderable = this.renderableFactory.create(gameObject);
-        renderable.setPosition(gameObject.position.worldPosition);
+        const renderable = this.renderableFactory.create(gameObject as any);
+        (renderable as any).setPosition(gameObject.position.worldPosition);
         container.add(renderable);
         this.renderablesByGameObject.set(gameObject, renderable);
-        this.renderablesById.set(gameObject.id, renderable);
+        this.renderablesById.set(gameObject.id as any, renderable);
         return renderable;
     }
     updateLighting(): void {

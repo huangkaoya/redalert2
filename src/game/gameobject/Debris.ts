@@ -60,7 +60,7 @@ export class Debris extends GameObject {
             ground: true,
             shore: false,
             walls: true,
-            units: false,
+            units: () => false,
         });
         if (collisionType) {
             const isGroundCollision = [

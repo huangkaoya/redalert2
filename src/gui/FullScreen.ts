@@ -74,7 +74,7 @@ export class FullScreen {
         else {
             await this.document.documentElement.requestFullscreen();
             try {
-                await screen?.orientation?.lock?.("landscape");
+                await (screen?.orientation as any)?.lock?.("landscape");
             }
             catch (error) {
                 console.warn("Orientation lock failed", error);

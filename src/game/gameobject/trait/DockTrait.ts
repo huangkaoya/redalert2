@@ -140,9 +140,9 @@ export class DockTrait implements NotifyDestroy, NotifyOwnerChange, NotifySell, 
             const availableHelipads: Building[] = [];
             let unitsToRelocate = 0;
             for (const otherBuilding of [...building.owner.buildings].filter(b => b.helipadTrait &&
-                (b.dockTrait?.getAvailableDockCount() ?? false) &&
+                ((b as any).dockTrait?.getAvailableDockCount() ?? false) &&
                 b !== building)) {
-                let availableDocks = otherBuilding.dockTrait?.getAvailableDockCount() ?? 0;
+                let availableDocks = (otherBuilding as any).dockTrait?.getAvailableDockCount() ?? 0;
                 while (availableDocks > 0 && unitsToRelocate < this.unitsByDockNumber.length) {
                     availableHelipads.push(otherBuilding);
                     availableDocks--;
@@ -156,10 +156,10 @@ export class DockTrait implements NotifyDestroy, NotifyOwnerChange, NotifySell, 
                 if (unit) {
                     const targetHelipad = availableHelipads[helipadIndex];
                     if (targetHelipad) {
-                        unit.unitOrderTrait.addTask(new MoveToDockTask(context, targetHelipad));
+                        unit.unitOrderTrait.addTask(new MoveToDockTask(context as any, targetHelipad));
                     }
                     else {
-                        unit.unitOrderTrait.addTask(new TaskGroup(new MoveTask(context, unit.tile, false), new CallbackTask((unit: Unit) => {
+                        unit.unitOrderTrait.addTask(new TaskGroup(new MoveTask(context as any, unit.tile as any, false), new CallbackTask((unit: Unit) => {
                             if (unit.crashableTrait) {
                                 unit.crashableTrait.crash({ player: building.owner });
                             }

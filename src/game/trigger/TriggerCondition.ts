@@ -1,4 +1,5 @@
 export class TriggerCondition {
+    [key: string]: any;
     public event: any;
     public trigger: any;
     public blocking: boolean;

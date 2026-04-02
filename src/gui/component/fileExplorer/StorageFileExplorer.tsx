@@ -402,7 +402,7 @@ export const StorageFileExplorer: React.FC<StorageFileExplorerProps> = ({
     const browserCaptureIdRef = useRef(`fileexplorer-${Math.random().toString(36).slice(2)}`);
     const browserCaptureRefs = useRef(0);
     const browserCaptureActive = useRef(false);
-    const browserScrollRestoreRef = useRef<string | undefined>();
+    const browserScrollRestoreRef = useRef<string | undefined>(undefined);
     const selectionDragRef = useRef<{
         anchorClientX: number;
         anchorClientY: number;
@@ -1002,7 +1002,7 @@ export const StorageFileExplorer: React.FC<StorageFileExplorerProps> = ({
                     }
                     chunks.push(value);
                 }
-                await downloadBlob(new Blob(chunks, { type: 'application/zip' }), 'cdexport.zip');
+                await downloadBlob(new Blob(chunks as any, { type: 'application/zip' }), 'cdexport.zip');
                 emitInfo(`已打包下载 ${entriesToDownload.length} 个项目`);
                 return;
             }

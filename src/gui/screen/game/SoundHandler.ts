@@ -211,7 +211,7 @@ export class SoundHandler {
         if (target.isTechno()) {
             sound = target.rules.dieSound;
             if (!sound && target.isBuilding()) {
-                sound = SoundKey.BuildingDieSound;
+                sound = SoundKey.BuildingDieSound as any;
             }
         }
         if (sound) {

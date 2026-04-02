@@ -4,7 +4,7 @@ import { GameApi, TechnoRules } from "../../../game-api";
 // A null value indicates an object that does not have TechnoRules.
 const technoRulesCache: { [rulesName: string]: TechnoRules | null } = {};
 
-export const getCachedTechnoRules = (gameApi: GameApi, unitId: number): TechnoRules | null => {
+export const getCachedTechnoRules = (gameApi: GameApi, unitId: any): TechnoRules | null => {
     const gameObject = gameApi.getGameObjectData(unitId);
     if (!gameObject) {
         return null;

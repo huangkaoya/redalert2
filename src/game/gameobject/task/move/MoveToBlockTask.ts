@@ -4,13 +4,13 @@ import { MoveTask } from "@/game/gameobject/task/move/MoveTask";
 export class MoveToBlockTask extends Task {
     private game: any;
     private target: any;
-    private preventOpportunityFire: boolean = false;
-    private useChildTargetLines: boolean = true;
     private attackPerformed: boolean = false;
     constructor(game: any, target: any) {
         super();
         this.game = game;
         this.target = target;
+        this.preventOpportunityFire = false;
+        this.useChildTargetLines = true;
     }
     onStart(unit: any): void {
         this.children.push(new MoveTask(this.game, this.target.centerTile, false, {

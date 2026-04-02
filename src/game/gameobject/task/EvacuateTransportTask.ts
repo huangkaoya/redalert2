@@ -165,17 +165,17 @@ export class EvacuateTransportTask extends Task {
         this.game.unlimboObject(unit, spawnNode.tile);
         unit.unitOrderTrait.unmarkNextQueuedOrder();
         if (moveNode) {
-            unit.unitOrderTrait.addTask(new MoveTask(this.game, moveNode.tile, !!moveNode.onBridge));
+            unit.unitOrderTrait.addTask(new MoveTask(this.game as any, moveNode.tile, !!moveNode.onBridge));
         }
         else {
-            unit.unitOrderTrait.addTask(new ScatterTask(this.game));
+            unit.unitOrderTrait.addTask(new ScatterTask(this.game as any, undefined as any, undefined as any));
         }
         this.game.events.dispatch(new LeaveTransportEvent(transport));
         return true;
     }
     private findValidEvacTarget(transport: Transport, unit: Unit): EvacTarget | undefined {
         const map = this.game.map;
-        const moveHelper = new MovePositionHelper(map);
+        const moveHelper = new MovePositionHelper(map as any);
         const bridge = transport.onBridge
             ? map.tileOccupation.getBridgeOnTile(transport.tile)
             : undefined;
@@ -237,7 +237,7 @@ export class EvacuateTransportTask extends Task {
     private isValidEvacPosition(tile: any, onBridge: any, fromBridge: any, fromTile: any, unit: Unit): boolean {
         const map = this.game.map;
         return map.terrain.getPassableSpeed(tile, unit.rules.speedType, unit.isInfantry(), !!onBridge) > 0 &&
-            new MovePositionHelper(map).isEligibleTile(tile, onBridge, fromBridge, fromTile) &&
+            new MovePositionHelper(map as any).isEligibleTile(tile, onBridge, fromBridge, fromTile) &&
             !map.terrain.findObstacles({ tile, onBridge }, unit).length;
     }
 }

@@ -42,7 +42,7 @@ export class HarvesterTrait {
     [NotifySpawn.onSpawn](unit: any, world: any): void {
         if (unit.owner.isCombatant()) {
             world.afterTick(() => {
-                unit.unitOrderTrait.addTask(new GatherOreTask(world));
+                unit.unitOrderTrait.addTask(new GatherOreTask(world, undefined));
             });
             unit.attackTrait?.increasePassiveScanCooldown(1);
         }
@@ -51,7 +51,7 @@ export class HarvesterTrait {
         if ((!oldOwner.isCombatant() && unit.owner.isCombatant()) ||
             world.alliances.areAllied(unit.owner, oldOwner)) {
             world.afterTick(() => {
-                unit.unitOrderTrait.addTask(new GatherOreTask(world));
+                unit.unitOrderTrait.addTask(new GatherOreTask(world, undefined));
             });
         }
     }
@@ -63,7 +63,7 @@ export class HarvesterTrait {
                     this.ticksSinceLastRefineryCheck = -25 * GameSpeed.BASE_TICKS_PER_SECOND;
                 }
                 else if ([...unit.owner.buildings].some(b => b.rules.refinery) || this.lastGatherExplicit) {
-                    unit.unitOrderTrait.addTask(new ReturnOreTask(world));
+                    unit.unitOrderTrait.addTask(new ReturnOreTask(world, undefined));
                 }
                 else {
                     this.status = HarvesterStatus.Idle;
@@ -74,7 +74,7 @@ export class HarvesterTrait {
             if (this.ticksSinceLastOreCheck++ > 20 * GameSpeed.BASE_TICKS_PER_SECOND) {
                 this.ticksSinceLastOreCheck = 0;
                 if (!unit.unitOrderTrait.hasTasks()) {
-                    unit.unitOrderTrait.addTask(new GatherOreTask(world));
+                    unit.unitOrderTrait.addTask(new GatherOreTask(world, undefined));
                 }
             }
         }
@@ -92,7 +92,7 @@ export class HarvesterTrait {
             this.lastOreSite = undefined;
             if (tile && unit.rules.teleporter) {
                 world.afterTick(() => {
-                    unit.unitOrderTrait.addTask(new (this.isFull() ? ReturnOreTask : GatherOreTask)(world));
+                    unit.unitOrderTrait.addTask(new (this.isFull() ? ReturnOreTask : GatherOreTask)(world, undefined));
                 });
             }
         }

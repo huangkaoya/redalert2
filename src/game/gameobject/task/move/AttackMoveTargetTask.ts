@@ -1,7 +1,6 @@
 import { AttackTask } from "@/game/gameobject/task/AttackTask";
 import { MoveState } from "@/game/gameobject/trait/MoveTrait";
 export class AttackMoveTargetTask extends AttackTask {
-    private isAttackMove: boolean = true;
     private attackPerformed: boolean = false;
     private passedFirstWaypoint: boolean = false;
     private internalTargetUpdateRequested: boolean = false;
@@ -18,6 +17,7 @@ export class AttackMoveTargetTask extends AttackTask {
         this.initialTarget = target;
         this.initialWeapon = weapon;
         this.requestedTarget = target;
+        this.isAttackMove = true;
     }
     duplicate(): AttackMoveTargetTask {
         return new AttackMoveTargetTask(this.game, this.initialTarget, this.initialWeapon);

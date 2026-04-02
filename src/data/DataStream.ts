@@ -62,7 +62,7 @@ export class DataStream {
     }
     set dataView(newDataView: DataView | TypedArray) {
         this._byteOffset = newDataView.byteOffset;
-        this._buffer = newDataView.buffer;
+        this._buffer = newDataView.buffer as ArrayBuffer;
         this._dataView = new DataView(this._buffer, this._byteOffset);
         this._byteLength = this._byteOffset + newDataView.byteLength;
     }

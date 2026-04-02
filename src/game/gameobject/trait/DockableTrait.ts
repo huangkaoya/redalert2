@@ -2,8 +2,8 @@ import { NotifyUnspawn } from "@/game/gameobject/trait/interface/NotifyUnspawn";
 import { NotifyOwnerChange } from "@/game/gameobject/trait/interface/NotifyOwnerChange";
 import { NotifyTeleport } from "@/game/gameobject/trait/interface/NotifyTeleport";
 export class DockableTrait {
-    private dock?: any;
-    private reservedDock?: any;
+    public dock?: any;
+    public reservedDock?: any;
     [NotifyUnspawn.onUnspawn](target: any): void {
         this.undock(target);
         this.reservedDock?.dockTrait.unreserveDockForUnit(target);

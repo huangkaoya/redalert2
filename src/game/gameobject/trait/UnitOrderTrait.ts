@@ -55,7 +55,7 @@ export class UnitOrderTrait implements NotifyTick, NotifyOwnerChange, NotifyTele
         const hasTasks = this.hasTasks();
         const currentTask = this.tasks.find(task => !task.isCancelling());
         if (hasTasks) {
-            this.taskRunner.tick(this.tasks, gameObject);
+            this.taskRunner.tick(this.tasks as any, gameObject);
         }
         if (!gameObject.isSpawned)
             return;
@@ -68,14 +68,14 @@ export class UnitOrderTrait implements NotifyTick, NotifyOwnerChange, NotifyTele
                     const newTasks = order.process();
                     if (newTasks) {
                         if (this.queuedOrders.has(order)) {
-                            this.tasks.push(new WaitTicksTask(5));
+                            this.tasks.push(new WaitTicksTask(5) as any);
                             this.tasks.push(new CallbackTask(() => {
                                 gameObject.resetGuardModeToIdle();
-                            }));
+                            }) as any);
                         }
                         this.tasks.push(...newTasks);
                         if (!hasTasks) {
-                            this.taskRunner.tick(this.tasks, gameObject);
+                            this.taskRunner.tick(this.tasks as any, gameObject);
                         }
                     }
                     processedOrder = true;

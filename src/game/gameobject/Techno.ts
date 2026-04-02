@@ -11,6 +11,7 @@ export class Techno extends GameObject {
     guardMode: boolean;
     purchaseValue: number;
     guardArea?: any;
+    [key: string]: any;
     get primaryWeapon() {
         return this.armedTrait?.primaryWeapon;
     }
@@ -27,7 +28,7 @@ export class Techno extends GameObject {
         return this.veteranTrait?.veteranLevel ?? VeteranLevel.None;
     }
     constructor(id: string, rules: any, owner: any, general: any) {
-        super(id, rules, owner, general);
+        super(id as any, rules, owner, general);
         this.explodes = this.rules.explodes;
         this.radarInvisible = this.rules.radarInvisible;
         this.c4 = this.rules.c4;

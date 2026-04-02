@@ -11,7 +11,7 @@ export class Palette {
         palette.fromVirtualFile(file);
         return palette;
     }
-    constructor(source: VirtualFile | Uint8Array | number[] | {
+    constructor(source?: VirtualFile | Uint8Array | number[] | {
         colors: Color[];
         hashVal?: number;
     }) {

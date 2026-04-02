@@ -2,8 +2,8 @@ import { EventType } from "@/game/event/EventType";
 import { TriggerCondition } from "@/game/trigger/TriggerCondition";
 export class DestroyedOrCapturedOrInfiltratedCondition extends TriggerCondition {
     private eventsFilter: EventType[];
-    constructor() {
-        super(null, null);
+    constructor(event?: any, trigger?: any) {
+        super(event ?? null, trigger ?? null);
         this.eventsFilter = [
             EventType.ObjectDestroy,
             EventType.ObjectOwnerChange,

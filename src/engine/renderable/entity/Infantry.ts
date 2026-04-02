@@ -13,6 +13,7 @@ import { ZoneType } from "@/game/gameobject/unit/ZoneType";
 import { StanceType } from "@/game/gameobject/infantry/StanceType";
 import { SequenceType } from "@/game/art/SequenceType";
 import * as math from "@/util/math";
+import * as THREE from "three";
 import { InfDeathType } from "@/game/gameobject/infantry/InfDeathType";
 import { VeteranLevel } from "@/game/gameobject/unit/VeteranLevel";
 import { HighlightAnimRunner } from "@/engine/renderable/entity/HighlightAnimRunner";
@@ -27,7 +28,7 @@ export class Infantry {
     private gameObject: any;
     private rules: any;
     private art: any;
-    private imageFinder: ImageFinder;
+    private imageFinder: any;
     private palette: any;
     private camera: any;
     private lighting: any;
@@ -77,7 +78,7 @@ export class Infantry {
     private lastFiring: boolean;
     private lastPanicked: boolean;
     private lastStance: StanceType;
-    constructor(gameObject: any, rules: any, art: any, imageFinder: ImageFinder, theater: any, palette: any, camera: any, lighting: any, debugFrame: any, gameSpeed: any, selectionModel: any, useSpriteBatching: boolean, useMeshInstancing: boolean, pipOverlay: any, worldSound: any) {
+    constructor(gameObject: any, rules: any, art: any, imageFinder: any, theater: any, palette: any, camera: any, lighting: any, debugFrame: any, gameSpeed: any, selectionModel: any, useSpriteBatching: boolean, useMeshInstancing: boolean, pipOverlay: any, worldSound: any) {
         this.gameObject = gameObject;
         this.rules = rules;
         this.art = art;
@@ -163,7 +164,7 @@ export class Infantry {
         this.plugins.forEach((plugin) => plugin.update(deltaTime));
         const { zone, stance, isCrashing, isMoving, isFiring, isPanicked, owner, veteranLevel, } = this.gameObject;
         this.pipOverlay?.update(deltaTime);
-        this.blobShadow?.update(deltaTime);
+        this.blobShadow?.update(deltaTime, undefined as any);
         if (veteranLevel !== this.lastVeteranLevel) {
             if (veteranLevel === VeteranLevel.Elite && this.lastVeteranLevel !== undefined) {
                 this.highlightAnimRunner.animate(30);
@@ -178,7 +179,7 @@ export class Infantry {
         }
         if (this.highlightAnimRunner.shouldUpdate()) {
             this.highlightAnimRunner.tick(deltaTime);
-            ExtraLightHelper.multiplyShp(this.extraLight, this.baseExtraLight, this.highlightAnimRunner.getValue());
+            ExtraLightHelper.multiplyShp(this.extraLight as any, this.baseExtraLight as any, this.highlightAnimRunner.getValue());
         }
         const currentOwner = this.disguise?.owner ?? owner;
         if (this.lastOwnerColor !== currentOwner.color) {

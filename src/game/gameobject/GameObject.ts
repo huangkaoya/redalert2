@@ -24,6 +24,7 @@ export class GameObject {
     public art: any;
     public id: number;
     public position: any;
+    [key: string]: any;
     get tile() {
         return this.position.tile;
     }

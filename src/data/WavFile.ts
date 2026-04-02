@@ -54,17 +54,17 @@ export class WavFile {
     }
     private decodeData(data: Uint8Array): Uint8Array {
         const wav = new WaveFile();
-        wav.fromBuffer(data);
+        wav.fromBuffer(data as any);
         if (wav.bitDepth === '4') {
             wav.fromIMAADPCM();
         }
-        return wav.toBuffer() as Uint8Array;
+        return new Uint8Array(wav.toBuffer() as any);
     }
     isRawImaAdpcm(): boolean {
         if (!this.rawData)
             return false;
         const wav = new WaveFile();
-        wav.fromBuffer(this.rawData);
+        wav.fromBuffer(this.rawData as any);
         return wav.bitDepth === '4';
     }
 }

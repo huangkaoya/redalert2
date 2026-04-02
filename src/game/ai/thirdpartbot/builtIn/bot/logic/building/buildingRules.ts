@@ -141,7 +141,7 @@ export function getDefaultPlacementLocation(
     minSpace: number = 2,
 ): { rx: number; ry: number } | undefined {
     // Closest possible location near `startPoint`.
-    const size: BuildingPlacementData = game.getBuildingPlacementData(technoRules.name);
+    const size: BuildingPlacementData = game.getBuildingPlacementData(technoRules.name) as any;
     if (!size) {
         return undefined;
     }
@@ -149,7 +149,7 @@ export function getDefaultPlacementLocation(
 
     // Score tiles: prefer close to ideal point but penalize crowding near many buildings.
     // This encourages a more spread-out base layout with room for unit movement.
-    const buildings = game.getVisibleUnits(playerData.name, "self", (r: TechnoRules) => r.type === ObjectType.Building);
+    const buildings = game.getVisibleUnits(playerData.name, "self", (r: TechnoRules) => r.type === ObjectType.Building) as any;
     const buildingPositions: Vector2[] = [];
     for (const bid of buildings) {
         const bd = game.getGameObjectData(bid);

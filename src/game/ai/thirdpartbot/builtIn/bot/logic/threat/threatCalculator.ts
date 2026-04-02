@@ -66,14 +66,14 @@ export function calculateGlobalThreat(game: GameApi, playerData: PlayerData, vis
 
 // For the purposes of determining if units can target air/ground, we look purely at the technorules and only the base weapon (not elite)
 // This excludes some special cases such as IFVs changing turrets, but we have to deal with it for now.
-function isAntiGround(gameApi: GameApi, unitId: number): boolean {
+function isAntiGround(gameApi: GameApi, unitId: any): boolean {
     return testProjectile(gameApi, unitId, (p) => p.isAntiGround);
 }
-function isAntiAir(gameApi: GameApi, unitId: number): boolean {
+function isAntiAir(gameApi: GameApi, unitId: any): boolean {
     return testProjectile(gameApi, unitId, (p) => p.isAntiAir);
 }
 
-function testProjectile(gameApi: GameApi, unitId: number, test: (p: ProjectileRules) => boolean) {
+function testProjectile(gameApi: GameApi, unitId: any, test: (p: ProjectileRules) => boolean) {
     const rules = getCachedTechnoRules(gameApi, unitId);
     if (!rules || !(rules.primary || rules.secondary)) {
         return false;
@@ -120,7 +120,7 @@ function calculateFirepowerForUnit(gameApi: GameApi, gameObjectData: GameObjectD
     return Math.min(800, threat);
 }
 
-function calculateFirepowerForUnits(game: GameApi, unitIds: number[]) {
+function calculateFirepowerForUnits(game: GameApi, unitIds: any[]) {
     let threat = 0;
     unitIds.forEach((unitId) => {
         const gameObjectData = game.getGameObjectData(unitId);

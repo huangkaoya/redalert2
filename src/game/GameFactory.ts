@@ -69,20 +69,20 @@ export class GameFactory {
         for (const additionalRule of additionalRules) {
             mergedRules.mergeWith(additionalRule);
         }
-        mergedRules.mergeWith(gameOptions);
+        mergedRules.mergeWith(gameOptions as any);
         const mergedArt: IniFile = baseArt.clone().mergeWith(gameOptions.artOverrides ?? new IniFile());
         const rules: Rules = new Rules(mergedRules, debugFlags);
         const art: Art = new Art(rules, mergedArt, gameOptions, debugFlags);
         const ai: Ai = new Ai(aiConfig);
-        rules.applySpecialFlags(gameOptions.specialFlags);
+        rules.applySpecialFlags(gameOptions.specialFlags as any);
         GameOptSanitizer.sanitize(gameOpts, rules);
         const baseMultiplayerRules: Rules = new Rules(baseRules);
         const multiplayerCountries: MultiplayerCountry[] = baseMultiplayerRules.getMultiplayerCountries();
-        const multiplayerColors: string[] = [...baseMultiplayerRules.getMultiplayerColors().values()];
+        const multiplayerColors: string[] = [...baseMultiplayerRules.getMultiplayerColors().values()] as any;
         const prng: Prng = Prng.factory(randomSeed1, randomSeed2);
-        const gameMap: GameMap = new GameMap(gameOptions, mapData, rules, prng.generateRandomInt.bind(prng));
+        const gameMap: GameMap = new GameMap(gameOptions as any, mapData, rules, prng.generateRandomInt.bind(prng));
         const world: World = new World();
-        const gameMode: GameMode = gameModeRegistry.getById(gameOpts.gameMode);
+        const gameMode: GameMode = gameModeRegistry.getById(gameOpts.gameMode as any);
         const playerList: PlayerList = new PlayerList();
         const alliances: Alliances = new Alliances(playerList);
         const unitSelection: UnitSelection = new UnitSelection();
@@ -97,13 +97,13 @@ export class GameFactory {
         const productionTrait: ProductionTrait = game.traits.get(ProductionTrait) as ProductionTrait;
         const playerFactory: PlayerFactory = new PlayerFactory(rules, gameOpts, productionTrait.getAvailableObjects());
         const randomGen: GameOptRandomGen = GameOptRandomGen.factory(randomSeed1, randomSeed2);
-        const generatedColors: Map<PlayerInfo, string> = randomGen.generateColors(gameOpts);
-        const generatedCountries: Map<PlayerInfo, string> = randomGen.generateCountries(gameOpts, baseMultiplayerRules);
-        const generatedStartLocations: Map<PlayerInfo, number> = randomGen.generateStartLocations(gameOpts, gameMap.startingLocations);
+        const generatedColors: Map<PlayerInfo, string> = randomGen.generateColors(gameOpts) as any;
+        const generatedCountries: Map<PlayerInfo, string> = randomGen.generateCountries(gameOpts, baseMultiplayerRules) as any;
+        const generatedStartLocations: Map<PlayerInfo, number> = randomGen.generateStartLocations(gameOpts, gameMap.startingLocations as any);
         const allPlayers: (HumanPlayerInfo | AiPlayerInfo)[] = [
             ...gameOpts.humanPlayers,
             ...gameOpts.aiPlayers
-        ].filter(isNotNullOrUndefined);
+        ].filter(isNotNullOrUndefined) as any;
         this.createPlayers(game, allPlayers, playerFactory, multiplayerCountries, multiplayerColors, rules, generatedCountries, generatedColors, generatedStartLocations);
         game.addPlayer(playerFactory.createNeutral(rules, "@@NEUTRAL@@"));
         return game;
@@ -120,10 +120,10 @@ export class GameFactory {
         game.mapShroudTrait = mapShroudTrait;
         game.traits.add(mapShroudTrait);
         const mapRadiationTrait: MapRadiationTrait = new MapRadiationTrait(gameMap);
-        game.mapRadiationTrait = mapRadiationTrait;
+        (game as any).mapRadiationTrait = mapRadiationTrait;
         game.traits.add(mapRadiationTrait);
-        const mapLightingTrait: MapLightingTrait = new MapLightingTrait(rules.audioVisual, gameMap.getLighting());
-        game.mapLightingTrait = mapLightingTrait;
+        const mapLightingTrait: MapLightingTrait = new MapLightingTrait(rules.audioVisual as any, gameMap.getLighting());
+        (game as any).mapLightingTrait = mapLightingTrait;
         game.traits.add(mapLightingTrait);
         game.traits.add(new SuperWeaponsTrait());
         game.traits.add(new SharedDetectDisguiseTrait());
@@ -149,9 +149,9 @@ export class GameFactory {
             else {
                 playerName = game.getAiPlayerName(playerInfo);
                 isAi = true;
-                aiDifficulty = playerInfo.difficulty;
+                aiDifficulty = (playerInfo as any).difficulty;
             }
-            if (playerInfo.countryId === OBS_COUNTRY_ID) {
+            if (playerInfo.countryId === (OBS_COUNTRY_ID as any)) {
                 game.addPlayer(playerFactory.createObserver(playerName, rules));
                 return;
             }
@@ -160,20 +160,20 @@ export class GameFactory {
             const resolvedStartPos: number = generatedStartLocations.get(playerInfo) ?? playerInfo.startPos;
             this.validateResolvedValues(resolvedCountryId, resolvedColorId, resolvedStartPos);
             const countryName: string = multiplayerCountries[parseInt(resolvedCountryId)].name;
-            const country: Country = Country.factory(countryName, rules);
+            const country: Country = Country.factory(countryName, rules as any);
             const color: string = multiplayerColors[parseInt(resolvedColorId)];
             const player = playerFactory.createCombatant(playerName, country, resolvedStartPos, color, isAi, aiDifficulty);
             game.addPlayer(player);
         });
     }
     private static validateResolvedValues(countryId: string, colorId: string, startPos: number): void {
-        if (countryId === RANDOM_COUNTRY_ID) {
+        if (countryId === (RANDOM_COUNTRY_ID as any)) {
             throw new Error("Random country should have been resolved by now");
         }
-        if (colorId === RANDOM_COLOR_ID) {
+        if (colorId === (RANDOM_COLOR_ID as any)) {
             throw new Error("Random color should have been resolved by now");
         }
-        if (startPos === RANDOM_START_POS) {
+        if (startPos === (RANDOM_START_POS as any)) {
             throw new Error("Random start location should have been resolved by now");
         }
     }

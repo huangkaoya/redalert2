@@ -173,7 +173,7 @@ export class Weapon {
         }
         const warhead = new Warhead(rulesEngine.getWarhead(warheadName));
         const projectileRules = rulesEngine.getProjectile(weaponRules.projectile);
-        const targeting = new WeaponTargeting(weaponType, projectileRules, weaponRules, warhead.rules, gameObject, rulesEngine.general);
+        const targeting = new WeaponTargeting(weaponType, projectileRules as any, weaponRules as any, warhead.rules, gameObject as any, rulesEngine.general as any);
         return new this(weaponType, gameObject, weaponRules, warhead, projectileRules, flh || new FlhCoords(), targeting);
     }
     static findSpecialWarheadName(weaponRules: WeaponRules, gameObject: GameObject, rulesEngine: RulesEngine): string {
@@ -338,7 +338,7 @@ export class Weapon {
                 selected: unitSelection.isSelected(gameObject),
                 controlGroup: unitSelection.getOrCreateSelectionModel(gameObject).getControlGroupNumber(),
             });
-            if (this.warhead.rules.parasite &&
+            if ((this.warhead.rules as any).parasite &&
                 (target.obj?.isVehicle() || target.obj?.isAircraft()) &&
                 target.obj.parasiteableTrait) {
                 target.obj.parasiteableTrait.beingBoarded = true;

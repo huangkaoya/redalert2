@@ -6,7 +6,7 @@ export class ScatterTask extends Task {
     private game: any;
     private target: any;
     private options: any;
-    constructor(game: any, target: any, options: any) {
+    constructor(game: any, target?: any, options?: any) {
         super();
         this.game = game;
         this.target = target;

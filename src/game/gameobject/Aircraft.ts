@@ -52,7 +52,7 @@ export class Aircraft extends Techno {
                 aircraft.traits.add(aircraft.spawnLinkTrait);
             }
         }
-        aircraft.moveTrait = new MoveTrait(aircraft, map);
+        aircraft.moveTrait = new MoveTrait(aircraft as any, map);
         aircraft.traits.add(aircraft.moveTrait);
         if (rules.dock.length) {
             aircraft.traits.add(new DockableTrait());
@@ -67,7 +67,7 @@ export class Aircraft extends Techno {
         return aircraft;
     }
     constructor(id: string, rules: any, owner: any) {
-        super(ObjectType.Aircraft, id, rules, owner);
+        super(ObjectType.Aircraft as any, id, rules, owner);
         this.pitch = 0;
         this.yaw = 0;
         this.roll = 0;

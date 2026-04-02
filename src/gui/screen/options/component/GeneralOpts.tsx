@@ -141,7 +141,7 @@ export const GeneralOpts: React.FC<GeneralOptsProps> = ({ strings, options, full
       <legend>{strings.get("TS:GfxOpts")}</legend>
       <div className="item">
         <span className="label">{strings.get("TS:Resolution")}</span>
-        <ResolutionSelect resolution={options.graphics.resolution} fullScreen={fullScreen} strings={strings}/>
+        <ResolutionSelect resolution={options.graphics.resolution} fullScreen={fullScreen as any} strings={strings}/>
         <span className="info" title={strings.get("TS:ResolutionHint")}>
           <Image src="info.png"/>
         </span>

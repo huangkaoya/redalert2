@@ -124,7 +124,7 @@ function canReachStructure(gameApi: GameApi, engineer: UnitData, target: GameObj
     const adjacentTiles = getAdjacentTiles(gameApi, range, false);
     for (const tile of adjacentTiles) {
         if (
-            reachabilityMap.isReachable(toPathNode(engineer.tile, engineer.onBridge ?? false), toPathNode(tile, false))
+            reachabilityMap.isReachable(toPathNode(engineer.tile, engineer.onBridge ?? false) as any, toPathNode(tile, false) as any)
         ) {
             return true;
         }

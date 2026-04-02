@@ -1,9 +1,9 @@
 import { ObjectType } from "@/engine/type/ObjectType";
 export class ObjectRules {
     static readonly IMAGE_NONE = "none";
-    protected type: ObjectType;
+    public type: ObjectType;
     protected ini: any;
-    private index: number;
+    public index: number;
     protected generalRules: any;
     private alphaImage?: string;
     private alternateArcticArt: boolean = false;

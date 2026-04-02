@@ -45,7 +45,7 @@ interface Foundation {
     height: number;
 }
 export class ObjectArt {
-    private static readonly DEFAULT_LINE_TRAIL_DEC = 16;
+    public static readonly DEFAULT_LINE_TRAIL_DEC = 16;
     private static readonly MISSING_CAMEO = "xxicon";
     public sequences: Map<SequenceType, any> = new Map();
     public dockingOffsets: Vector3[] = [];

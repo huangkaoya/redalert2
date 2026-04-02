@@ -48,6 +48,7 @@ export class MenuSlotAnimationRunner {
                     break;
                 case AnimationState.NOT_STARTED:
                     animation.start(time, this.delayFrames);
+                // falls through
                 case AnimationState.RUNNING:
                 default:
                     animation.update(time);

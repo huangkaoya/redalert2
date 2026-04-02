@@ -23,7 +23,7 @@ export class TaskRunner {
         }
         if (task.isRunning() || task.isCancelling()) {
             const isCancelling = task.isCancelling();
-            let shouldContinue = !!task.waitingForChildrenToFinish || task.onTick(object);
+            let shouldContinue = !!task.waitingForChildrenToFinish || (task as any).onTick(object);
             if (task.children.length && !blockingChild && shouldContinue) {
                 allChildrenFinished = task.children.every(child => child.status === TaskStatus.Cancelled || child.status === TaskStatus.Finished);
                 task.waitingForChildrenToFinish = !allChildrenFinished;

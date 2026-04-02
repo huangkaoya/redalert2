@@ -150,7 +150,7 @@ export class CombatantSidebarModel extends SidebarModel {
         tab.flashing = tab.items.some((item: any) => item.status === SidebarItemStatus.Ready);
     }
     updateSidebarTechnoItem(item: SidebarTechnoItem, queue: any, production: any) {
-        if (item.target.type === SidebarItemTargetType.Special) {
+        if ((item.target.type as any) === SidebarItemTargetType.Special) {
             throw new Error("Sidebar item must be of type Techno");
         }
         const rules = item.target.rules;

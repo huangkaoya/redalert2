@@ -24,7 +24,7 @@ export class MapSpriteTranslation {
         }
         return {
             spriteOffset,
-            anchorPointWorld: worldPos
+            anchorPointWorld: worldPos as any
         };
     }
 }

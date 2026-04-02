@@ -8,9 +8,7 @@ import { AttackMoveTask } from "@/game/gameobject/task/move/AttackMoveTask";
 export class ExitFactoryTask extends MoveTask {
     private factory: any;
     private rallyPoint: any;
-    private preventOpportunityFire: boolean = true;
     private rampBlockersPushed: boolean = false;
-    private cancellable: boolean = false;
     private checkRampTiles?: any[];
     constructor(game: any, factory: any, targetTile: any, rallyPoint: any) {
         super(game, targetTile, false, {
@@ -21,6 +19,8 @@ export class ExitFactoryTask extends MoveTask {
         });
         this.factory = factory;
         this.rallyPoint = rallyPoint;
+        this.preventOpportunityFire = true;
+        this.cancellable = false;
     }
     onStart(unit: any): void {
         super.onStart(unit);
