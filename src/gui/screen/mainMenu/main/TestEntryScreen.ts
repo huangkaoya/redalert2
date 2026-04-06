@@ -115,6 +115,7 @@ export class TestEntryScreen implements Screen {
             this.createRouteButton('大厅测试', '打开 大厅 测试工具', '/lobbytest'),
             this.createRouteButton('世界测试', '打开 世界场景 测试工具', '/worldscenetest'),
             this.createRouteButton('移动测试', '打开 单位移动 测试工具', '/unitmovementtest'),
+            this.createRouteButton('性能测试', '打开 性能 基准 测试工具', '/perftest'),
             this.createBackToCategoriesButton(),
             this.createBackToMenuButton()
         ];

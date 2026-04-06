@@ -51,6 +51,32 @@ const getJoystickPreference = (localPrefs?: LocalPrefs) => {
     }
     return isCoarsePointer();
 };
+const performanceOptionItems = [
+    {
+        key: 'raycastHelperReuse',
+        label: 'Raycast Helper Reuse',
+    },
+    {
+        key: 'entityIntersectTraversal',
+        label: 'Entity Intersect Traversal',
+    },
+    {
+        key: 'mapTileHitTest',
+        label: 'Map Tile Hit Test',
+    },
+    {
+        key: 'worldViewportCache',
+        label: 'World Viewport Cache',
+    },
+    {
+        key: 'worldSoundLoopCache',
+        label: 'World Sound Loop Cache',
+    },
+    {
+        key: 'telemetry',
+        label: 'Telemetry & Benchmarks',
+    },
+] as const;
 export const GeneralOpts: React.FC<GeneralOptsProps> = ({ strings, options, fullScreen, inGame, localPrefs, }) => {
     const [mobileLayout, setMobileLayout] = useState(() => isCoarsePointer());
     const [mobileJoystickEnabled, setMobileJoystickEnabled] = useState(() => getJoystickPreference(localPrefs));
@@ -162,6 +188,15 @@ export const GeneralOpts: React.FC<GeneralOptsProps> = ({ strings, options, full
           <Option value={String(ShadowQuality.Off)} label={strings.get("TS:GfxQualityOff")}/>
         </Select>
       </div>
+    </fieldset>
+    <fieldset>
+      <legend>Performance</legend>
+      {performanceOptionItems.map((item) => (<div className="item" key={item.key}>
+          <label>
+            <span className="label">{item.label}</span>
+            <input type="checkbox" defaultChecked={options.performance[item.key].value} onChange={(event) => (options.performance[item.key].value = event.target.checked)}/>
+          </label>
+        </div>))}
     </fieldset>
   </div>);
 };

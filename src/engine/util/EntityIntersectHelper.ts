@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { rectContainsPoint } from '../../util/geometry';
+import { isPerformanceFeatureEnabled, measurePerformanceFeature } from '@/performance/PerformanceRuntime';
 interface Point {
     x: number;
     y: number;
@@ -67,6 +68,8 @@ export class EntityIntersectHelper {
     private raycastHelper: RaycastHelper;
     private scene: Scene;
     private worldViewportHelper: WorldViewportHelper;
+    private intersectTargetStack: THREE.Object3D[] = [];
+    private intersectTargetsScratch: THREE.Object3D[] = [];
     constructor(map: GameMap, renderableManager: RenderableManager, mapTileIntersectHelper: MapTileIntersectHelper, raycastHelper: RaycastHelper, scene: Scene, worldViewportHelper: WorldViewportHelper) {
         this.map = map;
         this.renderableManager = renderableManager;
@@ -150,6 +153,11 @@ export class EntityIntersectHelper {
         return new THREE.Vector3(worldPosition.x, worldPosition.y, worldPosition.z);
     }
     private collectIntersectTargets(object3d: THREE.Object3D | undefined): THREE.Object3D[] {
+        return measurePerformanceFeature('entityIntersectTraversal', () => isPerformanceFeatureEnabled('entityIntersectTraversal')
+            ? this.collectIntersectTargetsOptimized(object3d)
+            : this.collectIntersectTargetsLegacy(object3d));
+    }
+    private collectIntersectTargetsLegacy(object3d: THREE.Object3D | undefined): THREE.Object3D[] {
         const targets: THREE.Object3D[] = [];
         if (!object3d || !object3d.visible)
             return targets;
@@ -172,10 +180,50 @@ export class EntityIntersectHelper {
         }
         object3d.children.forEach(child => {
             if (child.visible) {
-                targets.push(...this.collectIntersectTargets(child));
+                targets.push(...this.collectIntersectTargetsLegacy(child));
             }
         });
         return targets;
+    }
+    private collectIntersectTargetsOptimized(object3d: THREE.Object3D | undefined): THREE.Object3D[] {
+        const targets = this.intersectTargetsScratch;
+        targets.length = 0;
+        if (!object3d || !object3d.visible) {
+            return [];
+        }
+        const stack = this.intersectTargetStack;
+        stack.length = 0;
+        stack.push(object3d);
+        while (stack.length) {
+            const currentObject = stack.pop()!;
+            if (!currentObject.visible) {
+                continue;
+            }
+            if (currentObject.userData.id !== undefined) {
+                const renderable = this.renderableManager.getRenderableById(currentObject.userData.id);
+                if (!renderable) {
+                    throw new Error(`Entity not found (id = "${currentObject.userData.id}")`);
+                }
+                if (!renderable.gameObject.isDestroyed && !renderable.gameObject.isCrashing) {
+                    const intersectTarget = renderable.getIntersectTarget?.();
+                    if (intersectTarget) {
+                        if (Array.isArray(intersectTarget)) {
+                            targets.push(...intersectTarget);
+                        }
+                        else {
+                            targets.push(intersectTarget);
+                        }
+                    }
+                }
+            }
+            for (let index = currentObject.children.length - 1; index >= 0; index -= 1) {
+                const child = currentObject.children[index];
+                if (child.visible) {
+                    stack.push(child);
+                }
+            }
+        }
+        return [...targets];
     }
     private findRenderableId(object3d: THREE.Object3D): string {
         let currentObject: THREE.Object3D | null = object3d;

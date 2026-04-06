@@ -1,4 +1,5 @@
 import { Renderer } from './gfx/Renderer';
+import { recordUiPerformanceFrame } from '@/performance/PerformanceRuntime';
 export class UiAnimationLoop {
     private renderer: Renderer;
     private isStarted: boolean = false;
@@ -15,6 +16,7 @@ export class UiAnimationLoop {
     };
     private doFrame = (timestamp: number): void => {
         if (this.isStarted && !this.paused) {
+            recordUiPerformanceFrame(timestamp);
             const stats = this.renderer.getStats();
             if (stats) {
                 stats.begin();

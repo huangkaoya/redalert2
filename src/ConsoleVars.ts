@@ -12,6 +12,12 @@ export class ConsoleVars {
     public readonly persistentHoverTags: BoxedVar<boolean>;
     public readonly cheatsEnabled: BoxedVar<boolean>;
     public readonly fullScreenZoomOut: BoxedVar<number>;
+    public perfRaycastHelperReuse?: BoxedVar<boolean>;
+    public perfEntityIntersectTraversal?: BoxedVar<boolean>;
+    public perfMapTileHitTest?: BoxedVar<boolean>;
+    public perfWorldViewportCache?: BoxedVar<boolean>;
+    public perfWorldSoundLoopCache?: BoxedVar<boolean>;
+    public perfTelemetry?: BoxedVar<boolean>;
     constructor() {
         this.debugWireframes = new BoxedVar<boolean>(false);
         this.debugPaths = new BoxedVar<boolean>(false);

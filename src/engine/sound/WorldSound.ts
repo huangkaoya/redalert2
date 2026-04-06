@@ -6,6 +6,7 @@ import { rectEquals } from "../../util/geometry";
 import { ShroudType } from "../../game/map/MapShroud";
 import { Coords } from "../../game/Coords";
 import { isNotNullOrUndefined } from "../../util/typeGuard";
+import { isPerformanceFeatureEnabled, measurePerformanceFeature } from "@/performance/PerformanceRuntime";
 interface WorldPosition {
     x: number;
     y: number;
@@ -121,6 +122,7 @@ export class WorldSound {
         rx: number;
         ry: number;
     };
+    private specCounts = new Map<SoundSpec, number>();
     constructor(sound: Sound, localPlayer: Player, shroud: Shroud, worldViewportHelper: WorldViewportHelper, mapTileIntersectHelper: MapTileIntersectHelper, world: World, worldScene: WorldScene, renderer: Renderer) {
         this.sound = sound;
         this.localPlayer = localPlayer;
@@ -174,6 +176,11 @@ export class WorldSound {
         this.soundInstances.forEach((instance) => instance.handle.stop());
     }
     private update(): void {
+        measurePerformanceFeature('worldSoundLoopCache', () => isPerformanceFeatureEnabled('worldSoundLoopCache')
+            ? this.updateOptimized()
+            : this.updateLegacy());
+    }
+    private updateLegacy(): void {
         const centerTile = this.mapTileIntersectHelper.getTileAtScreenPoint({
             x: this.worldScene.viewport.x + this.worldScene.viewport.width / 2,
             y: this.worldScene.viewport.y + this.worldScene.viewport.height / 2,
@@ -201,6 +208,35 @@ export class WorldSound {
         }
         else {
             console.warn("No tile found at viewport center. Can't update local sound positions.");
+        }
+    }
+    private updateOptimized(): void {
+        const centerTile = this.mapTileIntersectHelper.getTileAtScreenPoint({
+            x: this.worldScene.viewport.x + this.worldScene.viewport.width / 2,
+            y: this.worldScene.viewport.y + this.worldScene.viewport.height / 2,
+        });
+        if (!centerTile) {
+            console.warn("No tile found at viewport center. Can't update local sound positions.");
+            return;
+        }
+        this.tileAtViewportCenter = centerTile;
+        this.cleanOldInstances();
+        this.specCounts.clear();
+        for (const instance of this.soundInstances) {
+            const worldPos = instance.gameObject?.position.worldPosition ?? instance.worldPos;
+            let { volume, pan } = this.computeVolumeAndPan(instance.spec, worldPos, instance.player, instance.gain);
+            if (volume > 0) {
+                const count = this.specCounts.get(instance.spec) ?? 0;
+                if (instance.loop && count >= instance.spec.limit) {
+                    volume = 0;
+                }
+                else {
+                    this.specCounts.set(instance.spec, count + 1);
+                }
+            }
+            instance.handle.setVolume(volume);
+            instance.handle.setPan(pan);
+            instance.volume = volume;
         }
     }
     private cleanOldInstances(): void {

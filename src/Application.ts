@@ -27,6 +27,23 @@ import { GeneralOptions } from './gui/screen/options/GeneralOptions';
 import { FullScreen } from './gui/FullScreen';
 import { browserFileSystemAccess } from './engine/gameRes/browserFileSystemAccess';
 import type { TestToolRuntimeContext } from './tools/TestToolSupport';
+import { attachPerformanceOptions, installPerformanceDebugApi } from './performance/PerformanceRuntime';
+
+const optionalDevModuleImporters: Record<string, () => Promise<any>> = {
+    './tools/VxlTester': () => import('./tools/VxlTester'),
+    './tools/LobbyFormTester': () => import('./tools/LobbyFormTester'),
+    './tools/SoundTester': () => import('./tools/SoundTester'),
+    './tools/BuildingTester': () => import('./tools/BuildingTester'),
+    './tools/InfantryTester': () => import('./tools/InfantryTester'),
+    './tools/AircraftTester': () => import('./tools/AircraftTester'),
+    './tools/VehicleTester': () => import('./tools/VehicleTester'),
+    './tools/TestToolSupport': () => import('./tools/TestToolSupport'),
+    './tools/ShpTester': () => import('./tools/ShpTester'),
+    './tools/WorldSceneTester': () => import('./tools/WorldSceneTester'),
+    './tools/UnitMovementTester': () => import('./tools/UnitMovementTester'),
+    './tools/PerformanceTester': () => import('./tools/PerformanceTester'),
+};
+
 export type SplashScreenUpdateCallback = (props: ComponentProps<typeof SplashScreenComponent> | null) => void;
 class MockLocalPrefs extends LocalPrefs {
     constructor(storage: Storage) {
@@ -64,8 +81,11 @@ export class Application {
     private static readonly MOBILE_BASE_VIEWPORT = { width: 800, height: 600 };
     private static readonly MIN_DESKTOP_VIEWPORT = { width: 800, height: 600 };
     private async importOptionalDevModule<T = any>(path: string): Promise<T> {
-        const dynamicImport = new Function('modulePath', 'return import(modulePath);') as (modulePath: string) => Promise<T>;
-        return dynamicImport(path);
+        const importer = optionalDevModuleImporters[path];
+        if (!importer) {
+            throw new Error(`Unknown optional dev module: ${path}`);
+        }
+        return importer();
     }
     private formatString(template: string, ...args: any[]): string {
         if (!args || args.length === 0)
@@ -121,6 +141,7 @@ export class Application {
         this.runtimeVars = new MockConsoleVars();
         this.generalOptions = new GeneralOptions();
         this.loadGeneralOptions();
+        this.bindPerformanceRuntimeVars();
         this.fullScreen = new FullScreen(document);
         this.updateViewportSize();
         console.log('Application constructor finished.');
@@ -244,6 +265,20 @@ export class Application {
             ? { ...this.generalOptions.graphics.resolution.value }
             : null;
         console.log('[Application] Initialized preferred viewport size from options', this.preferredViewportSize);
+    }
+    private bindPerformanceRuntimeVars(): void {
+        const performanceOptions = this.generalOptions.performance;
+        this.runtimeVars.perfRaycastHelperReuse = performanceOptions.raycastHelperReuse;
+        this.runtimeVars.perfEntityIntersectTraversal = performanceOptions.entityIntersectTraversal;
+        this.runtimeVars.perfMapTileHitTest = performanceOptions.mapTileHitTest;
+        this.runtimeVars.perfWorldViewportCache = performanceOptions.worldViewportCache;
+        this.runtimeVars.perfWorldSoundLoopCache = performanceOptions.worldSoundLoopCache;
+        this.runtimeVars.perfTelemetry = performanceOptions.telemetry;
+        attachPerformanceOptions(performanceOptions);
+        const debugRoot = ((window as any).__ra2debug ??= {});
+        debugRoot.generalOptions = this.generalOptions;
+        debugRoot.runtimeVars = this.runtimeVars;
+        installPerformanceDebugApi(debugRoot);
     }
     private setPreferredViewportSize(resolution?: {
         width: number;
@@ -467,6 +502,7 @@ export class Application {
             return;
         }
         this.runtimeVars = new MockConsoleVars();
+        this.bindPerformanceRuntimeVars();
         MockDevToolsApi.registerVar("freecamera", this.runtimeVars.freeCamera);
         await this.initLogging();
         this.fullScreen.init();
@@ -856,6 +892,15 @@ export class Application {
             const { UnitMovementTester } = await this.importOptionalDevModule('./tools/UnitMovementTester');
             await UnitMovementTester.main(Engine.vfs, gameMap, this.rootEl!, this.strings, this.createTestToolContext());
             currentHandler = UnitMovementTester;
+        });
+        this.routing.addRoute("/perftest", async () => {
+            if (!Engine.vfs) {
+                throw new Error("Original game files must be provided.");
+            }
+            console.log('[Application] Initializing PerformanceTester');
+            const { PerformanceTester } = await this.importOptionalDevModule('./tools/PerformanceTester');
+            await PerformanceTester.main(this.rootEl!, this.strings, this.runtimeVars, this.generalOptions, this.createTestToolContext());
+            currentHandler = PerformanceTester;
         });
         this.routing.init();
     }

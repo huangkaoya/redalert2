@@ -1,4 +1,5 @@
 import { IrcConnection } from "@/network/IrcConnection";
+import { recordGamePerformanceFrame } from "@/performance/PerformanceRuntime";
 interface LocalPlayer {
     isObserver: boolean;
 }
@@ -63,6 +64,7 @@ export class GameAnimationLoop {
     };
     private doFrame = (timestamp: number): void => {
         if (this.isStarted && !this.paused) {
+            recordGamePerformanceFrame(timestamp);
             let deltaFrames = this.updateDeltaGameFrames(timestamp);
             if (this.turnMgrIsWaiting || (!this.options.skipFrames && deltaFrames > 1)) {
                 deltaFrames = 1;

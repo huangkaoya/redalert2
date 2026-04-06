@@ -42,6 +42,7 @@ import { GameResConfig } from './engine/gameRes/GameResConfig.js';
 import { KeyBinds } from './gui/screen/game/worldInteraction/keyboard/KeyBinds.js';
 import { ClientApi } from './ClientApi.js';
 import type { ViewportRect } from './gui/Viewport.js';
+import { attachPerformanceOptions, installPerformanceDebugApi } from './performance/PerformanceRuntime.js';
 export class Gui {
     private appVersion: string;
     private strings: Strings;
@@ -621,6 +622,8 @@ export class Gui {
         debugRoot.keyBinds = this.keyBinds;
         debugRoot.fullScreen = this.fullScreen;
         debugRoot.localPrefs = this.localPrefs;
+        const performanceOptions = this.generalOptions.performance;
+        attachPerformanceOptions(performanceOptions);
         const runtimeVars = this.runtimeVars ?? {};
         this.runtimeVars = Object.assign(runtimeVars, {
             debugWireframes: runtimeVars.debugWireframes ?? new BoxedVar<boolean>(false),
@@ -635,7 +638,15 @@ export class Gui {
             persistentHoverTags: runtimeVars.persistentHoverTags ?? new BoxedVar<boolean>(false),
             cheatsEnabled: runtimeVars.cheatsEnabled ?? new BoxedVar<boolean>(false),
             fullScreenZoomOut: runtimeVars.fullScreenZoomOut ?? new BoxedVar<number>(1.3),
+            perfRaycastHelperReuse: performanceOptions.raycastHelperReuse,
+            perfEntityIntersectTraversal: performanceOptions.entityIntersectTraversal,
+            perfMapTileHitTest: performanceOptions.mapTileHitTest,
+            perfWorldViewportCache: performanceOptions.worldViewportCache,
+            perfWorldSoundLoopCache: performanceOptions.worldSoundLoopCache,
+            perfTelemetry: performanceOptions.telemetry,
         });
+        debugRoot.runtimeVars = this.runtimeVars;
+        installPerformanceDebugApi(debugRoot);
         console.log('[Gui] Runtime vars ready', Object.keys(this.runtimeVars));
         console.log('[Gui] Options system initialized');
     }

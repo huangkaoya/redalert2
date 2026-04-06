@@ -2,6 +2,7 @@ import { FlyerHelperMode } from "@/engine/renderable/entity/unit/FlyerHelperMode
 import { Base64 } from "@/util/Base64";
 import { BoxedVar } from "@/util/BoxedVar";
 import { GraphicsOptions } from "@/gui/screen/options/GraphicsOptions";
+import { PerformanceOptions } from "@/performance/PerformanceOptions";
 export const SCROLL_BASE_FACTOR = 3;
 export class GeneralOptions {
     scrollRate: BoxedVar<number>;
@@ -12,6 +13,7 @@ export class GeneralOptions {
     rightClickScroll: BoxedVar<boolean>;
     mouseAcceleration: BoxedVar<boolean>;
     graphics: GraphicsOptions;
+    performance: PerformanceOptions;
     constructor() {
         this.scrollRate = new BoxedVar(12);
         this.flyerHelper = new BoxedVar(FlyerHelperMode.Selected);
@@ -21,9 +23,10 @@ export class GeneralOptions {
         this.rightClickScroll = new BoxedVar(true);
         this.mouseAcceleration = new BoxedVar(true);
         this.graphics = new GraphicsOptions();
+        this.performance = new PerformanceOptions();
     }
     unserialize(data: string): this {
-        const [t, i, r, s, a, n, o, l] = data.split(",");
+        const [t, i, r, s, a, n, o, l, p] = data.split(",");
         this.scrollRate.value = Number(t);
         if (i !== undefined) {
             this.flyerHelper.value = Number(i) as FlyerHelperMode;
@@ -46,6 +49,7 @@ export class GeneralOptions {
         if (l !== undefined) {
             this.mouseAcceleration.value = Boolean(Number(l));
         }
+        this.performance.unserialize(p);
         return this;
     }
     serialize(): string {
@@ -58,6 +62,7 @@ export class GeneralOptions {
             Number(this.rightClickScroll.value),
             Number(this.targetLines.value),
             Number(this.mouseAcceleration.value),
+            this.performance.serialize(),
         ].join(",");
     }
 }
