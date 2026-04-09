@@ -56,6 +56,14 @@ export class HomeScreen implements Screen {
                 }
             },
             {
+                label: '直播互动',
+                tooltip: '进入直播互动模式，响应进房、点赞、礼物等事件并驱动双方出兵对抗',
+                onClick: () => {
+                    console.log('[HomeScreen] Live Interaction clicked');
+                    window.location.hash = '/liveinteraction';
+                }
+            },
+            {
                 label: '录像回放',
                 tooltip: '查看和回放游戏录像',
                 onClick: () => {

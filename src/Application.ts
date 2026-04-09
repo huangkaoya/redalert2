@@ -42,6 +42,7 @@ const optionalDevModuleImporters: Record<string, () => Promise<any>> = {
     './tools/WorldSceneTester': () => import('./tools/WorldSceneTester'),
     './tools/UnitMovementTester': () => import('./tools/UnitMovementTester'),
     './tools/PerformanceTester': () => import('./tools/PerformanceTester'),
+    './tools/LiveInteractionTester': () => import('./tools/LiveInteractionTester'),
 };
 
 export type SplashScreenUpdateCallback = (props: ComponentProps<typeof SplashScreenComponent> | null) => void;
@@ -901,6 +902,20 @@ export class Application {
             const { PerformanceTester } = await this.importOptionalDevModule('./tools/PerformanceTester');
             await PerformanceTester.main(this.rootEl!, this.strings, this.runtimeVars, this.generalOptions, this.createTestToolContext());
             currentHandler = PerformanceTester;
+        });
+        this.routing.addRoute("/liveinteraction", async () => {
+            if (!Engine.vfs) {
+                throw new Error("Original game files must be provided.");
+            }
+            console.log('[Application] Initializing LiveInteractionTester');
+            const { TestToolSupport } = await this.importOptionalDevModule('./tools/TestToolSupport');
+            const gameMap = await TestToolSupport.loadMap(this.createTestToolContext().mapResourceLoader!, "2_reconcile.map");
+            const { LiveInteractionTester } = await this.importOptionalDevModule('./tools/LiveInteractionTester');
+            await LiveInteractionTester.main(Engine.vfs, gameMap, this.rootEl!, this.strings, this.createTestToolContext(), {
+                generalOptions: this.generalOptions,
+                runtimeVars: this.runtimeVars,
+            });
+            currentHandler = LiveInteractionTester;
         });
         this.routing.init();
     }

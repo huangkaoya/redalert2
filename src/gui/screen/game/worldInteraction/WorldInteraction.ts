@@ -14,6 +14,8 @@ export class WorldInteraction {
     private queuedMouseMoveEvent?: any;
     private isMinimapHover = false;
     private minimapHoverTile?: any;
+    private minimapDragButton?: number;
+    private suppressNextMinimapClick = false;
     private lastSelectionHash?: number;
     private lastDefaultActionUpdate?: number;
     private lastFrameTime?: number;
@@ -247,6 +249,17 @@ export class WorldInteraction {
             event.button = 0;
         }
         this.mapScrollHandler.cancel();
+        if (event.button === 0 &&
+            this.isMinimapHover &&
+            this.minimapHandler.isTileWithinViewport(this.minimapHoverTile)) {
+            this.clickOrigin = event.pointer;
+            this.mousePressed = event.button;
+            this.lastMouseDownEvent = event;
+            this.hasDragged = false;
+            this.minimapDragButton = event.button;
+            this.pointer.setPointerType(PointerType.Mini);
+            return;
+        }
         this.pointerEvents.intersectionsEnabled = false;
         this.clickOrigin = event.pointer;
         this.mousePressed = event.button;
@@ -268,6 +281,15 @@ export class WorldInteraction {
             event.button = 0;
         }
         if (this.mousePressed !== event.button) {
+            return;
+        }
+        if (this.minimapDragButton === event.button) {
+            this.mousePressed = undefined;
+            this.lastMouseDownEvent = undefined;
+            this.suppressNextMinimapClick = this.hasDragged;
+            this.hasDragged = false;
+            this.minimapDragButton = undefined;
+            this.pointer.setPointerType(this.isMinimapHover ? PointerType.Mini : PointerType.Default);
             return;
         }
         if (event.isTouch && this.lastKeyMods && this.lastKeyMods !== this.lastKeyboardEvent) {
@@ -354,6 +376,10 @@ export class WorldInteraction {
         this.cameraZoom.applyStep(event.wheelDeltaY > 0 ? -0.1 : 0.1);
     };
     private readonly handleMinimapClick = (tile: any): void => {
+        if (this.suppressNextMinimapClick) {
+            this.suppressNextMinimapClick = false;
+            return;
+        }
         this.executeMinimapClickCommand(tile, false);
     };
     private readonly handleMinimapRightClick = (tile: any): void => {
@@ -364,6 +390,14 @@ export class WorldInteraction {
     };
     private readonly handleMinimapMouseMove = (tile: any): void => {
         this.minimapHoverTile = tile;
+        if (this.minimapDragButton === 0) {
+            if (!this.hasDragged && !this.isClickRange(this.pointer.getPosition())) {
+                this.hasDragged = true;
+            }
+            this.minimapHandler.panToTile(tile);
+            this.pointer.setPointerType(PointerType.Mini);
+            return;
+        }
         const hover = this.minimapHandler.getHover(tile);
         if (this.currentMode) {
             this.currentMode.hover(hover, true);
@@ -373,11 +407,20 @@ export class WorldInteraction {
         }
     };
     private readonly handleMinimapMouseOut = (): void => {
+        if (this.minimapDragButton !== undefined) {
+            return;
+        }
         this.pointer.setPointerType(PointerType.Default);
         this.isMinimapHover = false;
         this.minimapHoverTile = undefined;
     };
     private processMouseMove(event: any): void {
+        if (this.minimapDragButton !== undefined) {
+            if (!this.hasDragged && !this.isClickRange(event.pointer)) {
+                this.hasDragged = true;
+            }
+            return;
+        }
         const scrolling = this.mapScrollHandler.isScrolling();
         if (this.mousePressed === undefined) {
             if (!event.isTouch) {
@@ -445,6 +488,8 @@ export class WorldInteraction {
         }
         this.pointerEvents.intersectionsEnabled = true;
         this.mousePressed = undefined;
+        this.minimapDragButton = undefined;
+        this.suppressNextMinimapClick = false;
         if (this.maybePan) {
             this.maybePan = false;
             this.cameraPanHandler.finish();

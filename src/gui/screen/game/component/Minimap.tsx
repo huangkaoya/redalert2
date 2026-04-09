@@ -100,6 +100,7 @@ export class Minimap extends UiObject {
     private lastCanvasUpdate?: number;
     private lastPan?: Position;
     private lastViewport?: Rect;
+    private lastZoom?: number;
     private viewportOutline?: THREE.Line;
     private queuedHoverUv?: {
         x: number;
@@ -348,26 +349,32 @@ export class Minimap extends UiObject {
             if (this.worldScene) {
                 const pan = this.worldScene.cameraPan.getPan();
                 const viewport = this.worldScene.viewport;
+                const zoom = this.worldScene.cameraZoom?.getZoom?.() ?? 1;
                 const viewportChanged = !this.lastViewport || !geometry.rectEquals(viewport, this.lastViewport);
-                if (!geometry.pointEquals(pan, this.lastPan) || viewportChanged) {
+                const zoomChanged = this.lastZoom === undefined || Math.abs(zoom - this.lastZoom) > 0.001;
+                if (!geometry.pointEquals(pan, this.lastPan) || viewportChanged || zoomChanged) {
                     this.lastPan = pan;
                     this.lastViewport = viewport;
-                    const centerTile = this.mapTileIntersectHelper!.getTileAtScreenPoint({
-                        x: viewport.x + viewport.width / 2,
-                        y: viewport.y + viewport.height / 2,
-                    });
-                    if (!centerTile) {
-                        console.warn("Current pan intersects no map tile");
-                        return;
-                    }
-                    const screenTileCoords = IsoCoords.screenToScreenTile(viewport.width / 2, viewport.height / 2);
-                    const viewportRect = {
-                        x: (centerTile as any).dx - screenTileCoords.x,
-                        y: (centerTile as any).dy - screenTileCoords.y,
-                        width: 2 * screenTileCoords.x,
-                        height: 2 * screenTileCoords.y,
+                    this.lastZoom = zoom;
+                    const origin = IsoCoords.worldToScreen(0, 0);
+                    const visibleRect = {
+                        x: origin.x + pan.x - viewport.width / (2 * zoom),
+                        y: origin.y + pan.y - viewport.height / (2 * zoom),
+                        width: viewport.width / zoom,
+                        height: viewport.height / zoom,
                     };
-                    if (!this.viewportOutline || viewportChanged) {
+                    const topLeftTile = IsoCoords.screenToScreenTile(visibleRect.x, visibleRect.y);
+                    const bottomRightTile = IsoCoords.screenToScreenTile(
+                        visibleRect.x + visibleRect.width,
+                        visibleRect.y + visibleRect.height,
+                    );
+                    const viewportRect = {
+                        x: topLeftTile.x,
+                        y: topLeftTile.y,
+                        width: bottomRightTile.x - topLeftTile.x,
+                        height: bottomRightTile.y - topLeftTile.y,
+                    };
+                    if (!this.viewportOutline || viewportChanged || zoomChanged) {
                         const topLeft = this.minimapRenderer!.dxyToCanvas(viewportRect.x, viewportRect.y);
                         const bottomRight = this.minimapRenderer!.dxyToCanvas(viewportRect.x + viewportRect.width, viewportRect.y + viewportRect.height);
                         const outlineSize = {
@@ -441,6 +448,9 @@ export class Minimap extends UiObject {
             0, 0, 0,
         ]);
         geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        geometry.attributes.position.needsUpdate = true;
+        geometry.computeBoundingBox();
+        geometry.computeBoundingSphere();
     }
     destroy(): void {
         super.destroy();
