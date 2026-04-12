@@ -15,7 +15,7 @@ interface GameObject {
         insignificant?: boolean;
         organic?: boolean;
     };
-    traits: any[];
+    traits: { find(type: any): any; add(trait: any): void; getAll(): any[] };
     armedTrait?: ArmedTrait;
     cloakableTrait?: CloakableTrait;
     sensorsTrait?: SensorsTrait;
@@ -62,7 +62,6 @@ interface Weapon {
         };
     };
 }
-// @ts-ignore
 export class VeteranTrait implements NotifyTargetDestroy {
     private gameObject: GameObject;
     private veteranRules: VeteranRules;
@@ -76,7 +75,7 @@ export class VeteranTrait implements NotifyTargetDestroy {
         this.xp = 0;
         this.promotionThresh = gameObject.rules.cost * veteranRules.veteranRatio + 1;
     }
-    onDestroy(source: GameObject, target: GameObject, weapon?: Weapon, gameManager?: GameManager): void {
+    [NotifyTargetDestroy.onDestroy](source: GameObject, target: GameObject, weapon?: Weapon, gameManager?: GameManager): void {
         if (source.isDestroyed && !source.isCrashing)
             return;
         if (!target.isTechno())
@@ -85,7 +84,7 @@ export class VeteranTrait implements NotifyTargetDestroy {
             return;
         const isTemporalOrParasiteKill = weapon && (weapon.warhead.rules.temporal ||
             (weapon.warhead.rules.parasite && source.rules.organic));
-        if (isTemporalOrParasiteKill || !gameManager?.areFriendly(source, target)) {
+        if (!isTemporalOrParasiteKill && !gameManager?.areFriendly(source, target)) {
             if (this.veteranLevel >= this.veteranRules.veteranCap)
                 return;
             const xpGain = target.rules.cost * (target.veteranLevel + 1);
@@ -131,7 +130,7 @@ export class VeteranTrait implements NotifyTargetDestroy {
     }
     private handlePromotion(gameObject: GameObject, gameManager: GameManager): void {
         if (this.hasVeteranAbility(VeteranAbility.SELF_HEAL)) {
-            if (!gameObject.traits.find(trait => trait instanceof SelfHealingTrait)) {
+            if (!gameObject.traits.find(SelfHealingTrait)) {
                 gameManager.addObjectTrait(gameObject, new SelfHealingTrait());
             }
         }

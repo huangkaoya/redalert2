@@ -19,7 +19,7 @@ export class AgentTrait {
             target.owner.credits -= stolenAmount;
             agent.owner.credits += stolenAmount;
         }
-        if (!game.rules.ai.buildTech.includes(target.name)) {
+        if (game.rules.ai.buildTech.includes(target.name)) {
             const side = target.rules.aiBasePlanningSide;
             if (side !== undefined) {
                 agent.owner.production.addStolenTech(side);
