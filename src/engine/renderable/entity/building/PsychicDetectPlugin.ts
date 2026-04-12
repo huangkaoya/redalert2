@@ -23,7 +23,8 @@ export class PsychicDetectPlugin {
         this.renderableManager = renderableManager;
     }
     update(delta: number): void {
-        if (this.localPlayer.value === this.gameObject.owner) {
+        const localPlayer = this.localPlayer?.value ?? this.localPlayer;
+        if (localPlayer === this.gameObject.owner) {
             const detectionLines = this.psychicDetectorTrait.detectionLines;
             const hasChanged = detectionLines !== this.lastDetectionLines;
             this.lastDetectionLines = detectionLines;

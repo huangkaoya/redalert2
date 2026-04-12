@@ -246,7 +246,7 @@ export class Aircraft {
         if (this.invulnAnimRunner.shouldUpdate()) {
             this.invulnAnimRunner.tick(deltaTime);
         }
-        if (shouldUpdateHighlight || invulnChanged) {
+        if (shouldUpdateHighlight || invulnChanged || isInvulnerable) {
             if (shouldUpdateHighlight) {
                 this.highlightAnimRunner.tick(deltaTime);
             }

@@ -4,6 +4,6 @@ export class ExtraLightHelper {
         target.copy(source).add(source.clone().addScalar(1).multiplyScalar(intensity));
     }
     static multiplyVxl(target: THREE.Color, source: THREE.Color, intensity: number, radius: number): void {
-        target.copy(source).addScalar(2 * radius * intensity);
+        target.copy(source).multiplyScalar(Math.max(0, 1 + radius));
     }
 }

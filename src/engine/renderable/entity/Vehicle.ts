@@ -324,8 +324,7 @@ export class Vehicle {
         var s = this.gameObject.invulnerableTrait.isActive(), a = s !== this.lastInvulnerable;
         this.lastInvulnerable = s;
         var n = this.highlightAnimRunner.shouldUpdate();
-        n && this.highlightAnimRunner.tick(i),
-            s && a && this.invulnAnimRunner.animate(),
+        s && a && this.invulnAnimRunner.animate(),
             this.invulnAnimRunner.shouldUpdate() &&
                 this.invulnAnimRunner.tick(i);
         var o = this.gameObject.warpedOutTrait.isActive(), l = o !== this.lastWarpedOut;
@@ -343,12 +342,12 @@ export class Vehicle {
                 }),
                 this.placeholder?.setOpacity(t);
         }
-        if (((t || a || s || n) &&
-            ((p = s ? this.invulnAnimRunner.getValue() : 0),
-                (y = (n ? this.highlightAnimRunner.getValue() : 0) || p),
-                (m = this.lighting.getAmbientIntensity()),
-                A.ExtraLightHelper.multiplyVxl(this.vxlExtraLight, this.baseVxlExtraLight, m, y as any),
-                A.ExtraLightHelper.multiplyShp(this.shpExtraLight, this.baseShpExtraLight, y as any)),
+        if ((t || a || s || n) &&
+            (n && this.highlightAnimRunner.tick(i),
+                (p = s ? this.invulnAnimRunner.getValue() : 0),
+                (P = (n ? this.highlightAnimRunner.getValue() : 0) || p),
+                A.ExtraLightHelper.multiplyVxl(this.vxlExtraLight, this.baseVxlExtraLight, this.lighting.getAmbientIntensity(), P as any),
+                A.ExtraLightHelper.multiplyShp(this.shpExtraLight, this.baseShpExtraLight, P as any),
             this.gameObject.isDestroyed && this.resolveObjectRemove)) {
             if ((this.squidGrabAnim &&
                 (this.posObj?.remove(this.squidGrabAnim.get3DObject()),

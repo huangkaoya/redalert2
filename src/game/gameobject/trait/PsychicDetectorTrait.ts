@@ -54,29 +54,26 @@ export class PsychicDetectorTrait {
             target: any;
         }> = [];
         const rangeHelper = new RangeHelper(world.map.tileOccupation);
-        const isInRange = (target: any) => rangeHelper.distance2(target, gameObject) / Coords.LEPTONS_PER_TILE <= this.radiusTiles;
+        const isInRange = (unit: any) => rangeHelper.distance2(unit, gameObject) / Coords.LEPTONS_PER_TILE <= this.radiusTiles;
         for (const enemy of enemies) {
             for (const obj of enemy.getOwnedObjects()) {
+                if (!isInRange(obj)) {
+                    continue;
+                }
                 if (obj.attackTrait?.currentTarget) {
                     const target = obj.attackTrait.currentTarget;
-                    if (isInRange(target.obj ?? target.tile)) {
-                        detectionLines.push({ source: obj, target });
-                    }
+                    detectionLines.push({ source: obj, target });
                 }
                 else if (obj.isUnit() && obj.unitOrderTrait.targetLinesConfig) {
                     const config = obj.unitOrderTrait.targetLinesConfig;
                     if (config.target) {
-                        if (isInRange(config.target)) {
-                            const target = world.createTarget(config.target, config.target.tile);
-                            detectionLines.push({ source: obj, target });
-                        }
+                        const target = world.createTarget(config.target, config.target.tile);
+                        detectionLines.push({ source: obj, target });
                     }
                     else if (config.pathNodes[0]) {
                         const node = config.pathNodes[0];
-                        if (isInRange(node.tile)) {
-                            const target = world.createTarget(node.onBridge, node.tile);
-                            detectionLines.push({ source: obj, target });
-                        }
+                        const target = world.createTarget(node.onBridge, node.tile);
+                        detectionLines.push({ source: obj, target });
                     }
                 }
             }
