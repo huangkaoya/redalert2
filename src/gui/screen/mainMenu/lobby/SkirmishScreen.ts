@@ -13,6 +13,7 @@ import { MusicType } from '@/engine/sound/Music';
 import { OBS_COUNTRY_ID } from '@/game/gameopts/constants';
 import { MapFile } from '@/data/MapFile';
 import { PregameController, PregameMapSelectionResult } from '@/gui/screen/mainMenu/lobby/PregameController';
+import { BotRegistry } from '@/game/ai/thirdpartbot/BotRegistry';
 
 interface GameMode {
     id: number;
@@ -97,6 +98,7 @@ export class SkirmishScreen extends MainMenuScreen {
     onEnter(): void {
         this.controller.toggleMainVideo(false);
         this.lobbyForm = undefined;
+        this.loadPersistedBots();
         this.pregameController = new PregameController(
             this.strings,
             this.rules,
@@ -121,8 +123,7 @@ export class SkirmishScreen extends MainMenuScreen {
             this.pregameController?.applyMapSelection(params);
         }
         this.updateMapPreview();
-        this.refreshSidebarMpText();
-        this.refreshLobbyForm();
+        this.initView();
     }
 
     async onLeave(): Promise<void> {
@@ -137,8 +138,13 @@ export class SkirmishScreen extends MainMenuScreen {
     }
 
     private async createGame(): Promise<void> {
+        const controller = this.pregameController;
+        if (!controller) {
+            return;
+        }
+
         try {
-            await this.pregameController?.initialize();
+            await controller.initialize();
         }
         catch (error) {
             this.handleError(
@@ -147,6 +153,11 @@ export class SkirmishScreen extends MainMenuScreen {
                     ? this.strings.get('TXT_DOWNLOAD_FAILED')
                     : this.strings.get('WOL:MatchErrorCreatingGame')
             );
+            return;
+        }
+
+        // Bail out if the screen was left or re-entered during initialization
+        if (this.pregameController !== controller) {
             return;
         }
 
@@ -382,7 +393,9 @@ export class SkirmishScreen extends MainMenuScreen {
 
                 if (result.success && result.meta && messageDiv) {
                     messageDiv.innerHTML = `<div class="bot-upload-message bot-upload-message-success">${this.strings.get('GUI:BotUpload:Success') || 'Bot uploaded successfully!'}</div>`;
+                    this.persistBots();
                     this.refreshBotList();
+                    this.refreshLobbyForm();
                 }
                 else if (messageDiv) {
                     messageDiv.innerHTML = `<div class="bot-upload-message bot-upload-message-error">${(result.errors || ['Upload failed']).join('\n')}</div>`;
@@ -429,11 +442,24 @@ export class SkirmishScreen extends MainMenuScreen {
                     const botId = (button as HTMLElement).dataset.botId;
                     if (botId) {
                         BotRegistry.getInstance().unregister(botId);
+                        this.persistBots();
                         this.refreshBotList();
+                        this.refreshLobbyForm();
                     }
                 });
             });
         });
+    }
+
+    private loadPersistedBots(): void {
+        const data = this.localPrefs.getItem(StorageKey.UploadedBots);
+        if (data) {
+            BotRegistry.getInstance().loadPersistedBots(data);
+        }
+    }
+
+    private persistBots(): void {
+        this.localPrefs.setItem(StorageKey.UploadedBots, BotRegistry.getInstance().serializeUploadedBots());
     }
 
     private async unrender(): Promise<void> {

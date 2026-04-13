@@ -102,8 +102,18 @@ export class BotSandbox {
         // 5. Generic type parameters on function declarations: `function foo<T>(`
         source = source.replace(/(\bfunction\s+\w+)\s*<[^>]*>/g, '$1');
 
-        // 6. Return type annotations: `): ReturnType {` or `): ReturnType;`
-        source = source.replace(/\)\s*:\s*[\w<>[\]|&., ]+(?=\s*[{;])/g, ')');
+        // 6. Return type annotations on function declarations/expressions:
+        //    `function foo(params): ReturnType {`
+        //    Anchored to `function` keyword to avoid false-matching ternary `) : expr`.
+        source = source.replace(
+            /(\bfunction\s*\w*\s*\([^)]*\))\s*:\s*[\w<>[\]|&., ]+(?=\s*\{)/g,
+            '$1',
+        );
+        // Arrow function return types: `(params): ReturnType =>`
+        source = source.replace(
+            /(\([^)]*\))\s*:\s*[\w<>[\]|&., ]+(?=\s*=>)/g,
+            '$1',
+        );
 
         // 7. Strip type annotations from function/method parameter lists only.
         //    Each parameter is split by comma and handled individually so that
@@ -344,8 +354,8 @@ export class BotSandbox {
                 sourceFile: sourceFileName,
             };
 
-            // Register the bot
-            BotRegistry.getInstance().register(meta);
+            // Register the bot with source for persistence
+            BotRegistry.getInstance().registerWithSource(meta, mainScript, sourceFileName);
             return meta;
         } catch (e) {
             console.error('[BotSandbox] Failed to load bot:', e);

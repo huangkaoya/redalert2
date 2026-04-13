@@ -36,6 +36,7 @@ export class Player {
     public readonly isObserver: boolean;
     public readonly isNeutral: boolean;
     public aiDifficulty?: any;
+    public customBotId?: string;
     public powerTrait?: any;
     public radarTrait?: any;
     public superWeaponsTrait?: any;

@@ -16,6 +16,7 @@ export class BotFactory {
         country: {
             name: string;
         };
+        customBotId?: string;
     }): Bot {
         if (!player.isAi) {
             throw new Error(`Player "${player.name}" is not an AI`);
@@ -23,6 +24,14 @@ export class BotFactory {
 
         if (player.aiDifficulty === AiDifficulty.Custom) {
             const registry = BotRegistry.getInstance();
+            if (player.customBotId) {
+                const meta = registry.get(player.customBotId);
+                if (meta) {
+                    console.info(`[BotFactory] Using bot "${meta.displayName}" for "${player.name}"`);
+                    return new ThirdPartyBotAdapter(player.name, player.country.name, meta);
+                }
+                console.warn(`[BotFactory] Custom bot "${player.customBotId}" not found, trying fallback`);
+            }
             const uploadedBots = registry.getUploadedBots();
             if (uploadedBots.length > 0) {
                 const meta = uploadedBots[0];

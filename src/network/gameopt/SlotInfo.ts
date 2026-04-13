@@ -9,6 +9,7 @@ export interface SlotInfo {
     type: SlotType;
     name?: string;
     difficulty?: number;
+    customBotId?: string;
 }
 export interface PingInfo {
     playerName: string;

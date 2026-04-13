@@ -18,6 +18,7 @@ export interface HumanPlayerInfo {
 }
 export interface AiPlayerInfo {
     difficulty: AiDifficulty;
+    customBotId?: string;
     countryId: number;
     colorId: number;
     startPos: number;

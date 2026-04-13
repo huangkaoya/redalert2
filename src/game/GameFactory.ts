@@ -142,6 +142,7 @@ export class GameFactory {
             let playerName: string;
             let isAi: boolean;
             let aiDifficulty: string | undefined;
+            let customBotId: string | undefined;
             if (isHumanPlayerInfo(playerInfo)) {
                 playerName = playerInfo.name;
                 isAi = false;
@@ -150,6 +151,7 @@ export class GameFactory {
                 playerName = game.getAiPlayerName(playerInfo);
                 isAi = true;
                 aiDifficulty = (playerInfo as any).difficulty;
+                customBotId = (playerInfo as any).customBotId;
             }
             if (playerInfo.countryId === (OBS_COUNTRY_ID as any)) {
                 game.addPlayer(playerFactory.createObserver(playerName, rules));
@@ -162,7 +164,7 @@ export class GameFactory {
             const countryName: string = multiplayerCountries[parseInt(resolvedCountryId)].name;
             const country: Country = Country.factory(countryName, rules as any);
             const color: string = multiplayerColors[parseInt(resolvedColorId)];
-            const player = playerFactory.createCombatant(playerName, country, resolvedStartPos, color, isAi, aiDifficulty);
+            const player = playerFactory.createCombatant(playerName, country, resolvedStartPos, color, isAi, aiDifficulty, customBotId);
             game.addPlayer(player);
         });
     }

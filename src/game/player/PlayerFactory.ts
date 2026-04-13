@@ -15,10 +15,11 @@ export class PlayerFactory {
         this.gameOpts = gameOpts;
         this.allAvailableObjects = allAvailableObjects;
     }
-    createCombatant(id: any, country: any, team: any, color: any, isAi: boolean, aiDifficulty: any): Player {
+    createCombatant(id: any, country: any, team: any, color: any, isAi: boolean, aiDifficulty: any, customBotId?: string): Player {
         let player = new Player(id, country, team, color);
         player.isAi = isAi;
         player.aiDifficulty = aiDifficulty;
+        player.customBotId = customBotId;
         player.powerTrait = new PowerTrait(player);
         player.traits.add(player.powerTrait);
         player.radarTrait = new RadarTrait();
