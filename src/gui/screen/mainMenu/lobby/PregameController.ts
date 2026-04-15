@@ -23,6 +23,7 @@ import { findIndexReverse } from '@/util/array';
 import { PreferredHostOpts } from '@/gui/screen/mainMenu/lobby/PreferredHostOpts';
 import { Parser } from '@/network/gameopt/Parser';
 import { Serializer } from '@/network/gameopt/Serializer';
+import { BotRegistry } from '@/game/ai/thirdpartbot/BotRegistry';
 
 interface Rules {
     getMultiplayerCountries(): any[];
@@ -93,6 +94,7 @@ function cloneAiPlayer(ai: any) {
     return ai
         ? {
             difficulty: ai.difficulty,
+            customBotId: ai.customBotId,
             countryId: ai.countryId,
             colorId: ai.colorId,
             startPos: ai.startPos,
@@ -143,6 +145,7 @@ function cloneSlotsInfo(slotsInfo: SlotInfo[]): SlotInfo[] {
         type: slot.type,
         name: slot.name,
         difficulty: slot.difficulty,
+        customBotId: slot.customBotId,
     }));
 }
 
@@ -301,6 +304,21 @@ export class PregameController {
         this.saveBotSettings();
     }
 
+    private buildAvailableAiNames(): Map<string, string> {
+        const names = new Map<string, string>();
+        names.set('Easy', aiUiNames.get(AiDifficulty.Easy)!);
+        names.set('Normal', aiUiNames.get(AiDifficulty.Normal)!);
+        const uploadedBots = BotRegistry.getInstance().getUploadedBots();
+        if (uploadedBots.length > 0) {
+            for (const bot of uploadedBots) {
+                names.set(`Custom:${bot.id}`, bot.displayName);
+            }
+        } else {
+            names.set('Custom', aiUiNames.get(AiDifficulty.Custom)!);
+        }
+        return names;
+    }
+
     createLobbyFormProps(options: PregameLobbyFormOptions): any {
         const gameOpts = this.requireGameOpts();
         const slotsInfo = this.requireSlotsInfo();
@@ -324,7 +342,7 @@ export class PregameController {
             ]),
             availablePlayerCountries: [RANDOM_COUNTRY_NAME, OBS_COUNTRY_NAME].concat(this.getAvailablePlayerCountries()),
             availablePlayerColors: this.getSelectablePlayerColors(playerSlots),
-            availableAiNames: new Map([...aiUiNames.entries()]),
+            availableAiNames: this.buildAvailableAiNames(),
             availableStartPositions: this.getSelectableStartPositions(playerSlots, gameOpts.maxSlots),
             maxTeams: 4,
             lobbyType: options.lobbyType,
@@ -369,8 +387,8 @@ export class PregameController {
                 this.handleTeamSelect(team, slotIndex);
                 onStateChange();
             },
-            onSlotChange: (occupation: SlotOccupation, slotIndex: number, aiDifficulty?: AiDifficulty) => {
-                this.handleSlotChange(occupation, slotIndex, aiDifficulty);
+            onSlotChange: (occupation: SlotOccupation, slotIndex: number, aiDifficulty?: AiDifficulty, customBotId?: string) => {
+                this.handleSlotChange(occupation, slotIndex, aiDifficulty, customBotId);
                 onStateChange();
             },
             onToggleShortGame: (value: boolean) => {
@@ -511,7 +529,7 @@ export class PregameController {
             preferredOpts.applyMpDialogSettings(mpDialogSettings);
         }
 
-        const lastBots = savedBots ? new Parser().parseAiOpts(savedBots) : undefined;
+        const lastBots = savedBots ? this.parseSavedBots(savedBots) : undefined;
         const defaultAiDifficulty = AiDifficulty.Easy;
         const humanCountryId = savedCountry !== undefined &&
             Number(savedCountry) < this.getAvailablePlayerCountries().length
@@ -561,6 +579,7 @@ export class PregameController {
                     if (difficulty !== undefined) {
                         return {
                             difficulty,
+                            customBotId: lastBots?.[index]?.customBotId,
                             countryId: lastBots?.[index]?.countryId ?? RANDOM_COUNTRY_ID,
                             colorId: lastBots?.[index]?.colorId ?? RANDOM_COLOR_ID,
                             startPos: lastBots?.[index]?.startPos ?? RANDOM_START_POS,
@@ -581,7 +600,8 @@ export class PregameController {
         this.slotsInfo = [{ type: NetSlotType.Player, name: this.playerName }];
         for (let index = 1; index < 8; index += 1) {
             if (index < effectiveMaxSlots && this.gameOpts.aiPlayers[index]) {
-                this.slotsInfo.push({ type: NetSlotType.Ai, difficulty: (this.gameOpts.aiPlayers[index] as any).difficulty });
+                const ai = this.gameOpts.aiPlayers[index]!;
+                this.slotsInfo.push({ type: NetSlotType.Ai, difficulty: ai.difficulty, customBotId: ai.customBotId });
             }
             else {
                 const type = index < effectiveMaxSlots
@@ -717,12 +737,12 @@ export class PregameController {
         this.updatePlayerInfo(this.getCountryIdByName(playerSlots[slotIndex].country), this.getColorIdByName(playerSlots[slotIndex].color), playerSlots[slotIndex].startPos, teamId, slotIndex);
     }
 
-    private handleSlotChange(occupation: SlotOccupation, slotIndex: number, aiDifficulty?: AiDifficulty): void {
-        this.changeSlotType(occupation, slotIndex, aiDifficulty);
+    private handleSlotChange(occupation: SlotOccupation, slotIndex: number, aiDifficulty?: AiDifficulty, customBotId?: string): void {
+        this.changeSlotType(occupation, slotIndex, aiDifficulty, customBotId);
         this.saveBotSettings();
     }
 
-    private changeSlotType(occupation: SlotOccupation, slotIndex: number, aiDifficulty?: AiDifficulty): void {
+    private changeSlotType(occupation: SlotOccupation, slotIndex: number, aiDifficulty?: AiDifficulty, customBotId?: string): void {
         if (slotIndex === 0) {
             throw new Error('Change slot type of host');
         }
@@ -734,9 +754,11 @@ export class PregameController {
             const slot = slotsInfo[slotIndex];
             slot.type = NetSlotType.Ai;
             slot.difficulty = aiDifficulty;
+            slot.customBotId = customBotId;
             if (!gameOpts.aiPlayers[slotIndex]) {
                 gameOpts.aiPlayers[slotIndex] = {
                     difficulty: aiDifficulty,
+                    customBotId,
                     countryId: RANDOM_COUNTRY_ID,
                     colorId: RANDOM_COLOR_ID,
                     startPos: RANDOM_START_POS,
@@ -744,6 +766,7 @@ export class PregameController {
                 } as any;
             }
             gameOpts.aiPlayers[slotIndex]!.difficulty = aiDifficulty;
+            gameOpts.aiPlayers[slotIndex]!.customBotId = customBotId;
             return;
         }
 
@@ -847,6 +870,7 @@ export class PregameController {
 
             if (slot.type === NetSlotType.Ai) {
                 playerSlot.aiDifficulty = slot.difficulty;
+                playerSlot.customBotId = slot.customBotId;
                 playerSlot.type = UiSlotType.Ai;
             }
             else if (slot.type === NetSlotType.Player) {
@@ -915,7 +939,32 @@ export class PregameController {
     }
 
     private saveBotSettings(): void {
-        this.localPrefs.setItem(StorageKey.LastBots, new Serializer().serializeAiOpts(this.requireGameOpts().aiPlayers));
+        const aiPlayers = this.requireGameOpts().aiPlayers;
+        const hasCustomBotId = aiPlayers.some(ai => ai?.customBotId);
+        if (hasCustomBotId) {
+            this.localPrefs.setItem(StorageKey.LastBots, JSON.stringify(
+                aiPlayers.map(ai => ai
+                    ? { d: ai.difficulty, b: ai.customBotId, c: ai.countryId, co: ai.colorId, s: ai.startPos, t: ai.teamId }
+                    : null
+                )
+            ));
+        } else {
+            this.localPrefs.setItem(StorageKey.LastBots, new Serializer().serializeAiOpts(aiPlayers));
+        }
+    }
+
+    private parseSavedBots(data: string): (any | undefined)[] {
+        if (data.startsWith('[')) {
+            try {
+                const parsed = JSON.parse(data);
+                return parsed.map((item: any) =>
+                    item ? { difficulty: item.d, customBotId: item.b, countryId: item.c, colorId: item.co, startPos: item.s, teamId: item.t } : undefined
+                );
+            } catch {
+                return new Parser().parseAiOpts(data);
+            }
+        }
+        return new Parser().parseAiOpts(data);
     }
 
     private savePreferences(): void {

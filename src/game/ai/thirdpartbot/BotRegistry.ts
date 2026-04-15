@@ -1,4 +1,15 @@
 import { ThirdPartyBotMeta } from './ThirdPartyBotInterface';
+import { BotSandbox } from './BotSandbox';
+
+interface PersistedBot {
+    id: string;
+    displayName: string;
+    version: string;
+    author: string;
+    description?: string;
+    source: string;
+    sourceFile: string;
+}
 
 /**
  * Registry for third-party bots.
@@ -7,6 +18,7 @@ import { ThirdPartyBotMeta } from './ThirdPartyBotInterface';
 export class BotRegistry {
     private static instance: BotRegistry;
     private bots: Map<string, ThirdPartyBotMeta> = new Map();
+    private botSources: Map<string, { source: string; sourceFile: string }> = new Map();
 
     private constructor() {}
 
@@ -29,6 +41,14 @@ export class BotRegistry {
     }
 
     /**
+     * Register a bot and store its source for persistence.
+     */
+    registerWithSource(meta: ThirdPartyBotMeta, source: string, sourceFile: string): void {
+        this.register(meta);
+        this.botSources.set(meta.id, { source, sourceFile });
+    }
+
+    /**
      * Unregister a third-party bot by ID.
      */
     unregister(botId: string): boolean {
@@ -37,6 +57,7 @@ export class BotRegistry {
             console.warn(`[BotRegistry] Cannot unregister built-in bot "${botId}".`);
             return false;
         }
+        this.botSources.delete(botId);
         return this.bots.delete(botId);
     }
 
@@ -73,5 +94,47 @@ export class BotRegistry {
      */
     get size(): number {
         return this.bots.size;
+    }
+
+    /**
+     * Serialize uploaded bots for localStorage persistence.
+     */
+    serializeUploadedBots(): string {
+        const bots: PersistedBot[] = [];
+        for (const meta of this.getUploadedBots()) {
+            const sourceInfo = this.botSources.get(meta.id);
+            if (sourceInfo) {
+                bots.push({
+                    id: meta.id,
+                    displayName: meta.displayName,
+                    version: meta.version,
+                    author: meta.author,
+                    description: meta.description,
+                    source: sourceInfo.source,
+                    sourceFile: sourceInfo.sourceFile,
+                });
+            }
+        }
+        return JSON.stringify(bots);
+    }
+
+    /**
+     * Load persisted bots from serialized data.
+     */
+    loadPersistedBots(data: string): void {
+        try {
+            const bots: PersistedBot[] = JSON.parse(data);
+            for (const bot of bots) {
+                if (this.bots.has(bot.id)) {
+                    continue;
+                }
+                const meta = BotSandbox.loadBotFromSource(bot.source, bot.sourceFile);
+                if (meta) {
+                    this.botSources.set(meta.id, { source: bot.source, sourceFile: bot.sourceFile });
+                }
+            }
+        } catch (e) {
+            console.error('[BotRegistry] Failed to load persisted bots:', e);
+        }
     }
 }

@@ -48,7 +48,7 @@ interface LobbyFormProps {
     teamsRequired: boolean;
     maxTeams: number;
     availableAiNames: any;
-    onSlotChange: (occupation: number, slotIndex: number, aiDifficulty?: any) => void;
+    onSlotChange: (occupation: number, slotIndex: number, aiDifficulty?: any, customBotId?: string) => void;
     onToggleShortGame: (checked: boolean) => void;
     onToggleMcvRepacks: (checked: boolean) => void;
     onToggleCratesAppear: (checked: boolean) => void;
@@ -72,23 +72,38 @@ export class LobbyForm extends React.Component<LobbyFormProps> {
     private getFirstAvailableAiDifficulty(): AiDifficulty {
         const iterator = this.props.availableAiNames.keys();
         const first = iterator.next();
-        return first.done ? AiDifficulty.Easy : first.value;
+        if (first.done) return AiDifficulty.Easy;
+        const key = first.value as string;
+        if (key.startsWith('Custom:')) return AiDifficulty.Custom;
+        return AiDifficulty[key as keyof typeof AiDifficulty] ?? AiDifficulty.Easy;
     }
     onPlayerSelect = (value: string, slotIndex: number) => {
         let occupation: number;
         let aiDifficulty: any;
+        let customBotId: string | undefined;
         if (value.match(/^\d+$/)) {
             occupation = Number(value);
         }
         else {
             occupation = SlotOccupation.Occupied;
-            aiDifficulty = AiDifficulty[value as keyof typeof AiDifficulty];
-            if (aiDifficulty === undefined ||
-                !this.props.availableAiNames.has(aiDifficulty)) {
-                aiDifficulty = this.getFirstAvailableAiDifficulty();
+            if (value.startsWith('Custom:')) {
+                aiDifficulty = AiDifficulty.Custom;
+                customBotId = value.slice('Custom:'.length);
+            } else {
+                aiDifficulty = AiDifficulty[value as keyof typeof AiDifficulty];
+                if (aiDifficulty === undefined ||
+                    !this.props.availableAiNames.has(value)) {
+                    const firstKey = this.props.availableAiNames.keys().next().value;
+                    if (firstKey?.startsWith('Custom:')) {
+                        aiDifficulty = AiDifficulty.Custom;
+                        customBotId = firstKey.slice('Custom:'.length);
+                    } else {
+                        aiDifficulty = this.getFirstAvailableAiDifficulty();
+                    }
+                }
             }
         }
-        this.props.onSlotChange(occupation, slotIndex, aiDifficulty);
+        this.props.onSlotChange(occupation, slotIndex, aiDifficulty, customBotId);
     };
     render() {
         const { strings, lobbyType, mpDialogSettings } = this.props;
@@ -277,14 +292,19 @@ export class LobbyForm extends React.Component<LobbyFormProps> {
         if (displayOccupation === SlotOccupation.Occupied &&
             slot.type === SlotType.Ai) {
             optionsMap.delete(SlotOccupation.Occupied);
-            const selectedDifficulty = this.props.availableAiNames.has(slot.aiDifficulty)
-                ? slot.aiDifficulty
-                : this.getFirstAvailableAiDifficulty();
-            selectedValue = AiDifficulty[selectedDifficulty];
+            if (slot.customBotId && this.props.availableAiNames.has(`Custom:${slot.customBotId}`)) {
+                selectedValue = `Custom:${slot.customBotId}`;
+            } else {
+                const diffKey = AiDifficulty[slot.aiDifficulty];
+                selectedValue = this.props.availableAiNames.has(diffKey)
+                    ? diffKey
+                    : [...this.props.availableAiNames.keys()][0] ?? 'Easy';
+            }
         }
         if (slot.type !== SlotType.Observer) {
-            this.props.availableAiNames.forEach((name: string, difficulty: number) => {
-                optionsMap.set(AiDifficulty[difficulty], strings.get(name));
+            this.props.availableAiNames.forEach((name: string, key: string) => {
+                const resolvedName = key.startsWith('Custom:') ? name : strings.get(name);
+                optionsMap.set(key, resolvedName);
             });
         }
         return (<Select initialValue={"" + selectedValue} disabled={!isHost} onSelect={(value) => this.onPlayerSelect(value, index)} className="player-name" tooltip={isSingleplayer
@@ -300,6 +320,9 @@ export class LobbyForm extends React.Component<LobbyFormProps> {
                             let tooltipKey: string | undefined;
                             if (value === SlotOccupation.Closed) {
                                 tooltipKey = "STT:PlayerNone";
+                            }
+                            else if (typeof value === 'string' && value.startsWith('Custom:')) {
+                                tooltipKey = undefined;
                             }
                             else {
                                 tooltipKey = aiUiTooltips.get(AiDifficulty[value as keyof typeof AiDifficulty] as AiDifficulty);
