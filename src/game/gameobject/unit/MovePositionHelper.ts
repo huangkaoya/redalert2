@@ -1,6 +1,7 @@
 import { RadialTileFinder } from '@/game/map/tileFinder/RadialTileFinder';
 import { MovementZone } from '@/game/type/MovementZone';
 import { SpeedType } from '@/game/type/SpeedType';
+import { Target } from '@/game/Target';
 interface GameObject {
     tile: Tile;
     rules: {
@@ -65,7 +66,7 @@ export class MovePositionHelper {
                     !(obj.rules.airportBound || (isSpecialCondition && obj.rules.balloonHover && !obj.rules.hoverAttack)) &&
                     !this.map.terrain.getPassableSpeed(candidateTile, SpeedType.Amphibious, false, !!bridge)) ||
                 (obj.rules.movementZone !== MovementZone.Fly &&
-                    !this.isEligibleTile(candidateTile, bridge, sourceBridge, targetTile))) {
+                    !this.isEligibleTile(candidateTile, this.eligibilityBridge(obj, bridge), sourceBridge, targetTile))) {
                 unplacedObjects.push(obj);
             }
             else {
@@ -90,7 +91,7 @@ export class MovePositionHelper {
                     obj.rules.airportBound ||
                     this.map.terrain.getPassableSpeed(nextTile, SpeedType.Amphibious, false, !!bridge)) &&
                 (obj.rules.movementZone === MovementZone.Fly ||
-                    this.isEligibleTile(nextTile, bridge, sourceBridge, targetTile))) {
+                    this.isEligibleTile(nextTile, this.eligibilityBridge(obj, bridge), sourceBridge, targetTile))) {
                 let assignedObjects = tileAssignments.get(nextTile);
                 if (!assignedObjects) {
                     assignedObjects = [];
@@ -118,6 +119,21 @@ export class MovePositionHelper {
             return existingObjects.filter(existing => existing.isInfantry()).length < maxInfantry;
         }
         return !existingObjects.length;
+    }
+    // A unit that travels the water layer UNDER bridges (naval) reaches the water
+    // beneath a HIGH bridge at ground level, so the deck above must not be treated as a
+    // layer it has to match — otherwise the destination tile fails the elevation check
+    // and the unit is bumped to the open water beside the bridge instead of stopping
+    // under it. Low bridges sit at water level and still block, so only ignore high ones.
+    // Units flagged tooBigToFitUnderBridge genuinely can't stop under a high bridge
+    // (MoveTask.canStopAtTile rejects it), so keep treating the deck as a blocker for
+    // them — otherwise they'd be sent under the deck only to bounce back out to the side.
+    private eligibilityBridge(obj: GameObject, tileBridge: Bridge | undefined): Bridge | undefined {
+        return tileBridge?.isHighBridge?.() &&
+            Target.usesGroundLayerUnderBridge(obj) &&
+            !(obj as any).rules?.tooBigToFitUnderBridge
+            ? undefined
+            : tileBridge;
     }
     public isEligibleTile(tile: Tile, tileBridge: Bridge | undefined, sourceBridge: Bridge | undefined, targetTile: Tile): boolean {
         if (sourceBridge?.isHighBridge() || tileBridge?.isHighBridge()) {

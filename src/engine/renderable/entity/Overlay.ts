@@ -266,20 +266,19 @@ export class Overlay {
                     EngineMathUtils.translateTowardsCamera(shadowMesh, this.camera as any, (MAGIC_OFFSET + 0.05) * Coords.ISO_WORLD_SCALE);
                     shadowMesh.updateMatrix();
                 }
-                const bridgeShadowSurface = this.createBridgeShadowSurface();
-                parent.add(bridgeShadowSurface);
             }
             if (this.gameObject.isBridge()) {
+                const renderOrder = this.gameObject.isHighBridge() ? 1 : -1;
                 const shapeMesh = mainRenderable.getShapeMesh();
                 if (shapeMesh) {
-                    (shapeMesh as THREE.Mesh).renderOrder = -1;
+                    (shapeMesh as THREE.Mesh).renderOrder = renderOrder;
                     const mat = (shapeMesh as THREE.Mesh).material as THREE.Material;
                     mat.depthTest = false;
                     mat.depthWrite = false;
                 }
                 const shadowMesh = mainRenderable.getShadowMesh();
                 if (shadowMesh) {
-                    (shadowMesh as THREE.Mesh).renderOrder = -1;
+                    (shadowMesh as THREE.Mesh).renderOrder = renderOrder;
                     const smat = (shadowMesh as THREE.Mesh).material as THREE.Material;
                     smat.depthTest = false;
                     smat.depthWrite = false;
@@ -338,7 +337,8 @@ export class Overlay {
     private createMainObject(imageSource: any, drawOffset: THREE.Vector3): ShpRenderable {
         const isWall = this.objectRules.wall;
         const heightOffset = this.gameObject.isHighBridge() ? 4 : 0;
-        const renderable = ShpRenderable.factory(imageSource, this.palette, this.camera, drawOffset, this.objectArt.hasShadow && !this.gameObject.isLowBridge(), heightOffset, isWall);
+        const hasShadow = this.objectArt.hasShadow && !this.gameObject.isLowBridge() && !this.gameObject.isHighBridge();
+        const renderable = ShpRenderable.factory(imageSource, this.palette, this.camera, drawOffset, hasShadow, heightOffset, isWall);
         renderable.setBatched(this.useSpriteBatching);
         if (this.useSpriteBatching) {
             renderable.setBatchPalettes([this.palette]);

@@ -41,7 +41,7 @@ export class GuardAreaOrder extends Order {
         const sourceObject = this.sourceObject;
         const tasks: (MoveTask | CallbackTask | GatherOreTask)[] = [];
         if (targetTile) {
-            tasks.push(new MoveTask(this.game, targetTile, !!this.target.getBridge(), {
+            tasks.push(new MoveTask(this.game, targetTile, !!this.target.getBridgeFor(this.sourceObject), {
                 closeEnoughTiles: this.game.rules.general.closeEnough,
             }));
         }

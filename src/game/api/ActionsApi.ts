@@ -1,6 +1,7 @@
 import { ActionType } from '@/game/action/ActionType';
 import { UpdateType } from '@/game/action/UpdateQueueAction';
 import { DebugCommand, DebugCommandType } from '@/game/action/DebugAction';
+import { TargetBridgeMode } from '@/game/Target';
 interface Tile {
     x: number;
     y: number;
@@ -38,7 +39,7 @@ interface Game {
         hasObjectId(id: number): boolean;
     };
     getObjectById(id: number): any;
-    createTarget(object: any, tile: any): Target;
+    createTarget(object: any, tile: any, bridgeMode?: TargetBridgeMode): Target;
 }
 interface LocalPlayer {
     name: string;
@@ -184,7 +185,10 @@ export class ActionsApi {
                 targetObject = this.game.getObjectById(targetX);
                 targetTile = targetObject.tile;
             }
-            target = this.game.createTarget(targetObject, targetTile);
+            const bridgeMode = targetY !== undefined && useBridge !== undefined
+                ? (useBridge ? TargetBridgeMode.Bridge : TargetBridgeMode.Ground)
+                : TargetBridgeMode.Auto;
+            target = this.game.createTarget(targetObject, targetTile, bridgeMode);
         }
         this.createAndPushAction(ActionType.OrderUnits, (action) => {
             action.orderType = orderType;

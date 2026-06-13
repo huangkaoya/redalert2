@@ -37,7 +37,7 @@ export class MoveOrder extends Order {
             this.game.mapShroudTrait
                 .getPlayerShroud(this.sourceObject.owner)
                 ?.isShrouded(this.target.tile, this.target.obj?.tileElevation)) {
-            const hasBridge = !!this.target.getBridge();
+            const hasBridge = !!this.target.getBridgeFor(this.sourceObject);
             const speedType = this.sourceObject.rules.speedType;
             const isInfantry = this.sourceObject.isInfantry();
             const isFlying = this.sourceObject.rules.movementZone === MovementZone.Fly;
@@ -125,7 +125,7 @@ export class MoveOrder extends Order {
         if (sourceObject.isBuilding() && sourceObject.rules.undeploysInto) {
             return [
                 new UndeployIntoTask(this.game),
-                new MoveTask(this.game, this.target.tile, !!this.target.getBridge(), { closeEnoughTiles, forceMove: this.forceMove })
+                new MoveTask(this.game, this.target.tile, !!this.target.getBridgeFor(this.sourceObject), { closeEnoughTiles, forceMove: this.forceMove })
             ];
         }
         if (sourceObject.isUnit()) {
@@ -136,7 +136,7 @@ export class MoveOrder extends Order {
                 return [new MoveTargetTask(this.game, this.target.obj)];
             }
             return [
-                new MoveTask(this.game, this.target.tile, !!this.target.getBridge(), { closeEnoughTiles, forceMove: this.forceMove })
+                new MoveTask(this.game, this.target.tile, !!this.target.getBridgeFor(this.sourceObject), { closeEnoughTiles, forceMove: this.forceMove })
             ];
         }
         return undefined;
@@ -182,7 +182,7 @@ export class MoveOrder extends Order {
             const existingMoveTask = tasks.find((task: any) => task.constructor === MoveTask && !task.isCancelling());
             if (existingMoveTask) {
                 existingMoveTask.setForceMove(this.forceMove);
-                existingMoveTask.updateTarget(this.target.tile, !!this.target.getBridge());
+                existingMoveTask.updateTarget(this.target.tile, !!this.target.getBridgeFor(this.sourceObject));
                 if (existingMoveTask.children.length &&
                     existingMoveTask.children[0] instanceof AttackTask) {
                     existingMoveTask.children[0].cancel();

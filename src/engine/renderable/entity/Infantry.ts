@@ -53,6 +53,7 @@ export class Infantry {
     private extraLight: THREE.Vector3;
     private target: THREE.Object3D;
     private posWrap: THREE.Object3D;
+    private mainObject: THREE.Object3D;
     private shpRenderable: ShpRenderable;
     private placeholder: DebugRenderable;
     private blobShadow: BlobShadow;
@@ -78,6 +79,7 @@ export class Infantry {
     private lastFiring: boolean;
     private lastPanicked: boolean;
     private lastStance: StanceType;
+    private lastBridgeRenderOrder?: number;
     constructor(gameObject: any, rules: any, art: any, imageFinder: any, theater: any, palette: any, camera: any, lighting: any, debugFrame: any, gameSpeed: any, selectionModel: any, useSpriteBatching: boolean, useMeshInstancing: boolean, pipOverlay: any, worldSound: any) {
         this.gameObject = gameObject;
         this.rules = rules;
@@ -136,6 +138,7 @@ export class Infantry {
             this.withPosition.matrixUpdate = true;
             this.withPosition.applyTo(this);
             this.createObjects(obj);
+            this.updateBridgeRenderOrder();
             this.shpRenderable?.setExtraLight(this.extraLight);
             if (this.pipOverlay) {
                 this.pipOverlay.create3DObject();
@@ -164,6 +167,7 @@ export class Infantry {
         this.plugins.forEach((plugin) => plugin.update(deltaTime));
         const { zone, stance, isCrashing, isMoving, isFiring, isPanicked, owner, veteranLevel, } = this.gameObject;
         this.pipOverlay?.update(deltaTime);
+        this.updateBridgeRenderOrder();
         this.blobShadow?.update(deltaTime, undefined as any);
         if (veteranLevel !== this.lastVeteranLevel) {
             if (veteranLevel === VeteranLevel.Elite && this.lastVeteranLevel !== undefined) {
@@ -464,7 +468,7 @@ export class Infantry {
         const posWrap = this.posWrap = new THREE.Object3D();
         posWrap.matrixAutoUpdate = false;
         parent.add(posWrap);
-        const mainObject = this.createMainObject(this.objectArt);
+        const mainObject = this.mainObject = this.createMainObject(this.objectArt);
         posWrap.add(mainObject);
         if ((this.gameObject.rules.movementZone !== MovementZone.Fly || this.objectArt.isVoxel) &&
             this.gameObject.stance !== StanceType.Paradrop) {
@@ -472,6 +476,16 @@ export class Infantry {
             this.blobShadow.create3DObject();
             this.posWrap.add(this.blobShadow.get3DObject());
         }
+    }
+    private updateBridgeRenderOrder(): void {
+        const renderOrder = this.gameObject.onBridge ? 2 : 0;
+        if (this.lastBridgeRenderOrder === renderOrder) {
+            return;
+        }
+        this.lastBridgeRenderOrder = renderOrder;
+        this.mainObject?.traverse((object) => {
+            object.renderOrder = renderOrder;
+        });
     }
     createMainObject(art: any): THREE.Object3D {
         let image;
@@ -522,7 +536,10 @@ export class Infantry {
             this.posWrap.remove(currentObject);
             (this.shpRenderable ?? this.placeholder)?.dispose();
         }
-        this.posWrap.add(this.createMainObject(art));
+        this.mainObject = this.createMainObject(art);
+        this.posWrap.add(this.mainObject);
+        this.lastBridgeRenderOrder = undefined;
+        this.updateBridgeRenderOrder();
     }
     onCreate(renderableManager: any): void {
         this.renderableManager = renderableManager;

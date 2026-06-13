@@ -6,7 +6,7 @@ import { MoveOrder } from '@/game/order/MoveOrder';
 import { orderPriorities } from '@/game/order/orderPriorities';
 import { OrderFactory } from '@/game/order/OrderFactory';
 import { AttackOrder } from '@/game/order/AttackOrder';
-import { Target } from '@/game/Target';
+import { Target, TargetBridgeMode } from '@/game/Target';
 import { AttackMoveOrder } from '@/game/order/AttackMoveOrder';
 import { OrderFeedbackType } from '@/game/order/OrderFeedbackType';
 import { GuardAreaOrder } from '@/game/order/GuardAreaOrder';
@@ -93,12 +93,13 @@ export class DefaultActionHandler {
     private specialActions: any[] = [];
     private currentTarget?: any;
     private currentSelected?: any[];
+    private currentHover?: any;
     private mostSignificantAction?: any;
     get onOrder() {
         return this._onOrder.asEvent();
     }
     static factory(renderableManager: any, unitSelection: any, unitSelectionHandler: any, currentPlayer: any, map: any, game: any, audioVisualRules: any): DefaultActionHandler {
-        const handler = new DefaultActionHandler(renderableManager, currentPlayer, audioVisualRules, map.tileOccupation);
+        const handler = new DefaultActionHandler(renderableManager, currentPlayer, audioVisualRules, map);
         const selectAction = new SelectAction(game, unitSelectionHandler, currentPlayer);
         handler.selectAction = selectAction;
         if (currentPlayer && !currentPlayer.isObserver) {
@@ -126,11 +127,36 @@ export class DefaultActionHandler {
         }
         return handler;
     }
-    constructor(private readonly renderableManager: any, private readonly currentPlayer: any, private readonly audioVisualRules: any, private readonly tileOccupation: any) { }
+    constructor(private readonly renderableManager: any, private readonly currentPlayer: any, private readonly audioVisualRules: any, private readonly map: any) { }
     private createOrderTarget(hover: any): Target {
-        return new Target(hover?.gameObject, hover?.tile, this.tileOccupation);
+        return new Target(hover?.gameObject, hover?.tile, this.map.tileOccupation);
     }
-    private getDefaultAction(sourceObject: any, selected: any[], hover: any, target: any, filter: ActionFilter, force: boolean, allowTypeSelect: boolean, keyboardEvent: any, minimap: boolean): any {
+    private createTargetForAction(hover: any, sourceObject: any, action: any): Target {
+        if (action instanceof MoveOrder ||
+            action instanceof AttackMoveOrder ||
+            action instanceof GuardAreaOrder) {
+            const hoverObjectIsBridge = hover?.gameObject?.isOverlay?.() && hover.gameObject.isBridge?.();
+            const bridgeTile = hoverObjectIsBridge ? hover?.bridgeTile ?? hover.tile : hover?.bridgeTile;
+            if (!bridgeTile) {
+                return this.createOrderTarget(hover);
+            }
+            if (Target.usesGroundLayerUnderBridge(sourceObject)) {
+                // Ships/naval units travel the water layer. The water beneath a
+                // high bridge shares the deck tile's (rx,ry); hover.groundTile is
+                // the z=0 screen projection of the elevated deck and lands a couple
+                // tiles away on the (impassable) shore, so the move is rejected.
+                // Target the bridge tile itself in Ground mode so the unit heads to
+                // the water directly under the deck.
+                const groundTile = bridgeTile ?? hover?.groundTile ?? hover?.tile;
+                return groundTile
+                    ? new Target(undefined, groundTile, this.map.tileOccupation, TargetBridgeMode.Ground)
+                    : this.createOrderTarget(hover);
+            }
+            return new Target(undefined, bridgeTile, this.map.tileOccupation, TargetBridgeMode.Bridge);
+        }
+        return this.createOrderTarget(hover);
+    }
+    private getDefaultAction(sourceObject: any, selected: any[], hover: any, filter: ActionFilter, force: boolean, allowTypeSelect: boolean, keyboardEvent: any, minimap: boolean): any {
         const hoveredObject = hover.gameObject;
         const selectAction = this.selectAction.setForce(force).setTypeSelect(false);
         if (!sourceObject || sourceObject.owner !== this.currentPlayer || sourceObject.rules.spawned) {
@@ -153,21 +179,29 @@ export class DefaultActionHandler {
         const allWarpedOut = selected.every((unit) => unit.warpedOutTrait?.isActive?.());
         if (keyboardEvent?.ctrlKey && !allWarpedOut) {
             if (keyboardEvent.shiftKey) {
-                if (this.attackMoveAction?.set(sourceObject, target).isValid()) {
+                const target = this.attackMoveAction && this.createTargetForAction(hover, sourceObject, this.attackMoveAction);
+                if (target && this.attackMoveAction.set(sourceObject, target).isValid()) {
                     return this.attackMoveAction;
                 }
             }
             else if (keyboardEvent.altKey) {
-                if (this.guardAreaAction?.set(sourceObject, target).isValid()) {
+                const target = this.guardAreaAction && this.createTargetForAction(hover, sourceObject, this.guardAreaAction);
+                if (target && this.guardAreaAction.set(sourceObject, target).isValid()) {
                     return this.guardAreaAction;
                 }
             }
-            else if (this.forceAttackAction?.set(sourceObject, target).isValid()) {
-                return this.forceAttackAction;
+            else if (this.forceAttackAction) {
+                const target = this.createTargetForAction(hover, sourceObject, this.forceAttackAction);
+                if (this.forceAttackAction.set(sourceObject, target).isValid()) {
+                    return this.forceAttackAction;
+                }
             }
         }
-        if (keyboardEvent?.altKey && !allWarpedOut && this.forceMoveAction?.set(sourceObject, target).isValid()) {
-            return this.forceMoveAction;
+        if (keyboardEvent?.altKey && !allWarpedOut && this.forceMoveAction) {
+            const target = this.createTargetForAction(hover, sourceObject, this.forceMoveAction);
+            if (this.forceMoveAction.set(sourceObject, target).isValid()) {
+                return this.forceMoveAction;
+            }
         }
         for (const action of this.defaultActions) {
             if (action instanceof SelectAction) {
@@ -178,24 +212,31 @@ export class DefaultActionHandler {
             else if (!allWarpedOut &&
                 (!minimap || action.minimapAllowed) &&
                 !(action.singleSelectionRequired && selected.length > 1) &&
-                action.set(sourceObject, target).isValid()) {
+                action.set(sourceObject, this.createTargetForAction(hover, sourceObject, action)).isValid()) {
                 return action;
             }
         }
-        if (minimap && !allWarpedOut && this.forceMoveAction?.set(sourceObject, target).isValid()) {
-            return this.forceMoveAction;
+        if (minimap && !allWarpedOut && this.forceMoveAction) {
+            const target = this.createTargetForAction(hover, sourceObject, this.forceMoveAction);
+            if (this.forceMoveAction.set(sourceObject, target).isValid()) {
+                return this.forceMoveAction;
+            }
         }
         return undefined;
     }
-    private updateMostSignificantAction(selected: any[], hover: any, target: any, filter: ActionFilter, force: boolean, allowTypeSelect: boolean, keyboardEvent: any, minimap: boolean): any {
+    private updateMostSignificantAction(selected: any[], hover: any, filter: ActionFilter, force: boolean, allowTypeSelect: boolean, keyboardEvent: any, minimap: boolean): any {
         if (!selected.length) {
-            return this.getDefaultAction(undefined, selected, hover, target, filter, force, allowTypeSelect, keyboardEvent, minimap);
+            return this.getDefaultAction(undefined, selected, hover, filter, force, allowTypeSelect, keyboardEvent, minimap);
         }
         const actions = selected
             .map((unit) => {
-            const action = this.getDefaultAction(unit, selected, hover, target, filter, force, allowTypeSelect, keyboardEvent, minimap);
+            const action = this.getDefaultAction(unit, selected, hover, filter, force, allowTypeSelect, keyboardEvent, minimap);
             if (action) {
-                return { unit, action };
+                return {
+                    unit,
+                    action,
+                    target: action instanceof SelectAction ? undefined : action.target,
+                };
             }
             return undefined;
         })
@@ -206,7 +247,7 @@ export class DefaultActionHandler {
         }
         return actions.reduce((best: any, entry: any) => {
             if (!best) {
-                return entry.action instanceof SelectAction ? entry.action : entry.action.set(entry.unit, target);
+                return entry.action instanceof SelectAction ? entry.action : entry.action.set(entry.unit, entry.target);
             }
             const bestIndex = this.defaultActions.indexOf(best);
             const currentIndex = this.defaultActions.indexOf(entry.action);
@@ -218,7 +259,7 @@ export class DefaultActionHandler {
             return currentBeatsBest
                 ? entry.action instanceof SelectAction
                     ? entry.action
-                    : entry.action.set(entry.unit, target)
+                    : entry.action.set(entry.unit, entry.target)
                 : best;
         }, undefined);
     }
@@ -231,35 +272,48 @@ export class DefaultActionHandler {
         }
         if (!this.mostSignificantAction.isAllowed()) {
             const sourceObject = this.mostSignificantAction.sourceObject;
+            const target = this.mostSignificantAction.target;
             for (const unit of this.currentSelected) {
-                this.mostSignificantAction.set(unit, this.currentTarget);
+                this.mostSignificantAction.set(
+                    unit,
+                    this.currentHover
+                        ? this.createTargetForAction(this.currentHover, unit, this.mostSignificantAction)
+                        : this.currentTarget,
+                );
                 if (this.mostSignificantAction.isValid() && this.mostSignificantAction.isAllowed()) {
                     return this.mostSignificantAction.getPointerType(minimap, this.currentSelected);
                 }
             }
-            this.mostSignificantAction.set(sourceObject, this.currentTarget);
+            this.mostSignificantAction.set(sourceObject, target);
         }
         return this.mostSignificantAction.getPointerType(minimap, this.currentSelected);
     }
     update(hover: any, selected: any[], rightClickMove: boolean, keyboardEvent: any, minimap: boolean = false): void {
-        const target = (this.currentTarget = this.createOrderTarget(hover));
+        this.currentHover = hover;
         this.currentSelected = selected;
-        this.mostSignificantAction = this.updateMostSignificantAction(selected, hover, target, ActionFilter.All, rightClickMove, false, keyboardEvent, minimap);
+        this.mostSignificantAction = this.updateMostSignificantAction(selected, hover, ActionFilter.All, rightClickMove, false, keyboardEvent, minimap);
+        this.currentTarget = this.mostSignificantAction instanceof SelectAction
+            ? this.createOrderTarget(hover)
+            : this.mostSignificantAction?.target ?? this.createOrderTarget(hover);
     }
     execute(hover: any, selected: any[], filter: ActionFilter, force: boolean, allowTypeSelect: boolean, keyboardEvent: any, minimap: boolean = false): boolean {
-        const target = (this.currentTarget = this.createOrderTarget(hover));
+        this.currentHover = hover;
         this.currentSelected = selected;
-        this.mostSignificantAction = this.updateMostSignificantAction(selected, hover, target, filter, force, allowTypeSelect, keyboardEvent, minimap);
+        this.mostSignificantAction = this.updateMostSignificantAction(selected, hover, filter, force, allowTypeSelect, keyboardEvent, minimap);
         if (!this.mostSignificantAction) {
             return false;
         }
+        const target = (this.currentTarget = this.mostSignificantAction instanceof SelectAction
+            ? this.createOrderTarget(hover)
+            : this.mostSignificantAction.target);
         const allowed = this.mostSignificantAction.isAllowed();
         if (allowed) {
             if (this.mostSignificantAction instanceof MoveOrder ||
                 (this.mostSignificantAction instanceof AttackMoveOrder && !target.obj?.isTechno?.()) ||
                 this.mostSignificantAction instanceof GuardAreaOrder) {
                 this.renderableManager.createTransientAnim(this.audioVisualRules.moveFlash, (renderable: any) => {
-                    renderable.setPosition(Coords.tile3dToWorld(target.tile.rx + 0.5, target.tile.ry + 0.5, target.tile.z + (target.getBridge()?.tileElevation ?? 0)));
+                    const bridge = target.getBridgeFor?.(this.mostSignificantAction.sourceObject) ?? target.getBridge?.();
+                    renderable.setPosition(Coords.tile3dToWorld(target.tile.rx + 0.5, target.tile.ry + 0.5, target.tile.z + (bridge?.tileElevation ?? 0)));
                 });
             }
             else if (!(this.mostSignificantAction instanceof SelectAction) && !selected.includes(hover.gameObject)) {

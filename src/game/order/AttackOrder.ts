@@ -119,6 +119,12 @@ export class AttackOrder extends Order {
             !weapon.warhead.rules.bombDisarm) {
             return false;
         }
+        if (!this.forceAttack &&
+            targetObj?.isOverlay?.() &&
+            targetObj.isBridge?.() &&
+            !weapon.warhead.rules.wall) {
+            return false;
+        }
         const canMoveOrInRange = (this.sourceObject.isUnit() &&
             this.sourceObject.moveTrait &&
             !this.sourceObject.moveTrait.isDisabled()) ||
@@ -139,6 +145,7 @@ export class AttackOrder extends Order {
         if (targetObj.isDestroyed || targetObj.isCrashing)
             return false;
         if (targetObj.isOverlay() &&
+            !targetObj.isBridge?.() &&
             (weapon.warhead.rules.wall ||
                 (weapon.warhead.rules.wood && targetObj.rules.armor === ArmorType.Wood)) &&
             !targetObj.isTechno()) {
