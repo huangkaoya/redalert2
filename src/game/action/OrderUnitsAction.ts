@@ -10,6 +10,7 @@ import { DeployNotAllowedEvent } from "@/game/event/DeployNotAllowedEvent";
 import { isNotNullOrUndefined } from "@/util/typeGuard";
 import { ScatterPositionHelper } from "@/game/gameobject/unit/ScatterPositionHelper";
 import { ActionType } from "@/game/action/ActionType";
+import { TargetBridgeMode } from "@/game/Target";
 export const ORDER_UNIT_LIMIT = 128;
 export class OrderUnitsAction extends Action {
     private game: any;
@@ -38,20 +39,26 @@ export class OrderUnitsAction extends Action {
             const ry = stream.readUint16();
             this.queue = version > 2 && Boolean(stream.readUint8());
             let targetObject: any;
+            let bridgeMode = TargetBridgeMode.Auto;
             if (version > 3) {
                 const objectId = stream.readUint32();
-                if (!this.game.getWorld().hasObjectId(objectId)) {
+                if (objectId === 0 && version > 4) {
+                    targetObject = undefined;
+                }
+                else if (!this.game.getWorld().hasObjectId(objectId)) {
                     this.isInvalid = true;
                     return;
                 }
-                targetObject = this.game.getObjectById(objectId);
+                else {
+                    targetObject = this.game.getObjectById(objectId);
+                }
             }
-            else {
-                targetObject = undefined;
+            if (version > 4) {
+                bridgeMode = stream.readUint8();
             }
             const tile = this.map.tiles.getByMapCoords(rx, ry);
             if (tile) {
-                this.target = this.game.createTarget(targetObject, tile);
+                this.target = this.game.createTarget(targetObject, tile, bridgeMode);
             }
             else {
                 this.isInvalid = true;
@@ -59,7 +66,7 @@ export class OrderUnitsAction extends Action {
         }
     }
     serialize(): Uint8Array {
-        let stream = new DataStream(11);
+        let stream = new DataStream(12);
         stream.dynamicSize = false;
         stream.writeUint8(this.orderType);
         let extraDataSize = 0;
@@ -69,12 +76,17 @@ export class OrderUnitsAction extends Action {
             stream.writeUint16(this.target.tile.ry);
             extraDataSize += 2;
             const objectId = (this.target.obj || this.target.getBridge())?.id;
-            if (this.queue || objectId !== undefined) {
+            const hasExplicitBridgeMode = this.target.hasExplicitBridgeMode?.();
+            if (this.queue || objectId !== undefined || hasExplicitBridgeMode) {
                 stream.writeUint8(Number(this.queue));
                 extraDataSize += 1;
             }
-            if (objectId !== undefined) {
-                stream.writeUint32(objectId);
+            if (objectId !== undefined || hasExplicitBridgeMode) {
+                stream.writeUint32(objectId ?? 0);
+                extraDataSize += 1;
+            }
+            if (hasExplicitBridgeMode) {
+                stream.writeUint8(this.target.getBridgeMode());
                 extraDataSize += 1;
             }
         }
@@ -145,18 +157,42 @@ export class OrderUnitsAction extends Action {
                 moveOrders.forEach((order: any) => processedOrders.push(order));
             }
             else {
-                const bridge = this.target.getBridge();
                 const forceMove = moveOrders[0].forceMove;
-                const units = moveOrders.map((order: any) => order.sourceObject);
-                const positions = new MovePositionHelper(this.map).findPositions(units, this.target.tile, bridge, forceMove);
-                moveOrders.forEach((order: any) => {
-                    const position = positions.get(order.sourceObject);
-                    const bridgeOnTile = !bridge || bridge.isHighBridge()
-                        ? this.map.tileOccupation.getBridgeOnTile(position)
-                        : bridge;
-                    const target = this.game.createTarget(bridgeOnTile, position);
-                    order.target = target;
-                    processedOrders.push(order);
+                const movePositionHelper = new MovePositionHelper(this.map);
+                const groups = new Map<any, any[]>();
+                for (const order of moveOrders) {
+                    const bridge = order.target.getBridgeFor(order.sourceObject);
+                    const group = groups.get(bridge) ?? [];
+                    group.push(order);
+                    groups.set(bridge, group);
+                }
+                groups.forEach((orders, bridge) => {
+                    const units = orders.map((order: any) => order.sourceObject);
+                    const positions = movePositionHelper.findPositions(units, this.target.tile, bridge, forceMove);
+                    orders.forEach((order: any) => {
+                        const position = positions.get(order.sourceObject);
+                        if (!position) {
+                            return;
+                        }
+                        const bridgeOnTile = bridge
+                            ? (bridge.isHighBridge()
+                                ? this.map.tileOccupation.getBridgeOnTile(position)
+                                : bridge)
+                            : undefined;
+                        // A move target is a LOCATION, not the bridge structure: leave
+                        // obj undefined and let TargetBridgeMode.Bridge re-attach the
+                        // bridge via the tile. Passing the bridge as obj makes
+                        // MoveOrder.isValid() treat it as an (unmovable) overlay object
+                        // and silently drop the order, so ground units never move onto
+                        // the bridge.
+                        const target = this.game.createTarget(
+                            undefined,
+                            position,
+                            bridgeOnTile ? TargetBridgeMode.Bridge : TargetBridgeMode.Ground,
+                        );
+                        order.target = target;
+                        processedOrders.push(order);
+                    });
                 });
             }
         }
@@ -168,7 +204,13 @@ export class OrderUnitsAction extends Action {
             scatterOrders.forEach((order: any) => {
                 const position = scatterPositions.get(order.sourceObject);
                 if (position) {
-                    const target = this.game.createTarget(position.onBridge, position.tile);
+                    // Same as the move case: a scatter destination is a location, not
+                    // the bridge object — keep obj undefined so the order isn't dropped.
+                    const target = this.game.createTarget(
+                        undefined,
+                        position.tile,
+                        position.onBridge ? TargetBridgeMode.Bridge : TargetBridgeMode.Ground,
+                    );
                     order.target = target;
                     processedOrders.push(order);
                 }

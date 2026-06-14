@@ -28,7 +28,7 @@ export class AttackMoveOrder extends AttackOrder {
         }
         let isAllowed = this.isAllowed();
         if (isAllowed) {
-            const hasBridge = !!this.target.getBridge();
+            const hasBridge = !!this.target.getBridgeFor(this.sourceObject);
             const speedType = this.sourceObject.rules.speedType;
             const isInfantry = this.sourceObject.isInfantry();
             const canFly = this.sourceObject.rules.movementZone === MovementZone.Fly;
@@ -70,7 +70,7 @@ export class AttackMoveOrder extends AttackOrder {
             return [new AttackMoveTargetTask(this.game, this.target, weapon)];
         }
         return [
-            new AttackMoveTask(this.game, this.target.tile, !!this.target.getBridge(), { closeEnoughTiles: this.game.rules.general.closeEnough })
+            new AttackMoveTask(this.game, this.target.tile, !!this.target.getBridgeFor(this.sourceObject), { closeEnoughTiles: this.game.rules.general.closeEnough })
         ];
     }
     isTargetted(): boolean {
@@ -93,7 +93,7 @@ export class AttackMoveOrder extends AttackOrder {
                     }
                     else {
                         if (existingTask.constructor === AttackMoveTask) {
-                            existingTask.updateTarget(this.target.tile, !!this.target.getBridge());
+                            existingTask.updateTarget(this.target.tile, !!this.target.getBridgeFor(this.sourceObject));
                             taskList.splice(taskList.indexOf(existingTask) + 1);
                             unit.unitOrderTrait.clearOrders();
                             return false;

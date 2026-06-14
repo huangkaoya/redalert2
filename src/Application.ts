@@ -43,6 +43,7 @@ const optionalDevModuleImporters: Record<string, () => Promise<any>> = {
     './tools/UnitMovementTester': () => import('./tools/UnitMovementTester'),
     './tools/PerformanceTester': () => import('./tools/PerformanceTester'),
     './tools/LiveInteractionTester': () => import('./tools/LiveInteractionTester'),
+    './tools/SceneSandboxTester': () => import('./tools/SceneSandboxTester'),
 };
 
 export type SplashScreenUpdateCallback = (props: ComponentProps<typeof SplashScreenComponent> | null) => void;
@@ -902,6 +903,34 @@ export class Application {
             const { PerformanceTester } = await this.importOptionalDevModule('./tools/PerformanceTester');
             await PerformanceTester.main(this.rootEl!, this.strings, this.runtimeVars, this.generalOptions, this.createTestToolContext());
             currentHandler = PerformanceTester;
+        });
+        this.routing.addRoute("/scenesandbox", async () => {
+            if (!Engine.vfs) {
+                throw new Error("Original game files must be provided.");
+            }
+            console.log('[Application] Initializing SceneSandboxTester');
+            const { TestToolSupport } = await this.importOptionalDevModule('./tools/TestToolSupport');
+            const mapCandidates = ["mp18s3.map", "mp03t4.map"];
+            let loadedMap: any;
+            let loadedMapName = "";
+            for (const mapName of mapCandidates) {
+                try {
+                    loadedMap = await TestToolSupport.loadMap(this.createTestToolContext().mapResourceLoader!, mapName);
+                    loadedMapName = mapName;
+                    break;
+                }
+                catch (error) {
+                    console.warn(`[Application] Failed to load sandbox map "${mapName}"`, error);
+                }
+            }
+            if (!loadedMap) {
+                throw new Error("Failed to load a scene sandbox map.");
+            }
+            const { SceneSandboxTester } = await this.importOptionalDevModule('./tools/SceneSandboxTester');
+            await SceneSandboxTester.main(Engine.vfs, loadedMap, this.rootEl!, this.strings, this.createTestToolContext(), {
+                mapName: loadedMapName,
+            });
+            currentHandler = SceneSandboxTester;
         });
         this.routing.addRoute("/liveinteraction", async () => {
             if (!Engine.vfs) {

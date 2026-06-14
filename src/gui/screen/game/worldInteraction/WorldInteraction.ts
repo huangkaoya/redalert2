@@ -338,7 +338,7 @@ export class WorldInteraction {
         const isClick = this.isClickRange(event.pointer);
         let isDoubleSameClick = false;
         const isTouchLongPress = isClick && event.isTouch && event.timeStamp - this.lastMouseDownEvent.timeStamp >= 500;
-        if (event.isTouch) {
+        if (isClick) {
             this.mapHoverHandler.update(event.pointer, true);
         }
         const hover = this.mapHoverHandler.getCurrentHover();

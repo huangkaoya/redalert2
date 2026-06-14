@@ -9,7 +9,7 @@ import { BoxedVar } from "../util/BoxedVar";
 import { StartingUnitsGenerator } from "./StartingUnitsGenerator";
 import { CardinalTileFinder } from "./map/tileFinder/CardinalTileFinder";
 import { SpeedType } from "./type/SpeedType";
-import { Target } from "./Target";
+import { Target, TargetBridgeMode } from "./Target";
 import { BridgeOverlayTypes } from "./map/BridgeOverlayTypes";
 import { fnv32a, isBetween } from "../util/math";
 import { GameEventBus } from "./GameEventBus";
@@ -561,8 +561,8 @@ export class Game {
         const rules = this.rules.getSuperWeapon(name);
         return new SuperWeapon(name, rules, owner, isReady);
     }
-    createTarget(obj: any, tile: any) {
-        return new Target(obj, tile, this.map.tileOccupation);
+    createTarget(obj: any, tile: any, bridgeMode: TargetBridgeMode = TargetBridgeMode.Auto) {
+        return new Target(obj, tile, this.map.tileOccupation, bridgeMode);
     }
     isValidTarget(obj: any): boolean {
         if (obj) {

@@ -75,6 +75,7 @@ interface GameObjectInterface {
     };
     tile: any;
     tileElevation: number;
+    onBridge: boolean;
     direction: number;
     spinVelocity: number;
     zone: any;
@@ -203,6 +204,7 @@ export class Vehicle {
     lastTurretFacing?: number;
     lastMoving?: boolean;
     lastFiring?: boolean;
+    lastBridgeRenderOrder?: number;
     destroyStartTime?: number;
     sinkWakeAnims: any[] = [];
     squidGrabAnim?: any;
@@ -275,6 +277,7 @@ export class Vehicle {
                 (this.withPosition.matrixUpdate = !0),
                 this.withPosition.applyTo(this),
                 this.createObjects(e),
+                this.updateBridgeRenderOrder(),
                 this.vxlBuilders.forEach((e) => e.setExtraLight(this.vxlExtraLight)),
                 this.shpRenderable?.setExtraLight(this.shpExtraLight),
                 this.pipOverlay &&
@@ -311,6 +314,7 @@ export class Vehicle {
     update(i, r = 0) {
         this.plugins.forEach((e) => e.update(i)),
             this.pipOverlay?.update(i),
+            this.updateBridgeRenderOrder(),
             this.gameObject.veteranLevel !== this.lastVeteranLevel &&
                 (this.gameObject.veteranLevel === O.VeteranLevel.Elite &&
                     void 0 !== this.lastVeteranLevel &&
@@ -660,6 +664,16 @@ export class Vehicle {
             e.add(i);
         let a = (this.posObj = new THREE.Object3D());
         (a.matrixAutoUpdate = !1), a.add(e), t.add(a);
+    }
+    updateBridgeRenderOrder() {
+        const renderOrder = this.gameObject.onBridge ? 2 : 0;
+        if (this.lastBridgeRenderOrder === renderOrder) {
+            return;
+        }
+        this.lastBridgeRenderOrder = renderOrder;
+        this.mainObj?.traverse((object) => {
+            object.renderOrder = renderOrder;
+        });
     }
     computeSpriteAnchorOffset(e) {
         var t = this.objectArt.getDrawOffset();
