@@ -666,7 +666,9 @@ export class Vehicle {
         (a.matrixAutoUpdate = !1), a.add(e), t.add(a);
     }
     updateBridgeRenderOrder() {
-        const renderOrder = this.gameObject.onBridge ? 2 : 0;
+        // Airborne units (aircraft) fly OVER a high bridge and must render above its
+        // deck; without the Air check they'd be drawn behind the bridge.
+        const renderOrder = (this.gameObject.onBridge || this.gameObject.zone === M.ZoneType.Air) ? 2 : 0;
         if (this.lastBridgeRenderOrder === renderOrder) {
             return;
         }

@@ -478,7 +478,10 @@ export class Infantry {
         }
     }
     private updateBridgeRenderOrder(): void {
-        const renderOrder = this.gameObject.onBridge ? 2 : 0;
+        // Airborne units (jumpjet rocketeers etc.) fly OVER a high bridge, so they must
+        // render above its deck (renderOrder 1); without the Air check they'd get
+        // renderOrder 0 and be drawn behind the bridge — looking like they went under it.
+        const renderOrder = (this.gameObject.onBridge || this.gameObject.zone === ZoneType.Air) ? 2 : 0;
         if (this.lastBridgeRenderOrder === renderOrder) {
             return;
         }
