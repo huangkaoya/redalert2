@@ -229,8 +229,9 @@ export class SceneSandboxTester {
         this.disposables.add(canvasMetrics);
 
         const generalOptions = new GeneralOptions();
-        generalOptions.rightClickMove.value = true;
-        generalOptions.rightClickScroll.value = false;
+        // RA2 风格：左键移动、右键拖动卷动地图（与真实游戏默认一致）。
+        generalOptions.rightClickMove.value = false;
+        generalOptions.rightClickScroll.value = true;
         generalOptions.targetLines.value = true;
         const runtimeVars = new ConsoleVars();
         runtimeVars.freeCamera.value = false;
